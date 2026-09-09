@@ -2,6 +2,13 @@
 
 **Exhaustive document traversal and anti-skimming for agentic workflows.**
 
+[![Release](https://img.shields.io/github/v/release/pterw/deeper-reading?color=blue&style=flat-square)](https://github.com/pterw/deeper-reading/releases)
+[![CI](https://img.shields.io/github/actions/workflow/status/pterw/deeper-reading/ci.yml?branch=main&style=flat-square)](https://github.com/pterw/deeper-reading/actions)
+[![Tests](https://img.shields.io/badge/tests-192%20passed-brightgreen?style=flat-square)](tests/)
+[![Spec](https://img.shields.io/badge/spec-agentskills.io-8a2be2?style=flat-square)](https://agentskills.io)
+[![Dependencies](https://img.shields.io/badge/dependencies-zero%20external-success?style=flat-square)](references/dependencies.md)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
+
 `deeper-reading` exists to stop language-model agents from doing the thing they are naturally tempted to do with dense technical material: skim, find the first plausible match, produce a high-level summary, and declare the job finished.
 
 It was born out of frustration with exactly that failure mode while reading dense mechanistic-interpretability work such as Anthropic's Jacobian Space paper, where a useful answer depends on details scattered across proofs, caveats, appendices, overrides, and later sections—not merely on finding one paragraph that looks relevant.
