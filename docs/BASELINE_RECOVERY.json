@@ -1,0 +1,11 @@
+{
+  "release": "0.1.0",
+  "archive": "chunking-document-workflows-0.1.0(2)(1).zip",
+  "sha256": "d1bfcfd54c8d70831ae73feb19446e7182cbb25fa28fb93e4861822174c310c4",
+  "size_bytes": 121058,
+  "files": 76,
+  "tests_collected": 157,
+  "immutable_source": "/mnt/data/recovery-authority/chunking-document-workflows-0.1.0(2)(1).zip",
+  "recovered_baseline": "/mnt/data/recovered-freeze/chunking-document-workflows",
+  "working_tree": "/mnt/data/hard-standalone-work"
+}

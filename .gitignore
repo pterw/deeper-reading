@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Environments
+.venv/
+venv/
+env/
+
+# Build / release artifacts
+build/
+dist/
+*.egg-info/
+*.zip
+
+# Local run outputs / scratch evidence
+runs/
+run-output/
+.tmp/
+tmp/
+
+# Editors / OS
+.vscode/
+.idea/
+.agent/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Local logs
+*.log
