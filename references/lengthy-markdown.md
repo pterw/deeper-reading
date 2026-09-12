@@ -4,7 +4,7 @@ Markdown uses the bundled `scripts/extract_markdown.py` extractor to create the 
 
 ## Structural splitting
 
-Split on Markdown heading structure at `# / ## / ###`. Preserve the active heading path in each chunk locator. A heading-looking line inside a fenced code block is content, not a heading.
+Split on Markdown heading structure at `# / ## / ### / #### / ##### / ######` (**H1-H6**). Preserve the active six-level heading path in each chunk locator. A heading-looking line inside a fenced code block is content, not a heading.
 
 Treat these structures as **atomic**:
 

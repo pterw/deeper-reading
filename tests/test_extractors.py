@@ -70,6 +70,16 @@ def test_markdown_extractor_is_deterministic_and_keeps_fences_tables_atomic(tmp_
     assert any("Tail" in c.get("locator", {}).get("heading_path", []) for c in a["chunks"])
 
 
+def test_markdown_extractor_tracks_h1_through_h6(tmp_path):
+    source = tmp_path / "deep.md"
+    source.write_text(
+        "# A\n## B\n### C\n#### D\n##### E\n###### F\nDeep proof.\n",
+        encoding="utf-8",
+    )
+    manifest = run_extractor("extract_markdown.py", source, tmp_path / "deep.json")
+    assert any(c["locator"].get("heading_path") == ["A", "B", "C", "D", "E", "F"] for c in manifest["chunks"])
+
+
 def test_html_extractor_uses_structure_and_omits_script_style(tmp_path):
     source = tmp_path / "source.html"
     source.write_text(
@@ -87,6 +97,54 @@ def test_html_extractor_uses_structure_and_omits_script_style(tmp_path):
     assert "literal code heading" in text
     assert "bad()" not in text
     assert "display:none" not in text
+
+
+def test_html_extractor_keeps_generic_visible_dom_text_once(tmp_path):
+    source = tmp_path / "generic.html"
+    source.write_text(
+        "<main>Lead text<div>Visible div prose.</div>"
+        "<section><span>Section inline text.</span></section>Tail text</main>",
+        encoding="utf-8",
+    )
+    manifest = run_extractor("extract_html.py", source, tmp_path / "generic.json")
+    text = "".join(c["content"] for c in manifest["chunks"])
+    for expected in ["Lead text", "Visible div prose.", "Section inline text.", "Tail text"]:
+        assert text.count(expected) == 1
+
+
+def test_html_extractor_tracks_h1_through_h6(tmp_path):
+    source = tmp_path / "headings.html"
+    source.write_text(
+        "<h1>A</h1><h2>B</h2><h3>C</h3><h4>D</h4><h5>E</h5><h6>F</h6><p>Proof.</p>",
+        encoding="utf-8",
+    )
+    manifest = run_extractor("extract_html.py", source, tmp_path / "h.json")
+    assert any(c["locator"].get("heading_path") == ["A", "B", "C", "D", "E", "F"] for c in manifest["chunks"])
+
+
+def test_html_extractor_keeps_visible_text_once_and_excludes_skipped_content(tmp_path):
+    source = tmp_path / "mixed.html"
+    source.write_text(
+        "<body><h1>Root</h1>Body lead"
+        "<div>Div text <span>inline span</span></div>"
+        "<section>Section text</section><article>Article text</article>"
+        "<ul><li>List item</li></ul>"
+        "<table><tr><td>Table cell</td></tr></table>"
+        "<pre>Pre literal</pre>"
+        "<script>script hidden</script><style>style hidden</style>"
+        "<noscript>noscript hidden</noscript><template>template hidden</template>"
+        "Tail text</body>",
+        encoding="utf-8",
+    )
+    manifest = run_extractor("extract_html.py", source, tmp_path / "mixed.json")
+    text = "".join(c["content"] for c in manifest["chunks"])
+    for expected in [
+        "Body lead", "Div text", "inline span", "Section text", "Article text",
+        "List item", "Table cell", "Pre literal", "Tail text",
+    ]:
+        assert text.count(expected) == 1
+    for excluded in ["script hidden", "style hidden", "noscript hidden", "template hidden"]:
+        assert excluded not in text
 
 
 def _write_minimal_docx(path: Path) -> None:
@@ -108,6 +166,24 @@ def _write_minimal_docx(path: Path) -> None:
         zf.writestr("word/comments.xml", comments)
 
 
+def _write_deep_heading_docx(path: Path) -> None:
+    ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    headings = "".join(
+        f'<w:p><w:pPr><w:pStyle w:val="Heading{level}"/></w:pPr>'
+        f'<w:r><w:t>H{level}</w:t></w:r></w:p>'
+        for level in range(1, 7)
+    )
+    document = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<w:document xmlns:w="{ns}"><w:body>'
+        + headings
+        + '<w:p><w:r><w:t>Deep body.</w:t></w:r></w:p>'
+        + '</w:body></w:document>'
+    )
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr("word/document.xml", document)
+
+
 def test_docx_extractor_reads_story_parts_without_oai_paths(tmp_path):
     source = tmp_path / "source.docx"
     _write_minimal_docx(source)
@@ -120,6 +196,17 @@ def test_docx_extractor_reads_story_parts_without_oai_paths(tmp_path):
     assert "word/document.xml" in locators
     assert "word/header1.xml" in locators
     assert "word/comments.xml" in locators
+
+
+def test_docx_extractor_tracks_heading1_through_heading6(tmp_path):
+    source = tmp_path / "deep.docx"
+    _write_deep_heading_docx(source)
+    manifest = run_extractor("extract_docx.py", source, tmp_path / "deep-docx.json")
+    assert any(
+        c["locator"].get("heading_path") == ["H1", "H2", "H3", "H4", "H5", "H6"]
+        for c in manifest["chunks"]
+        if "Deep body." in c["content"]
+    )
 
 
 def test_pdf_extractor_reads_every_page_with_portable_backend(tmp_path):

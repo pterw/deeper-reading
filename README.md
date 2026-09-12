@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/pterw/deeper-reading?color=blue&style=flat-square)](https://github.com/pterw/deeper-reading/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/pterw/deeper-reading/ci.yml?branch=main&style=flat-square)](https://github.com/pterw/deeper-reading/actions)
-[![Tests](https://img.shields.io/badge/tests-192%20passed-brightgreen?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-261%20passed-brightgreen?style=flat-square)](tests/)
 [![Spec](https://img.shields.io/badge/spec-agentskills.io-8a2be2?style=flat-square)](https://agentskills.io)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero%20external-success?style=flat-square)](references/dependencies.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -590,3 +590,13 @@ A 20-page paper can contain the answer on page 6, the caveat on page 14, and the
 # License
 
 MIT. See [`LICENSE`](LICENSE).
+
+## v0.2 hardening and evidence substrate
+
+The hardened runtime keeps the same core invariant—complete source traversal, one verified verdict per canonical chunk, and fresh re-extraction before Done—while tightening the boundaries that proof depends on.
+
+Installer receipts are untrusted input. Every **receipt-owned** payload path must remain inside the resolved **install root** before hashing, pruning, verification, or deletion; `force=True` never bypasses containment. HTML extraction retains every non-skipped DOM text node exactly once outside `script`, `style`, `noscript`, and `template`, while Markdown/HTML use H1-H6 heading provenance and DOCX recognizes Heading1 through Heading6.
+
+Existing evidence **schema v1 remains accepted**. `scripts/build_evidence.py` emits **schema v2** atoms with deterministic `atom_id` values. A unique exact quote can bind automatically; an ambiguous repeated quote requires an explicit byte span, which must reproduce the exact UTF-8 source bytes. These IDs identify extractive spans—they do not prove semantic truth or model comprehension.
+
+`TRAVERSAL_REPORT.md` is now grouped by canonical chunk for human auditability: run summary, chunk index, then one detail block per canonical chunk with its atoms nested beneath it. For bounded source inspection, `scripts/inspect_chunks.py MANIFEST --summary` and `--from N --to M` provide a read-only view over the same canonical manifest.

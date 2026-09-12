@@ -1,3 +1,4 @@
+import hashlib
 import json
 import shutil
 from pathlib import Path
@@ -68,3 +69,32 @@ def test_install_refuses_existing_unmanaged_skill_root(tmp_path):
         install(ROOT, target)
 
     assert (target / 'SKILL.md').read_text(encoding='utf-8') == 'unmanaged'
+
+
+@pytest.mark.parametrize(
+    'malicious',
+    [
+        '/tmp/outside.txt',
+        '../outside.txt',
+        'C:/outside.txt',
+        r'C:\outside.txt',
+        r'\\server\share\outside.txt',
+    ],
+)
+def test_upgrade_rejects_receipt_paths_outside_install_root(tmp_path, malicious):
+    target = tmp_path / 'skills' / 'deeper-reading'
+    install(ROOT, target)
+    victim = tmp_path / 'outside.txt'
+    victim.write_text('do not touch', encoding='utf-8')
+
+    receipt_path = target / '.install-receipt.json'
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    receipt['payload_hashes'] = {
+        malicious: hashlib.sha256(b'do not touch').hexdigest(),
+    }
+    receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+
+    with pytest.raises(InstallError, match='managed payload path'):
+        install(ROOT, target)
+
+    assert victim.read_text(encoding='utf-8') == 'do not touch'

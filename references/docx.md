@@ -18,6 +18,8 @@ The bundled extractor defines the anti-skimming text chunk universe. The resolve
 
 Use `scripts/extract_docx.py` to traverse the OOXML story parts and emit the authoritative chunk manifest. The portable extractor reads the main document plus supported headers, footers, footnotes, endnotes, and comments without depending on `/home/oai/skills`. Every emitted chunk requires exactly one atomic extractive evidence verdict (or explicit non-match), one `chunk_verified` event, and inclusion in deterministic `TRAVERSAL_REPORT.md` before Done.
 
+Within parsed story parts, paragraph styles named `Heading1` through `Heading6` (including the equivalent `Heading 1` through `Heading 6` spelling accepted by the parser) update the six-level `heading_path`. This does not claim support for arbitrary custom Word styles that merely look like headings.
+
 Text extraction does **not** prove layout, field rendering, tracked-change display, comments UI, or other Word-native presentation. Those remain separate visual/structural QA predicates when required.
 
 ## Reading and verification

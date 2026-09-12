@@ -20,7 +20,9 @@ Do not prefer arXiv merely because its URL pattern is familiar.
 
 For basic exhaustive traversal, use the bundled `scripts/extract_html.py` to emit the authoritative chunk manifest. Run `--help` before first use, then perform one bounded extraction operation. The manifest defines the complete chunk universe: every chunk must receive atomic extractive evidence (or explicit non-match), one `chunk_verified` event, and a row in deterministic `TRAVERSAL_REPORT.md` before Done.
 
-The bundled extractor is text/structure oriented: it preserves heading context, tables, and preformatted blocks while excluding script/style content. Visual figure interpretation remains a separate QA responsibility when the source contains meaning that cannot be proven from DOM text alone.
+The bundled extractor is text/structure oriented. It preserves **every non-skipped DOM text node exactly once** in the normalized canonical text stream, except text owned by atomic table/preformatted blocks, which is emitted once through those blocks. The exact skipped element set is `script`, `style`, `noscript`, and `template`. Text nested in generic containers such as `div`, `section`, `article`, `main`, and inline spans is not silently dropped.
+
+Heading provenance supports **H1-H6**. Tables and preformatted blocks remain atomic. Visual/CSS semantics are outside text extraction: figure interpretation, generated content, layout, and other meaning that cannot be proven from DOM text remain separate QA responsibilities.
 
 ## Chunk by document structure
 

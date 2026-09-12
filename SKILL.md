@@ -55,6 +55,9 @@ Read these in full when this skill activates: `references/prerequisites.md`, `re
 - Re-chunk only the failed unit when scope/size is the diagnosed cause.
 - After `architecture_stop`, do not continue repairs until `paths_exhausted -> disclosure -> alternative_designed -> plan_revised`.
 - Preserve source authority, task semantics, already-verified upstream work, and the canonical anti-skimming chunk universe.
+- Treat evidence construction as byte binding, not summary generation: schema v2 `atom_id` values identify verified extractive spans, while schema v1 remains accepted.
+- Prefer the grouped deterministic `TRAVERSAL_REPORT.md` and bounded `scripts/inspect_chunks.py` view for **human audit**; neither replaces the machine evidence ledger.
+- Machine verification proves source identity, canonical coverage, byte fidelity, ordering, and declared workflow predicates. It does **not** prove semantic truth or model comprehension.
 - `oai-native` may add rendering/OCR/visual QA, but may never weaken or replace the standalone evidence contract.
 
 ## Definition of Done

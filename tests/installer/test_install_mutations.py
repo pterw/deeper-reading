@@ -1,5 +1,8 @@
 import json
+import hashlib
 from pathlib import Path
+
+import pytest
 
 from installer.core import install_skill, verify_installation
 from installer.manifest import load_manifest
@@ -129,3 +132,50 @@ def test_mutation_deletes_install_receipt(tmp_path):
     result = verify_installation(target)
     assert result['passed'] is False
     assert result['predicates']['receipt_written'] is False
+
+
+@pytest.mark.parametrize(
+    'malicious',
+    [
+        '/tmp/outside.txt',
+        '../outside.txt',
+        'C:/outside.txt',
+        r'C:\outside.txt',
+        r'\\server\share\outside.txt',
+    ],
+)
+def test_mutation_receipt_escape_spellings_are_rejected_for_containment(tmp_path, malicious):
+    target = valid_install(tmp_path)
+    data = receipt(target)
+    data['payload_hashes'] = {
+        malicious: hashlib.sha256(b'do not touch').hexdigest(),
+    }
+    write_receipt(target, data)
+    result = verify_installation(target)
+    assert result['passed'] is False
+    assert result['predicates']['payload_hashes_match'] is False
+    assert any('managed payload path escapes install root' in v for v in result['violations'])
+
+
+def test_mutation_receipt_symlink_resolved_escape_is_rejected_for_containment(tmp_path):
+    target = valid_install(tmp_path)
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    victim = outside / 'victim.txt'
+    victim.write_text('do not touch', encoding='utf-8')
+    link = target / 'escape'
+    try:
+        link.symlink_to(outside, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('symlinks unavailable on this platform')
+
+    data = receipt(target)
+    data['payload_hashes'] = {
+        'escape/victim.txt': hashlib.sha256(b'do not touch').hexdigest(),
+    }
+    write_receipt(target, data)
+    result = verify_installation(target)
+    assert result['passed'] is False
+    assert result['predicates']['payload_hashes_match'] is False
+    assert any('managed payload path escapes install root' in v for v in result['violations'])
+    assert victim.read_text(encoding='utf-8') == 'do not touch'

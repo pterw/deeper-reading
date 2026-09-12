@@ -1,0 +1,2151 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "C:\\Users\\peter\\.config\\superpowers\\worktrees\\ScrobbleScope\\batch-21\\impeccable-init\\docs\\superpowers\\plans\\2026-09-11-batch21-design-system-reconciliation.md",
+    "uri": "file:///C:/Users/peter/.config/superpowers/worktrees/ScrobbleScope/batch-21/impeccable-init/docs/superpowers/plans/2026-09-11-batch21-design-system-reconciliation.md",
+    "format": "markdown",
+    "sha256": "3988998c93bb3005cfe3c183b82043cc4f1325bb361a306e1f618edb58b1ee18",
+    "size_bytes": 57062
+  },
+  "chunking": {
+    "strategy": "markdown-heading-ast-blocks",
+    "max_bytes": 12000,
+    "chunk_count": 70
+  },
+  "extracted_text_bytes": 56115,
+  "extracted_text_sha256": "f610bb1f10c57bd7c419d5ad4dbb6ff992a689f87208e27753e3bf6d69cb3f36",
+  "chunks": [
+    {
+      "id": "markdown-000001-91fe876cdf4d",
+      "ordinal": 1,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 1,
+            "heading_path": [
+              "Implementation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan"
+        ]
+      },
+      "text_byte_start": 0,
+      "text_byte_end": 810,
+      "content_sha256": "91fe876cdf4d7673a38e0e340cc920c8cfee9945711862c7b5bd94474ebe731a",
+      "content": "# Implementation Plan\n**Scope of this document:** make the repository, its plans and its design\nrecords agree with `docs/design/designsystemaudit.md`, in the audit's own\nrevised remediation order. Derived 2026-09-11 from branch `test` at `3f59380`.\n**Source read order used:** `AGENTS.md` (full), `docs/design/designsystemaudit.md`\n(sequentially, all 1048 lines, twice, including every truncated span),\n`PLAYBOOK.md` Sections 2-4, `BATCH21_DEFINITION.md`, `.claude/SESSION_CONTEXT.md`\nSections 1-4, `docs/AGENT_DOC_MAP.md`, `docs/design/README.md` (snapshot),\n`docs/design/RECONCILIATION.md`, `DESIGN.md`, `tests/test_design_snapshot.py`,\n`.docsync.toml`, `FINDINGS.md` (F-B21-4, -5, -19, -21..-24), both 2026-09-11\nWP-7 documents, and the live `static/js` and `static/css` sources each audit\nclaim names.\n---\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000002-9e90238b1ac4",
+      "ordinal": 2,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up"
+        ]
+      },
+      "text_byte_start": 810,
+      "text_byte_end": 1177,
+      "content_sha256": "9e90238b1ac43edb74309825b9fb793976fa33fd67a66b3093748543c7206d2c",
+      "content": "## Progress -- where this plan stands, and where to pick it up\n**Owner of this status: this section. Do not restate it in [Implementation\nOrder]; update it here.** Last updated 2026-09-11 by the session that drafted\nthe plan and executed Phase 1.\n**State: Phase 1 complete and committed. Phases 2-5 not started. Three work\nitems are uncommitted.** Nothing is pushed.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000003-75d8e9bfeb3c",
+      "ordinal": 3,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 1177,
+      "text_byte_end": 1765,
+      "content_sha256": "75d8e9bfeb3cf26c45d9850081432cbc6087b623358569ed2832b038cd288ca6",
+      "content": "| Phase | State | Evidence |\n| --- | --- | --- |\n| 0 Baseline | **Done** | guard exit 0; `pytest -q` 990 at open, 1020 now; docsync exit 0 |\n| 1 WP-7 refinement | **Done, committed** | `57d1474`; frontend gate 26 checks in 47 runs, chromium + firefox |\n| 2 Document reconciliation | **Not started** | the two live conflicts are listed below |\n| 3 Audit incidental defects | **Not started** | 5 items, all still present in the code |\n| 4 WP-8 core | **Not started** | includes the `heatmap.js` observer trap |\n| 5 WP-8 close-out | **Not started** | needs the mandated frontend/a11y audit |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000004-fff0a77d3b2b",
+      "ordinal": 4,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Commits landed during this plan"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "Commits landed during this plan"
+        ]
+      },
+      "text_byte_start": 1765,
+      "text_byte_end": 1801,
+      "content_sha256": "fff0a77d3b2b466e9f44e46a1e02d760c66a8d1697f0564821c3831d9f5cd291",
+      "content": "### Commits landed during this plan\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000005-7c96df876db7",
+      "ordinal": 5,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "Commits landed during this plan"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 1801,
+      "text_byte_end": 2151,
+      "content_sha256": "7c96df876db784b39d6aa0a89e0ef72c193de68f8d0f45c009ae8cebffdd636b",
+      "content": "| Commit | Subject |\n| --- | --- |\n| `72615ed` | `feat(unmatched): Align report with Results and cap album fetch` -- the prior session's work, committed as a checkpoint |\n| `c2f14fa` | `chore(agents): Record the issue tracker and domain docs for agent skills` |\n| `57d1474` | `fix(ui): Refine the unmatched report disclosure` -- this plan's Phase 1 |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000006-3edd8e22af73",
+      "ordinal": 6,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Uncommitted work at handoff, in the order it should be committed"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Uncommitted work at handoff, in the order it should be committed"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "Uncommitted work at handoff, in the order it should be committed"
+        ]
+      },
+      "text_byte_start": 2151,
+      "text_byte_end": 2918,
+      "content_sha256": "3edd8e22af7373ba4c8dd6822e67917e66f3d8d5b55eb2943367980294f2c5bf",
+      "content": "### Uncommitted work at handoff, in the order it should be committed\n1. **Staged, all four gates observed green on it:** the F-B21-51 slice-1 gate\n   refactor. `scripts/dev/_frontend_gate_colour.py`,\n   `tests/scripts/dev/test_frontend_gate_colour.py`, `scripts/dev/frontend_gate.py`,\n   `FINDINGS.md`, `PLAYBOOK.md`, `.claude/SESSION_CONTEXT.md`, and the rotated\n   archive. 480 insertions, 140 deletions.\n2. **Unstaged:** the architecture-diagram rebuild -- `docs/ARCHITECTURE.md` and\n   the five owners under `docs/architecture/`. Its PLAYBOOK entry is already\n   written but sits unstaged, so `PLAYBOOK.md` reads `MM`; re-stage it with the\n   diagrams.\n3. **Unstaged:** this plan's move into `docs/superpowers/plans/` and the\n   progress section you are reading.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000007-8a71797e3cb1",
+      "ordinal": 7,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Where to pick up"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Where to pick up"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "Where to pick up"
+        ]
+      },
+      "text_byte_start": 2918,
+      "text_byte_end": 3665,
+      "content_sha256": "8a71797e3cb1b1e10f191ee466e23d253d34e22a6fa6ad6ea0449ab692bfce6f",
+      "content": "### Where to pick up\n1. Commit the staged set. Its PLAYBOOK entry and every gate result are recorded.\n2. Commit the diagram rebuild, re-staging `PLAYBOOK.md`.\n3. Commit this plan's move. Decide the fate of\n   `docs/superpowers/plans/gemini_implementation_plan_unverified.md` at the same\n   time -- it is untracked, superseded, and still in the directory.\n4. Start **Phase 2** with the conflict that actively misleads: the approved spec\n   `docs/superpowers/specs/2026-09-11-unmatched-threshold-horizontal-report-design.md`\n   still says \"stacked, full-width reason sections\" while the owner ruled\n   side-by-side and the shipped page is side-by-side. `PLAYBOOK.md` Section 3\n   already carries the correction, so the spec is the last stale voice.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000008-b8d3832e9c7d",
+      "ordinal": 8,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "What Phase 1 actually did, and how it diverged from the plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "What Phase 1 actually did, and how it diverged from the plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "What Phase 1 actually did, and how it diverged from the plan"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "What Phase 1 actually did, and how it diverged from the plan"
+        ]
+      },
+      "text_byte_start": 3665,
+      "text_byte_end": 4999,
+      "content_sha256": "b8d3832e9c7d23ec62a66b676f99fb94d3b8a6ad7992fb4aaa655775677fca64",
+      "content": "### What Phase 1 actually did, and how it diverged from the plan\nFour deviations, recorded because the plan above still reads as written and a\nfuture executor should not treat it as a faithful record of what happened:\n1. **The layout was not rebuilt.** The plan's Phase 1 step 5 said to restructure\n   the report into stacked full-width sections. The owner's 2026-09-11 ruling is\n   side-by-side, the shipped page is side-by-side, and three frontend-gate\n   assertions defend it. Phase 1 therefore refined the existing layout instead.\n   The plan text was corrected the same day, and this note records why.\n2. **Three refinements arrived from skills, not from the plan.** The `daisyui`\n   skill's colour rule 10 moved the panel count off `primary` to `base-content`;\n   its usage rules 2 and 7 justified Results' scale-aware panel padding; and the\n   `frontend-design` pass justified letting the reason detail wrap in the\n   narrower side-by-side column.\n3. **The step size was chosen, not specified.** The owner allowed \"20 or 25\".\n   The plan uses 25 and records it as a decision, not an oversight.\n4. **A pre-existing data-integrity defect was found and fixed in passing.**\n   `static/css/tailwind.css` carried a stale `.collapse` utility no source\n   produces; the rebuild dropped it. It entered with `72615ed`, not with Phase 1.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000009-8fb2d6fd98c7",
+      "ordinal": 9,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Open owner decisions carried into the handoff"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Open owner decisions carried into the handoff"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Progress -- where this plan stands, and where to pick it up",
+              "Open owner decisions carried into the handoff"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Progress -- where this plan stands, and where to pick it up",
+          "Open owner decisions carried into the handoff"
+        ]
+      },
+      "text_byte_start": 4999,
+      "text_byte_end": 5448,
+      "content_sha256": "8fb2d6fd98c75befe072d38a51821bf3cbd225a59f3e54a98c1032f421ca0f5f",
+      "content": "### Open owner decisions carried into the handoff\n1. Whether `docs/superpowers/plans/gemini_implementation_plan_unverified.md`\n   should be deleted or kept.\n2. The unmatched expander step (20 vs 25) -- 25 is live.\n3. Whether Results' serif figure face is restated in `DESIGN.md` or the Role\n   Segregation Rule narrows. Phase 2 must pick one.\n4. Whether the theme gains a third \"System\" state (F-B21-22).\n5. The F-B21-20 staging-order contract.\n---\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000010-080a9238f85e",
+      "ordinal": 10,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Overview]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Overview]"
+        ]
+      },
+      "text_byte_start": 5448,
+      "text_byte_end": 8477,
+      "content_sha256": "080a9238f85e338100e6d5cf32d4e12099e6b1690ad465d45dd78170771e59e6",
+      "content": "## [Overview]\nBring the repository into agreement with the shipped design system the audit\nderives, and bring the repository's own documents into agreement with each\nother and with the audit, without editing the byte-frozen `docs/design/`\nsnapshot.\nThe audit is self-correcting: four later sections supersede earlier claims\n(the D-17 mischaracterisation, D-25 understating the breakpoint count, D-26's\ntooltip retraction, the `.dark-mode` \"dead\" claim reversed, D-34 voided by the\ncompleted migration). This plan follows the **final** state -- the\n\"Reframing\", \"The four unread JS files\" and \"Revised remediation order\"\nsections -- not the first-pass register.\nFour facts shape the whole plan:\n1. **`docs/design/` is a byte-frozen snapshot.** `tests/test_design_snapshot.py`\n   pins a 61-file digest and exempts only `RECONCILIATION.md` and\n   `designsystemaudit.md`. The audit's D-1..D-34 remediation targets the\n   external Claude Design project and **cannot land here**; the corrected facts\n   must land in the repository-owned `DESIGN.md` and\n   `docs/design/RECONCILIATION.md`, which is also what the audit's step 4 says.\n2. **The audit's repo-side list is already WP-8's shape.** The audit says so\n   itself (\"WP-8 can start today\"). WP-8's premise (\"once no Bootstrap page is\n   left\") is now satisfied: all eight page templates override `legacy_css` with\n   an empty block, so nothing loads Bootstrap or `global.css`.\n3. **One audit instruction is a trap, and one is mechanically wrong.** The\n   trap: retiring `global.css` and the `.dark-mode` write together silently\n   breaks the heatmap's zero-count cells, because `heatmap.js`\n   `initDarkModeObserver()` observes `document.body` for `class` and nothing\n   else watches a theme toggle. The mechanically wrong one: F-B21-23's\n   `stroke: var(--bars-color)` cannot be a presentation attribute, because the\n   audit's own section 4 proves an SVG presentation attribute does not resolve\n   a custom property. Both are handled explicitly below.\n4. **The unmatched-report layout is the owner's ruling, not the spec's.** The\n   approved spec `2026-09-11-unmatched-threshold-horizontal-report-design.md`\n   says \"stacked, full-width reason sections\". The owner overruled that in\n   favour of side-by-side reason panels (\"They should not be stacked, but\n   side-by-side\"), and both the shipped `templates/unmatched.html` and the\n   frontend gate implement side-by-side. Phase 1 therefore **refines** that\n   layout and must not rebuild it; Phase 2 records the override so the spec and\n   `PLAYBOOK.md` Section 3 stop contradicting it.\nOrdering chosen by the owner: **WP-7 refinement first, then document\nreconciliation, then the audit-derived code defects and WP-8.** WP-7's\nremaining UI work is uncommitted in this worktree and must be finished and\nvalidated before any audit work starts, so the tree the audit items land on is\nthe tree owner review has already seen.\nTwo measured corrections to the audit were found during this investigation and\nare carried into the plan:\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000011-fe92dc0531a8",
+      "ordinal": 11,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Overview]"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 8477,
+      "text_byte_end": 9391,
+      "content_sha256": "fe92dc0531a8f43c0474c96cacd25f2adb7d59d349a7b41b59c61c537fd9fec6",
+      "content": "| Audit states | Measured 2026-09-11 | Consequence |\n| --- | --- | --- |\n| `--index-scale` has 102 consumers | **111** `var(--index-scale` occurrences in `static/css/index.css` alone | Do not publish a count. Re-measure across every sheet before quoting one, or describe the mechanism without a number (Anti-Pattern Registry item 10). |\n| `--results-scale` has 58 consumers | **58** in `static/css/results.css`, plus **20** `results-scale` occurrences in `templates/results.html` | Quote as \"58 in `results.css` plus arbitrary Tailwind values in `results.html`\", which is what the audit's prose already says. |\n| Incidental defect 3, `--shell-accent-ink`, \"stands and is genuinely live\" | Its **only** consumers are `static/css/global.css:164,171,178,192`, a file no page loads | The value is not live. Resolve it by deletion with `global.css`, not by re-pointing it. Verify with a repo-wide grep before editing. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000012-9f6e66cc6e4e",
+      "ordinal": 12,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Types]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Types]"
+        ]
+      },
+      "text_byte_start": 9391,
+      "text_byte_end": 13337,
+      "content_sha256": "9f6e66cc6e4e6d51623b2b2054c319df1b795fc50b4065dd6bc60886deeae8b7",
+      "content": "## [Types]\nNo new or changed Python type definitions. Task 1 of the WP-7 extension already\nlanded its contract at `3f59380`; this plan consumes it and does not reshape it.\n**Already landed, treated as fixed interfaces (do not change):**\n- `scrobblescope/unmatched.py`: `REASON_BELOW_THRESHOLD = \"below_threshold\"`,\n  the three-entry category order, and\n  `partition_albums_by_threshold(albums, min_plays, min_tracks) -> tuple[dict, dict]`\n  returning eligible albums and threshold exclusions.\n- `scrobblescope/orchestrator.py`:\n  `fetch_top_albums_async(...) -> tuple[dict, dict, dict]` (eligible,\n  threshold exclusions, fetch metadata), with `albums_below_threshold` added to\n  the stats mapping.\n- The persisted unmatched payload per album: `artist`, `album`,\n  `play_count`, `track_count`, `failed_thresholds`, `min_plays`, `min_tracks`,\n  `reason_code`, `reason`.\n**New or changed declaration types (`.docsync.toml` only):**\n- `[[value]]` with `name`, `[[value.sites]]` (`file`, `pattern`, `expect`) --\n  for each fact the audit shows living in two places that must agree.\n- `[[retired]]` with `name`, `reason`, `pattern`, `scan`, `allow_files`,\n  optional `[retired.allow_after]` -- for each claim the audit shows is no\n  longer true in a document that still prescribes behaviour.\n- `[[anchor]]` -- already covers `docs/design/README.md` citations; no new one\n  is needed unless a new citation shape appears.\n**New or changed DOM/data contracts in `templates/unmatched.html`:**\n- `data-step` on `.unmatched-expander-btn` becomes `\"25\"` (was `\"50\"`).\n- `data-initial` stays `\"10\"`; `data-total-count` stays the group's album count.\n- `aria-expanded` and `aria-controls` must stay correct through the new\n  collapse path taken by the back-to-top control.\n- `.unmatched-groups` stays the responsive grid it is: three columns when three\n  reasons are present, two when two, one below 1024px. The owner's layout\n  ruling preserves this branch, so it is not removed.\n**New or changed CSS custom-property contracts:**\n- `--ss-shadow-chip` gains its first real consumer (the active theme-choice\n  pill), which is the selected-segment case it was drawn for.\n- `--ss-shadow-card` is removed (never defined; is the dead-declaration case).\n- `--shell-accent-ink` is removed with `global.css` (its only consumers).\n- The 140 ms page-exit duration gains a single named owner that the JavaScript\n  reads instead of hardcoding, because `shell.css:70` and `page_motion.js:30`\n  currently hold two halves of one timing with no link between them.\n**Retired names that must not survive in a prescriptive document:**\n- `--radius-pill` (the shipped name is `--radius-full`).\n- `--shadow-modal`, `--overlay-scrim`, `--blur-sticky` (no such tokens ship).\n- `--surface-page`, `--text-strong`, `--accent`, `--border-default`,\n  `--space-1..12`, `--card-padding`, `--page-gutter`, `--content-max`,\n  `--form-max`, `--leading-*`, `--tracking-*`, `--text-data-*`, `--weight-*`,\n  `--logo-bar`, `--button-solid-*`, `--rocket-0..6`, `--rocket-ramp`,\n  `--heatmap-cell-radius`, `--heatmap-cell-gap`, `--duration-*`, `--ease-*`,\n  `--pinwheel-cycle`, `--ss-warn`, `--duration-logo`.\n  Where one of these still appears, the shipped name is the `--ss-*` name or\n  daisyUI slot the audit's sections 2.2-2.5 record.\n- `--text-body` and `--text-muted` **as colours**: `--text-body: 1rem` is\n  Tailwind v4's own font-size namespace, so a colour at that name wins on\n  specificity and silently breaks the `.text-body` utility. This is D-2, and\n  it is the one collision rule an agent must not be allowed to re-derive.\n**New frontend-gate observation contracts** (see [Testing]):\n- Visible-row count per `.unmatched-group` after the expander and after the\n  back-to-top control.\n- Computed `font-weight` on every element of every migrated page in both\n  themes (must never be 500 or 600).\n- Zero-count heatmap cell `fill` before and after a theme toggle, read back\n  from the DOM.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000013-ab1d9b754787",
+      "ordinal": 13,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]"
+        ]
+      },
+      "text_byte_start": 13337,
+      "text_byte_end": 13348,
+      "content_sha256": "ab1d9b754787ffcc8a91596babb0ec1ecad86df1abf78b5e3d60d2f3f2ecd267",
+      "content": "## [Files]\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000014-0bdc1f9127c7",
+      "ordinal": 14,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Phase 1 -- finish the WP-7 extension (uncommitted work in this worktree)"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 1 -- finish the WP-7 extension (uncommitted work in this worktree)"
+        ]
+      },
+      "text_byte_start": 13348,
+      "text_byte_end": 13425,
+      "content_sha256": "0bdc1f9127c76ed2a925786377d223432315f0a39bcdc9c9e292fe5cb4709259",
+      "content": "### Phase 1 -- finish the WP-7 extension (uncommitted work in this worktree)\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000015-956c278970b7",
+      "ordinal": 15,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 1 -- finish the WP-7 extension (uncommitted work in this worktree)"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 13425,
+      "text_byte_end": 16295,
+      "content_sha256": "956c278970b7253b91ae8ddeba256769652adb28a47dcccdf87cac8388604c64",
+      "content": "| File | Change |\n| --- | --- |\n| `templates/unmatched.html` | Keep the side-by-side `.unmatched-groups` grid (`grid-cols-1 lg:grid-cols-2|3`) and its `items-start` top alignment. Change `data-step` from `\"50\"` to `\"25\"` (line 174). Let the reason detail wrap rather than truncate at the narrower panel width. Keep `data-initial=\"10\"`, `data-total-count`, the four-column table, the 10-row `.unmatched-overflow hidden` rhythm, `.unmatched-expander-btn`, `.unmatched-back-to-top-btn`, `[data-artist-image]`, and the `results-page unmatched-page` main element. |\n| `static/js/unmatched.js` | Change the `step` fallback at line 85 from `\\|\\| 50` to `\\|\\| 25`. Extract the expander's collapse branch (lines 91-106) into one named function and call it from both the expander click and the back-to-top click (lines 127-131), so back-to-top collapses the group as well as scrolling. |\n| `static/css/unmatched.css` | Own only page-specific behaviour: panel gaps and vertical rhythm, the narrower four-column budget, the threshold metric style, the reason-detail wrap, the 2.5rem/2.75rem artwork override, narrow-screen row containment, and the coarse-pointer 44px targets. Keep `max-width: 90rem`, `var(--unmatched-surface)`, `var(--radius-sm)`, `box-shadow: none`. Keep the `min-width: 1024px` rule (lines 10-13) -- it gives the side-by-side grid its width, so verify it rather than deleting it. |\n| `static/css/tailwind.css` | Regenerated output, only if a utility class changes. Produced by `scripts/dev/tailwind_build.py`; never hand-edited. |\n| `scripts/dev/frontend_gate.py` | Extend the unmatched checks: side-by-side parity at desktop (panels share a top offset and the grid computes to the expected column count) and a single column below 1024px, no eyebrow element before `h1`, neutral username (no italic and no primary-colour class), reason order `below_threshold` -> `release_scope` -> `no_spotify_match`, expander progress 10 -> 35 -> ... -> total, back-to-top collapses back to 10 with `aria-expanded=\"false\"`, artwork 40px mobile / 44px desktop, and no horizontal overflow at the narrow profile. |\n| `tests/test_routes.py` | Assert the rendered group order, the `below_threshold` section's title and copy, and the threshold metric text for an item failing both minimums. |\n| `tests/test_template_shell.py` | Assert `data-step=\"25\"` and `data-initial=\"10\"` survive, so the owner ruling is pinned rather than spelled in a review comment. |\n| `docs/superpowers/plans/2026-09-11-batch21-wp7-threshold-horizontal-report-extension.md` | Tick Task 2 steps 1-7, record the 50-to-25 deviation, and record that the owner's side-by-side ruling supersedes the stacked layout its Step 4 describes. |\n| `PLAYBOOK.md` | Section 3: WP-7 extension complete. Section 4: dated `(Batch 21 WP-7)` entry. |\n| `.claude/SESSION_CONTEXT.md` | Section 1 batch-status row and test count. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000016-987c37c998fb",
+      "ordinal": 16,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Phase 2 -- document reconciliation to the audit"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 2 -- document reconciliation to the audit"
+        ]
+      },
+      "text_byte_start": 16295,
+      "text_byte_end": 16347,
+      "content_sha256": "987c37c998fb2d53fec10e2ee53b543067f2e0fbdc8b00d8229c2979d579aae2",
+      "content": "### Phase 2 -- document reconciliation to the audit\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000017-3e2d2e8b1881",
+      "ordinal": 17,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 2 -- document reconciliation to the audit"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 16347,
+      "text_byte_end": 20072,
+      "content_sha256": "3e2d2e8b1881b1bd7ed03bb7b548d00ce9a111ad1b73d918429ce13aca014872",
+      "content": "| File | Change |\n| --- | --- |\n| `DESIGN.md` | Correct the four claims the audit names (Modal Shadow row, `var(--border-default)` -> `var(--ss-border-default)`, both index grid bands, `--rocket-5`'s real consumers) and add the mechanisms the audit says no document records: the `--ss-*` name-collision rule; dynamic spacing off; the two scaling systems; the eight real breakpoints; the mark-recolour requirement; the gate-pinned geometry; \"disabled is not hidden\"; one framework stylesheet per page; framework-neutral shared partials and their `.hidden` dependency; the stale-async-response convention; the ramp's single source; motion's real values and its status as the weakest area; the heatmap's mobile strip, its log10 mapping and its three SVG-attribute constraints; the two export architectures; the seven-step type ladder; `--radius-full`; the five surfaces and the absence of a warn colour; the theme marker's dual write and its retirement path. |\n| `docs/design/RECONCILIATION.md` | Correct the stale geometry row in section 7 (D-15: the gap is 2px, not 3px) and the override table's \"Current source declares `3fr 4fr`\" (D-16: `1.1fr 1fr` holds for 860-1199px). Append numbered sections (never reuse or renumber) recording: the 2026-09-11 owner frame that the design system is not the aesthetic authority for a migrated page; the mobile heatmap strip as an explicit override, which answers the first half of F-B21-19; a pointer to `docs/design/designsystemaudit.md` as the code-derived reference; and the unmatched-report layout override, since the approved spec still states the superseded stacked layout. |\n| `docs/superpowers/specs/2026-09-11-unmatched-threshold-horizontal-report-design.md` | Record that the owner superseded its \"stacked, full-width reason sections\" line with the side-by-side ruling, so the approved spec stops contradicting the shipped layout. Add the override line to the spec, or point `RECONCILIATION.md` at it; the rest of the spec is still accurate. |\n| `PLAYBOOK.md` Section 3 | The next-action bullet tells the next agent to \"Follow what is specified in `2026-09-11-unmatched-threshold-report-design.md`\", which is the document the side-by-side ruling overrode. Repoint it at the ruling, or an agent following Section 3 literally rebuilds the rejected layout and the frontend gate fights it. |\n| `docs/AGENT_DOC_MAP.md` | Section 3's Design row names only `docs/design/README.md`. Add `RECONCILIATION.md` (overrides), `DESIGN.md` (code-derived summary) and `docs/design/designsystemaudit.md` (audit of the handoff against the code), or the map sends the next agent to the frozen snapshot alone. |\n| `.docsync.toml` | Add `[[value]]` declarations for the facts the audit proves live in two places (`--ss-surface-card`, `--heatmap-empty` in both themes, the `--results-surface` formula shared by `results.css` and `unmatched.css`, the radius ladder, the light page background). Add `[[retired]]` declarations for `--radius-pill`, the Modal Shadow, and the pre-1970s decade floor. **Edge case:** the `[[retired]]` scan covers `docs/**/*.md`, and the frozen snapshot legitimately still states these, so add `docs/design/*` to that declaration's `allow_files` with a comment saying why a byte-frozen import is exempt. Without that, the new declaration turns a correct snapshot red and the only fix would be editing history. |\n| `docs/design/designsystemaudit.md` | **Do not edit.** It is a dated, self-correcting record whose later sections supersede its earlier ones. Corrections belong in `DESIGN.md` and `RECONCILIATION.md`. |\n| `PLAYBOOK.md` | Section 3: record the audit as the design-system source and the D-15/D-16 corrections. Section 4: dated entry for this documentation pass. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000018-95e93cef2ee9",
+      "ordinal": 18,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Phase 3 -- the audit's incidental code defects"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 3 -- the audit's incidental code defects"
+        ]
+      },
+      "text_byte_start": 20072,
+      "text_byte_end": 20123,
+      "content_sha256": "95e93cef2ee9519b2e5fa78be63a62ff799869c4fe165c82123401992951e098",
+      "content": "### Phase 3 -- the audit's incidental code defects\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000019-12902d69a68b",
+      "ordinal": 19,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 3 -- the audit's incidental code defects"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 20123,
+      "text_byte_end": 21640,
+      "content_sha256": "12902d69a68b4042fcf8dce5cf46031a8da16bcef78a786a73438ee9aa175072",
+      "content": "| File | Change |\n| --- | --- |\n| `static/css/shell.css` | Lines 575 and 610: `font-weight: 500` -> `400` (or delete the declaration; the active pill already carries a border, a background and a shadow, which is the audit's own reasoning). Lines 574 and 609: adopt `var(--ss-shadow-chip)` for the active-choice shadow, so the token gains the consumer the gate already asserts. Add a comment at line 70 naming `page_motion.js` as the other half of the 140 ms contract. |\n| `static/css/heatmap.css` | Line 189: remove `box-shadow: var(--ss-shadow-card, none);` -- the token is never declared, so the fallback always wins and the declaration is dead. |\n| `static/js/page_motion.js` | Line 10: remove `document.body.classList.add('is-ready')` unless a stylesheet is given a reason to read it; nothing does today. Line 30: read the exit duration from its single owner instead of hardcoding 140, or comment the coupling in both files. |\n| `static/js/results-spotlight.js` + `static/css/results.css` | The spotlight swaps at 150 ms while `.spotlight-card-content` transitions opacity over 0.25s, so the fade-out is cut mid-transition. Give the pair one owner and one cross-reference. |\n| `static/css/results.css` | `.metric-toggle-btn:focus-visible` uses `outline-offset: 1px` against the system's 2px. Align it, or record it in `DESIGN.md` as the one deliberate exception. |\n| `tests/test_template_shell.py` | Pin the token table as it now stands, and add the \"no `font-weight: 500` or `600` in `static/css/*.css`\" guard. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000020-6f9b8ff0e748",
+      "ordinal": 20,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Phase 4 -- WP-8 core: retire the legacy layer"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 4 -- WP-8 core: retire the legacy layer"
+        ]
+      },
+      "text_byte_start": 21640,
+      "text_byte_end": 21690,
+      "content_sha256": "6f9b8ff0e748ea34d4f331f588a65fd3b564d515e7237c82afc9c2aba3845a37",
+      "content": "### Phase 4 -- WP-8 core: retire the legacy layer\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000021-25723c18891c",
+      "ordinal": 21,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 4 -- WP-8 core: retire the legacy layer"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 21690,
+      "text_byte_end": 24613,
+      "content_sha256": "25723c18891c3a6098c58ed414691c9478f9778e04c143d9d5c1080145b4782b",
+      "content": "| File | Change |\n| --- | --- |\n| `static/js/heatmap.js` | `initDarkModeObserver()` (lines 1375-1385): observe `document.documentElement` with `attributeFilter: ['data-theme']` instead of `document.body` with `['class']`. **This must land in the same commit as the `.dark-mode` removal**, or a theme toggle silently leaves every zero-count cell painted in the previous theme's colour and no gate notices. |\n| `static/js/theme.js` | Remove the `document.body.classList.toggle('dark-mode', isDark)` write (line 13) and rewrite the stale comment block (lines 5-9) that justifies it with \"the seven legacy stylesheets still key on it\". Keep `data-theme` on `<html>` and the read-back at line 41. |\n| `templates/base.html` | Remove the Bootstrap 5.1.3 stylesheet link (line 69) and the `global.css` link (line 70). Delete the `legacy_css` block (line 68) and its eight child overrides (`error.html`, `heatmap_empty.html`, `index.html`, `loading.html`, `results.html`, `results_empty.html`, `unmatched.html`, `unmatched_empty.html`), because the block's only purpose was to default Bootstrap ON for pages that no longer exist; leaving it is a default that can silently lose a page's theme. |\n| `static/css/global.css` | **Delete** (486 lines; no page loads it). |\n| `static/css/shell.css` | Delete `--shell-accent-ink` (lines 22 and 43) with its only consumers. Update the comments at lines 6, 165-170 and 494 that explain the file in terms of `global.css` and unmigrated pages. |\n| `static/css/error.css`, `static/css/heatmap.css`, `static/css/tailwind.src.css` | Update every comment that references `global.css` or an unmigrated page (`heatmap.css:8` and `error.css:4` are the recorded ones). |\n| `scripts/dev/frontend_gate.py` | Update the `shell.css` cascade comment (line ~1694) that still reasons about load order against Bootstrap and `global.css`. Keep `check_mark_follows_theme`; it becomes the regression guard for the new asset contract. |\n| `templates/inline/scrobble_scope_inline.svg`, `templates/inline/scrobble_scope_lockup_inline.svg` | Give the letterforms `fill=\"currentColor\"` and move the bars' colour into an SVG **`<style>` element** as `stroke: var(--bars-color)`, so any wrapper that sets `color` and defines the token gets a correct mark with no selector naming it. This is F-B21-23's contract with the audit's own mechanical constraint applied: a presentation attribute does not resolve `var()`, so the literal `stroke=\"var(--bars-color)\"` that FINDINGS prescribes would fail silently. Then delete the per-wrapper recolour list in `shell.css`. Keep the `0 0 453 74` viewBox and the bar feet at 63.50, which three tests in `tests/test_template_shell.py` pin. |\n| `FINDINGS.md` | Close F-B21-23 (the asset contract now holds), correct the audit-voided D-34 `::selection`/`scrollbar-color` item rather than implementing it, and record that `.dark-mode` was load-bearing for the heatmap rather than dead. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000022-a253f3f68ee1",
+      "ordinal": 22,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Phase 5 -- WP-8 sweep and close-out"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 5 -- WP-8 sweep and close-out"
+        ]
+      },
+      "text_byte_start": 24613,
+      "text_byte_end": 24653,
+      "content_sha256": "a253f3f68ee1dc4a0820addcc49677278b1d87abc25ca9126e82db0d5ed1b9d0",
+      "content": "### Phase 5 -- WP-8 sweep and close-out\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000023-41a95a96f1d7",
+      "ordinal": 23,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Phase 5 -- WP-8 sweep and close-out"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 24653,
+      "text_byte_end": 25721,
+      "content_sha256": "41a95a96f1d719fc46683ef0c016a8ab9158a89c897138c8389e27332ffb49f3",
+      "content": "| File | Change |\n| --- | --- |\n| Repository-wide | `git grep -nE \"bootstrap\\|data-bs-\\|bs-(toggle\\|target\\|dismiss)\" -- templates static` must return nothing (WP-8's deterministic check). |\n| `docs/history/reports/<TOPIC>_2026-09-11.md` | The frontend and accessibility audit WP-8 mandates, over the migrated `static/js/`, templates and `tailwind.src.css`; file results as `F-SWE-N` or `F-AUDIT-N`. Batch 21 does not close without it. |\n| `BATCH21_DEFINITION.md` | WP-8 gains the audit-derived item list and the `.dark-mode` observer trap in writing, plus the explicit HTML/CSS/JS linting disposition the WP owes. |\n| `AGENT_NOTES.md` | Repoint the linting gap entry at that disposition, so the gap closes by a decision rather than by silence. |\n| `README.md`, `DEVELOPMENT.md`, `.claude/SESSION_CONTEXT.md` Sections 1/3 | Tech stack, project structure, build step, test count. |\n| `BATCH21_DEFINITION.md` -> `docs/history/definitions/` | Archive at close-out, update PLAYBOOK Section 2, purge the log, mark the batch complete per the AGENTS.md close-out procedure. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000024-b891041a9efa",
+      "ordinal": 24,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Files]",
+              "Root artifact"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Root artifact"
+        ]
+      },
+      "text_byte_start": 25721,
+      "text_byte_end": 25739,
+      "content_sha256": "b891041a9eface78fb5aad9f5e1c198c9f9bbd6eb627f634ed0f2c1c5c495c0c",
+      "content": "### Root artifact\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000025-025bfa635701",
+      "ordinal": 25,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Files]",
+          "Root artifact"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 25739,
+      "text_byte_end": 26198,
+      "content_sha256": "025bfa6357015792b3b13d7fce602450c74e86d39d58a2763c647c29dc125863",
+      "content": "| File | Note |\n| --- | --- |\n| `implementation_plan.md` (this file) | A working plan, not a governed document. Decide before the first commit whether to keep it (then add it to the doc map) or remove it, so it does not become another undeclared root file. `docs/superpowers/plans/gemini_implementation_plan_unverified.md` is already untracked in this worktree and is a prior, unverified attempt at the WP-7 extension; resolve its fate in the same decision. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000026-e44d1be94ac3",
+      "ordinal": 26,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]"
+        ]
+      },
+      "text_byte_start": 26198,
+      "text_byte_end": 26213,
+      "content_sha256": "e44d1be94ac3a680814a6eac456e44072e0b924cbc038f66796c1f529b57f3e4",
+      "content": "## [Functions]\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000027-edb5541b9458",
+      "ordinal": 27,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]",
+              "Modified -- Phase 1"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "Modified -- Phase 1"
+        ]
+      },
+      "text_byte_start": 26213,
+      "text_byte_end": 26237,
+      "content_sha256": "edb5541b9458ae343a082997afc47f1625523df8654aaaefec0235850992410f",
+      "content": "### Modified -- Phase 1\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000028-c354645a10f9",
+      "ordinal": 28,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "Modified -- Phase 1"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 26237,
+      "text_byte_end": 27149,
+      "content_sha256": "c354645a10f941e0b71d31d50778fc8977c741027d20a367d0832d6fd3628b88",
+      "content": "| Function | File | Change |\n| --- | --- | --- |\n| group expander click handler (anonymous, lines 89-125) | `static/js/unmatched.js` | Split the collapse branch into a named `collapseGroup()` so two callers share one state transition; keep `visibleCount`, the `hidden` class toggles, the `aria-expanded` write and the button label logic in one place. |\n| group back-to-top click handler (lines 127-131) | `static/js/unmatched.js` | Call `collapseGroup()` before `scrollIntoView`. Today it only scrolls, which is the owner-reported defect. |\n| `syncResultsScale()` | `static/js/unmatched.js` | Unchanged; it already applies the Results scale variables the panel layout depends on. Verify it still runs after the Phase 1 edits. |\n| `observeArtistImages()`, `hydrateArtistImage()` | `static/js/unmatched.js` | Unchanged. Preserve `[data-artist-image]`, the `rootMargin: 100px` observer, and the initials fallback. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000029-9a556a6df57b",
+      "ordinal": 29,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]",
+              "Modified -- Phase 3"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "Modified -- Phase 3"
+        ]
+      },
+      "text_byte_start": 27149,
+      "text_byte_end": 27173,
+      "content_sha256": "9a556a6df57b8ebc4d9bc8bbe6aad9dc4df4efd86224373fa4737d0ec7f54633",
+      "content": "### Modified -- Phase 3\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000030-fca1e237f6a5",
+      "ordinal": 30,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "Modified -- Phase 3"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 27173,
+      "text_byte_end": 28189,
+      "content_sha256": "fca1e237f6a5236cc126970d87fa5737bb15a498dec43969e1f8a7fc92ed7c31",
+      "content": "| Function | File | Change |\n| --- | --- | --- |\n| `revealPage()` | `static/js/page_motion.js` | Drop the `is-ready` class write; keep the `is-leaving` removal, which is the only class any stylesheet reads. |\n| `followLink()` | `static/js/page_motion.js` | Read the exit duration from its single owner instead of the hardcoded `140`. |\n| spotlight rotation and swap (cross-fade pair) | `static/js/results-spotlight.js` | Align the JS swap delay with the CSS transition duration, and comment the coupling in both files. |\n| `initDarkModeObserver()` | `static/js/heatmap.js` | **Phase 4**: observe `document.documentElement` for `data-theme`. Same commit as the `.dark-mode` removal. |\n| `updateZeroFills()`, `zeroFill()` | `static/js/heatmap.js` | Unchanged signatures. `updateZeroFills` is the observer's callback and is the reason the observer must survive the retirement. |\n| `applyTheme(isDark)` | `static/js/theme.js` | **Phase 4**: stop writing `.dark-mode` on `<body>`; keep the `data-theme` attribute write. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000031-ec185db5d01b",
+      "ordinal": 31,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]",
+              "New -- server side"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]",
+              "New -- server side"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "New -- server side"
+        ]
+      },
+      "text_byte_start": 28189,
+      "text_byte_end": 28376,
+      "content_sha256": "ec185db5d01b744a04041d72a2976af02a315d0ea8c0cb1c0e095465870cbfb2",
+      "content": "### New -- server side\nNone. Task 1 of the WP-7 extension already added\n`partition_albums_by_threshold` and the three-value\n`fetch_top_albums_async`; this plan adds no production Python.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000032-48ca407155d0",
+      "ordinal": 32,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Functions]",
+              "New -- gate helpers"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "New -- gate helpers"
+        ]
+      },
+      "text_byte_start": 28376,
+      "text_byte_end": 28400,
+      "content_sha256": "48ca407155d04a4a7b1f5c277cd7096a2a00f3224e1995153d12827ea32555ae",
+      "content": "### New -- gate helpers\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000033-501ff38f2bd4",
+      "ordinal": 33,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Functions]",
+          "New -- gate helpers"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 28400,
+      "text_byte_end": 29113,
+      "content_sha256": "501ff38f2bd43fefa4339d9d386c2965605954cb0a7f8ef5a6d7cdb10567165d",
+      "content": "| Function | File | Purpose |\n| --- | --- | --- |\n| unmatched group-row helper (working name) | `scripts/dev/frontend_gate.py` | Count visible rows inside a `.unmatched-group` so the expander step and the back-to-top collapse can both be asserted from one measurement. |\n| font-weight sweep helper (working name) | `scripts/dev/frontend_gate.py` | Assert no element on a migrated page computes to weight 500 or 600, in both themes. This is the check that would have caught the two `font-weight: 500`s. |\n| heatmap theme-fill helper (working name) | `scripts/dev/frontend_gate.py` | Read a zero-count cell's `fill` before and after a theme toggle. This is the check that catches the `.dark-mode` retirement trap. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000034-9452f12b5226",
+      "ordinal": 34,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Classes]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Classes]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Classes]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Classes]"
+        ]
+      },
+      "text_byte_start": 29113,
+      "text_byte_end": 29337,
+      "content_sha256": "9452f12b5226e42d3e1e7a30a39af5654f49fa29e1a0732b604c4e5e322e8de2",
+      "content": "## [Classes]\nNo Python class is added, removed, renamed or moved. `scrobblescope/` is\nuntouched by this plan; only `static/`, `templates/`, `tests/`, `scripts/`,\n`docs/` and the root documents change.\n**CSS class changes.**\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000035-e8c2c2903662",
+      "ordinal": 35,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Classes]"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 29337,
+      "text_byte_end": 30500,
+      "content_sha256": "e8c2c2903662a8d29e05b1185a39c1dfe4811cea564974df2beecc3bb22806c6",
+      "content": "| Class | File | Change |\n| --- | --- | --- |\n| `.unmatched-groups` | `templates/unmatched.html` | Unchanged. The responsive grid branch and `items-start` are the owner-ruled layout and are preserved. |\n| `.unmatched-group` | `templates/unmatched.html`, `static/css/unmatched.css` | Keeps its panel width inside the grid, its `--results-surface`, 1px hairline, `--radius-sm` and `box-shadow: none`. Only the reason-detail wrap changes. |\n| `.site-header__theme-choice--light`, `.site-header__theme-choice--dark` | `static/css/shell.css` | Lose `font-weight: 500` in their active states; gain `var(--ss-shadow-chip)` as the active-state shadow. |\n| `.metric-toggle-btn` | `static/css/results.css` | Its `:focus-visible` offset aligns with the 2px system rule, or is documented as the single exception. |\n| `.ss-mark` and the per-wrapper mark recolour rules | `static/css/shell.css` | The per-wrapper list is deleted once the inline assets carry `fill=\"currentColor\"` and a `<style>`-scoped `stroke: var(--bars-color)`. |\n| `.hm-preview` | `static/css/heatmap.css` | Loses the dead `var(--ss-shadow-card, none)` declaration; keeps its existing border and surface. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000036-a866cc033371",
+      "ordinal": 36,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Classes]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Classes]"
+        ]
+      },
+      "text_byte_start": 30500,
+      "text_byte_end": 30945,
+      "content_sha256": "a866cc033371c8a7b4a03ae45e5313511a8a09fca8b6546b9324e11c1a926329",
+      "content": "**Container-class contract this change depends on.** An SVG presentation\nattribute does not resolve a CSS custom property, so an SVG `<style>` element\nis the only correct home for `stroke: var(--bars-color)`. `fill=\"currentColor\"`\nis a keyword rather than a custom property, so it remains valid as an\nattribute. Get this backwards and the mark ships with a fixed colour in one\ntheme and no error anywhere, which is exactly how F-B21-21 shipped.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000037-680a046159f7",
+      "ordinal": 37,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Dependencies]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Dependencies]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Dependencies]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Dependencies]"
+        ]
+      },
+      "text_byte_start": 30945,
+      "text_byte_end": 31790,
+      "content_sha256": "680a046159f740d598d1b8a9ed346f8137ac369669abe5befbbe345a19bbca5d",
+      "content": "## [Dependencies]\n**No dependency changes.** This plan adds none, removes none, and changes no\nversion.\n- `requirements.txt` and `requirements-dev.txt` are untouched. Every package\n  stays pinned with `==` as `AGENTS.md` requires.\n- `playwright==1.62.0` is already pinned and already drives\n  `scripts/dev/frontend_gate.py`; the new gate helpers use it and add no\n  package, no `package.json` and no Node project.\n- The pinned Tailwind and daisyUI versions in `scripts/dev/tailwind_build.py`\n  are unchanged. `static/css/tailwind.css` is rebuilt with the same toolchain,\n  so no drift baseline moves.\n- No new integration and no new environment variable.\n- The only dependency-like thing removed is the Bootstrap 5.1.3 CDN stylesheet\n  in `templates/base.html`, which no page has loaded since the last page\n  template opted out of `legacy_css`.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000038-0b84233aed93",
+      "ordinal": 38,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]"
+        ]
+      },
+      "text_byte_start": 31790,
+      "text_byte_end": 31803,
+      "content_sha256": "0b84233aed9310d62380d7b4f6239a6a9855c293f0822c53efb5b6d1d7eb8871",
+      "content": "## [Testing]\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000039-e3ce3326c272",
+      "ordinal": 39,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Test-quality constraints (AGENTS.md \"Test Quality Rules\")"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Test-quality constraints (AGENTS.md \"Test Quality Rules\")"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Test-quality constraints (AGENTS.md \"Test Quality Rules\")"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Test-quality constraints (AGENTS.md \"Test Quality Rules\")"
+        ]
+      },
+      "text_byte_start": 31803,
+      "text_byte_end": 32992,
+      "content_sha256": "e3ce3326c272e126ef964c715f82c1595000486b7f8075fa28647a9f8ea8f9f4",
+      "content": "### Test-quality constraints (AGENTS.md \"Test Quality Rules\")\nEvery new test must challenge behaviour rather than confirm that a mock was\ncalled. Three concrete obligations for this plan:\n1. **Prove each guard fails when the fix is reverted, and say so.** State the\n   mutation in the test docstring or the WP log entry: restore\n   `font-weight: 500` and the weight sweep must fail; revert `attributeFilter`\n   to `['class']` on `document.body` and the heatmap fill check must fail; set\n   `data-step=\"50\"` and the expander-step assertion must fail. A guard whose\n   failure mode was never observed is an assumption, not a test.\n2. **Assert computed style and DOM state, not class names.** A page stylesheet\n   loads after the framework and beats a utility of equal specificity, so an\n   element can carry `hidden` and still be on screen. Read `getComputedStyle`\n   and the DOM.\n3. **Cover every state a reader can reach, not the one that loads.** The\n   unmatched expander has three observable states (10 rows, 10+step rows, fully\n   expanded) plus the back-to-top collapse; the theme toggle has two themes and\n   a persisted preference; the decade pills have an impossible-decade state.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000040-94befab26308",
+      "ordinal": 40,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "New and modified Python tests"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "New and modified Python tests"
+        ]
+      },
+      "text_byte_start": 32992,
+      "text_byte_end": 33026,
+      "content_sha256": "94befab263088220a8aaef6f76b153bb5d8da3c3f3cb60859580e859d01f91c2",
+      "content": "### New and modified Python tests\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000041-a0142fa51dad",
+      "ordinal": 41,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "New and modified Python tests"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 33026,
+      "text_byte_end": 34255,
+      "content_sha256": "a0142fa51dad02ed97b5e28279738a83d9ab7a3f3eefaab546d94aea0ed274a6",
+      "content": "| File | Test work |\n| --- | --- |\n| `tests/test_unmatched.py` | Already covers the partition contract from Task 1. No change expected; re-run to prove the Phase 1 edits did not disturb it. |\n| `tests/test_routes.py` | Assert the `below_threshold` group reaches HTML with its title, description and the `plays`/`tracks` metric, and that group order is `below_threshold`, `release_scope`, `no_spotify_match`. |\n| `tests/test_template_shell.py` | Assert `data-step=\"25\"` and `data-initial=\"10\"`; keep the three lockup facts (`0 0 453 74`, bar feet at 63.50, the wrapper class) green through the Phase 4 asset change; add the \"no `font-weight: 500` or `600` in `static/css/*.css`\" guard. |\n| `tests/test_design_snapshot.py` | No change. `designsystemaudit.md` is already in `REPOSITORY_OWNED_PATHS`, and the digest must stay identical through every phase -- that test is what proves no phase edited the frozen snapshot. |\n| `tests/scripts/dev/` (existing gate-helper modules) | Add unit coverage for each new gate helper. A helper that cannot fail is not a guard. |\n| `tests/test_heatmap.py` | Unchanged unless `updateZeroFills`'s read path is refactored. The theme-toggle behaviour is DOM-only, so it belongs in the browser gate. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000042-3b7077e9c944",
+      "ordinal": 42,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Browser gate coverage (`scripts/dev/frontend_gate.py`, Chromium + Firefox)"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Browser gate coverage (`scripts/dev/frontend_gate.py`, Chromium + Firefox)"
+        ]
+      },
+      "text_byte_start": 34255,
+      "text_byte_end": 34334,
+      "content_sha256": "3b7077e9c944cf3650ecc97d5c65e69b8ff9951917c252b2378a91d9eaba8f84",
+      "content": "### Browser gate coverage (`scripts/dev/frontend_gate.py`, Chromium + Firefox)\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000043-c6d450ce0849",
+      "ordinal": 43,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Browser gate coverage (`scripts/dev/frontend_gate.py`, Chromium + Firefox)"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 34334,
+      "text_byte_end": 35504,
+      "content_sha256": "c6d450ce08491a95e8a368dd76334121b593a5bb81d8660ca2b2463bfed35e62",
+      "content": "| Check | Phase | Proves |\n| --- | --- | --- |\n| Unmatched panels sit side by side at desktop and collapse to one column below 1024px | 1 | The owner-ruled layout, otherwise eye-only. |\n| Expander progress 10 -> 35 -> ... -> total, then collapse to 10 | 1 | The 25-row step and the collapse state machine. |\n| Back-to-top collapses the group and resets `aria-expanded` | 1 | The owner-reported defect. |\n| No eyebrow before `h1`; the username is neither italic nor primary-coloured | 1 | The extension's masthead ruling. |\n| Artwork 40px mobile / 44px desktop; no horizontal overflow | 1 | The Results-mirrored rhythm at both profiles. |\n| No computed `font-weight` of 500 or 600 on any migrated page, both themes | 3 | The No-Medium Rule, structurally. |\n| Zero-count heatmap cell `fill` changes on theme toggle to the new theme's empty colour | 4 | The `.dark-mode` retirement trap. Nothing watches this today. |\n| Every wrapper of every inline mark renders theme-correct colours | 4 | The new `currentColor` / `<style>` asset contract, which keeps `check_mark_follows_theme` meaningful. |\n| The Bootstrap grep returns nothing | 5 | WP-8's deterministic criterion 1. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000044-166205c7b2bf",
+      "ordinal": 44,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Validation sequence per phase"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Validation sequence per phase"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Validation sequence per phase"
+        ]
+      },
+      "text_byte_start": 35504,
+      "text_byte_end": 35584,
+      "content_sha256": "166205c7b2bf982408b2e09cd1002d4056972e80753786fc9468b2a8da2dbedc",
+      "content": "### Validation sequence per phase\nRun in order and do not advance on a failure:\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000045-81ebd588c30c",
+      "ordinal": 45,
+      "locator": {
+        "kind": "fenced_code",
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Validation sequence per phase"
+        ],
+        "atomic_kind": "fenced_code"
+      },
+      "text_byte_start": 35584,
+      "text_byte_end": 35817,
+      "content_sha256": "81ebd588c30c320fb237a729e3ff4320a9b1a097efa451f150676106ab610884",
+      "content": "```\npytest -q\npre-commit run --all-files\npython scripts/dev/tailwind_build.py\npython scripts/dev/frontend_gate.py\nnode --check static/js/unmatched.js\npython scripts/doc_state_sync.py --fix\npython scripts/doc_state_sync.py --check\n```",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000046-456ca7a18bda",
+      "ordinal": 46,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Validation sequence per phase"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Testing]",
+              "Validation sequence per phase"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Testing]",
+          "Validation sequence per phase"
+        ]
+      },
+      "text_byte_start": 35817,
+      "text_byte_end": 36590,
+      "content_sha256": "456ca7a18bdac671e1dfc062e2ea7b678b4d9030356575af56b663d10623ffe6",
+      "content": "Then confirm `git diff --exit-code -- static/css/tailwind.css` is clean. Per\nF-B21-20 the documented order (hooks before staging) and the Tailwind drift\nhook disagree; stage the named paths, run the hooks, verify the named paths are\nunchanged, and record the order actually used in the WP log entry rather than\nsilently reordering the repository procedure.\n**Documentation validation.** `doc_state_sync.py --check` must exit 0 with no\n`DOC` integrity error after every phase. New `[[value]]` and `[[retired]]`\ndeclarations are exactly the change that turns a green corpus red, so run\n`--check` immediately after editing `.docsync.toml`, before any other work in\nthat phase. Root `BATCH21_DEFINITION.md` warnings are expected while the batch\nis active and are not failures.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000047-078fca86d1b4",
+      "ordinal": 47,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)"
+        ]
+      },
+      "text_byte_start": 36590,
+      "text_byte_end": 37054,
+      "content_sha256": "078fca86d1b4795f57c58ceab61a09e15c4b7634ee3ead1aca1771cbd36a4371",
+      "content": "## Phase 1 design annex -- the unmatched report (frontend-design pass)\nA design pass under the `frontend-design` skill, applied to Phase 1. This\nbrief has two hard constraints that outrank the skill's defaults: the shipped\ncode is the aesthetic authority (the audit's 2026-09-11 reframing), and the\nextension spec requires the page to mirror Results. So this pass decides\n*composition*, not identity. It introduces no new colour, no new typeface and\nno new token.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000048-60b5fde2792e",
+      "ordinal": 48,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Brief"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Brief"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Brief"
+        ]
+      },
+      "text_byte_start": 37054,
+      "text_byte_end": 37369,
+      "content_sha256": "60b5fde2792e9caf153fbc7cf88a582b4e9ad2626c910b48405fd9cedd7c7956",
+      "content": "### Brief\nAn archival field-notebook report. Its job: tell a reader why each album was\nexcluded, and -- for the one reason they can act on -- exactly what to change.\nThe audience has just run a search and is looking at a shorter list than they\nexpected. The primary job is comprehension plus one clear next action.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000049-756889bfea82",
+      "ordinal": 49,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Colour"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Colour"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Colour"
+        ]
+      },
+      "text_byte_start": 37369,
+      "text_byte_end": 37426,
+      "content_sha256": "756889bfea82057ada8bf5a85c1e0054aee025cedaf53626da490ab680cd0882",
+      "content": "### Colour\nNo new hexes; every value is a shipped token.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000050-c99e4b2d5255",
+      "ordinal": 50,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Colour"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 37426,
+      "text_byte_end": 37799,
+      "content_sha256": "c99e4b2d5255fb3349a1be4ffbacf0620ecc78028949b4d8a2a0d774747cc5fb",
+      "content": "| Role | Token |\n| --- | --- |\n| Section surface | `--results-surface` (the Results midpoint) |\n| Hairline and section border | `--ss-border-default` |\n| Headings, values | `--color-base-content` |\n| Prose and row detail | `--ss-text-body`, `--ss-text-muted` |\n| The single primary action | `--color-primary` fill |\n| Secondary actions | `--ss-surface-card` on a hairline |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000051-2442b112d9ae",
+      "ordinal": 51,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Type"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Type"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Type"
+        ]
+      },
+      "text_byte_start": 37799,
+      "text_byte_end": 37845,
+      "content_sha256": "2442b112d9ae0876f91a2cc3d88077c39034f13d59e4bca7d776108bcd73beff",
+      "content": "### Type\nRoles only, from the shipped system.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000052-0d57d4bcee94",
+      "ordinal": 52,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Type"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 37845,
+      "text_byte_end": 38123,
+      "content_sha256": "0d57d4bcee94191aa73e9adb796baa708be0c313a601dab437e0d173a49b2115",
+      "content": "| Element | Role |\n| --- | --- |\n| Page `h1` | `--font-serif` (Instrument Serif) |\n| Section title, description, row identity | `--font-sans` (Akzidenz), weight 400 |\n| Rank, metric, reason detail | `--font-mono` (Input Mono) |\n| Section album count | `--font-figure` (Gotham) |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000053-9568038f3653",
+      "ordinal": 53,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Layout"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Layout"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Layout"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Layout"
+        ]
+      },
+      "text_byte_start": 38123,
+      "text_byte_end": 38521,
+      "content_sha256": "9568038f3653e30709e86926e55c6b8b1598acef3bc51070d091d6cad25657cb",
+      "content": "### Layout\nReason panels sit **side by side**, sorted by reason, in the fixed order\n`below_threshold`, `release_scope`, `no_spotify_match`.\nThe owner ruled this layout explicitly -- \"They should not be stacked, but\nside-by-side\" -- superseding the spec's earlier \"stacked, full-width\" wording.\nThree reasons give three columns, two give two, and below 1024px the grid\ncollapses to a single column.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000054-13d1afea8e20",
+      "ordinal": 54,
+      "locator": {
+        "kind": "fenced_code",
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Layout"
+        ],
+        "atomic_kind": "fenced_code"
+      },
+      "text_byte_start": 38521,
+      "text_byte_end": 39878,
+      "content_sha256": "13d1afea8e20431df48ff87410b08059c6543dfd12c7b444b70119d43956a634",
+      "content": "```\nDesktop, 90rem measure -- panels share a top offset, keep natural height\n+--------------------------------+  +--------------------------------+\n| Below your thresholds 12 albums |  | Nothing Fits the Filter     8  |  counts: Gotham, right\n| Played in 2019, but below 10    |  | Released outside your          |\n| plays or 3 unique tracks.       |  | selected release scope.        |\n| Lower either minimum and run    |  | Widen the release window.      |\n| the search again.               |  |                                |\n+--------------------------------+  +--------------------------------+\n| RANK | ALBUM / ARTIST | M  | D  |  | RANK | ALBUM / ARTIST | M  | D  |\n|  01  | [art] Title    |7/2 | ..  |  |  01  | [art] Title    |9/3 | ..  |\n+--------------------------------+  +--------------------------------+\n|         Show next 25 (37 left)  |  |         Show next 25 (11 left)  |\n+--------------------------------+  +--------------------------------+\n\nMobile (below 1024px): one column, full width, no horizontal page scroll.\n+---------------------------+\n| Below your thresholds     |\n| 12 albums                 |\n| Played in 2019, but       |\n| below 10 plays or 3 ...   |\n+---------------------------+\n| [art] Title               |  artwork 40px\n|       Artist              |\n| 7 plays / 2 tracks        |\n+---------------------------+\n```",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000055-930496fe7a0b",
+      "ordinal": 55,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Layout"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Layout"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Layout"
+        ]
+      },
+      "text_byte_start": 39878,
+      "text_byte_end": 40466,
+      "content_sha256": "930496fe7a0b04dc67d5ee39ba25f9da03b669a731a8e1affe4dab0ac7cb106c",
+      "content": "Alignment: left for prose and identity; right for every numeric column, so the\neye scans down a column rather than across a row. Panels keep their natural\nheight (`items-start`) instead of stretching to a common bottom, so a short\npanel does not fill with empty space.\nOne consequence of side-by-side that a stacked layout would not have: each\npanel is narrower than a full-width row, so the four-column budget compresses\nand the reason detail may wrap to a second line. Design for the wrap rather\nthan reaching for `truncate`, which would hide the very text that explains the\nexclusion.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000056-23a84fbb159e",
+      "ordinal": 56,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Principles"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Principles"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Principles"
+        ]
+      },
+      "text_byte_start": 40466,
+      "text_byte_end": 41154,
+      "content_sha256": "23a84fbb159ee95d9e7af3e764fb4f601d80f6364fd2781782cb9d49dbb92ff3",
+      "content": "### Principles\n1. **The structure is the information.** Albums are grouped by *why* they were\n   excluded, and the groups are ordered so the actionable reason comes first.\n   The grouping is the design; the panel chrome stays out of its way.\n2. **Spend boldness in one place.** The threshold numbers are the only\n   emphasised element, because they are the only thing the reader can act on.\n   Everything around them stays quiet.\n3. **No numbered section markers.** The reason order is priority, not\n   sequence, and Results does not number its sections.\n4. **Disabled is not hidden.** The fold hides rows but never removes them; the\n   control is a real button carrying `aria-expanded`.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000057-76efec188757",
+      "ordinal": 57,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "Self-critique -- generic defaults rejected"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Self-critique -- generic defaults rejected"
+        ]
+      },
+      "text_byte_start": 41154,
+      "text_byte_end": 41201,
+      "content_sha256": "76efec188757bcca1b3ada0ce78ad2bceb976399a355896cc9348bcd4262f629",
+      "content": "### Self-critique -- generic defaults rejected\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000058-23ff79cac969",
+      "ordinal": 58,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "Self-critique -- generic defaults rejected"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 41201,
+      "text_byte_end": 42619,
+      "content_sha256": "23ff79cac969b86b554ed29d7fa90249339ffb0b1497522e7951bb9ab79bb452",
+      "content": "| Generic default | Replacement, and why |\n| --- | --- |\n| Three-column card grid with reason badges and an oversized coloured count | Replaced by reason panels at the Results surface and density: one panel per reason, sorted, sharing a top offset. **Recorded correction:** the owner did not reject side-by-side panels -- you asked for them. What the spec rejected was the original badge-and-span card grid. |\n| Panels stretched to equal height | Panels keep their natural height (`items-start`). Stretching a short panel leaves dead space that reads as a rendering fault. |\n| Eyebrow label above the heading | Removed. The spec requires it, and the audit shows the house section-mark idiom used where it does not belong. |\n| Purple italic username for emphasis | Neutral ink. The headline carries the name; the accent is reserved for the one action. |\n| Hover-lift on rows | Background tint only, per the Border-Over-Shadow Rule and the State-Only Elevation Rule. |\n| Fade-and-slide entrance on each section | One orchestrated page-load moment (`ss-page-enter`, 220 ms, opacity-only), stopped under `prefers-reduced-motion`. |\n| `01 / 02 / 03` section markers | None. Recorded because the archival idiom makes them tempting here, and the content is not a sequence. |\n| `truncate` on the reason detail | Let it wrap. The panel is narrower side-by-side, and truncation would hide the text that explains the exclusion. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000059-0b14160fbe61",
+      "ordinal": 59,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "What this annex changes in Phase 1"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+              "What this annex changes in Phase 1"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Phase 1 design annex -- the unmatched report (frontend-design pass)",
+          "What this annex changes in Phase 1"
+        ]
+      },
+      "text_byte_start": 42619,
+      "text_byte_end": 43115,
+      "content_sha256": "0b14160fbe610946c16a84e54adb6376085bd436e235e8ee7935d6cf74a9c94f",
+      "content": "### What this annex changes in Phase 1\nThe layout is **not** one of them: side-by-side panels stay. Phase 1 changes\nthree things only -- the expansion step (50 to 25), the back-to-top control\ncollapsing its panel, and the page's space, rhythm and sizing once the step and\nthe collapse behave. The panel header composition (title and description left,\nGotham count right), the four-column budget, and the single-emphasised-metric\nrule are already the target; verify them rather than rebuild them.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000060-baef3e4e471e",
+      "ordinal": 60,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]"
+        ]
+      },
+      "text_byte_start": 43115,
+      "text_byte_end": 43402,
+      "content_sha256": "baef3e4e471e7bbd5f9afd6583999e6edb859def1b671b5ef6c0501027be077f",
+      "content": "## [Implementation Order]\nEach numbered step is one validated unit. Commit after the step, do not batch\nsteps into one commit, and pause after each commit for owner review.\n**Step status is not tracked here. The Progress section above owns it** -- one\nplace, so the two cannot disagree.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000061-2e94d372b159",
+      "ordinal": 61,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 0 -- baseline (no edits)"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 0 -- baseline (no edits)"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 0 -- baseline (no edits)"
+        ]
+      },
+      "text_byte_start": 43402,
+      "text_byte_end": 43907,
+      "content_sha256": "2e94d372b15918f3190abcf17110490eed30b5968bf9d360b229df7523a5b77c",
+      "content": "### Phase 0 -- baseline (no edits)\n1. Run the bootstrap guard and record the qualified Python, pytest and\n   pre-commit paths it prints.\n2. Confirm the pre-work baseline: `pytest -q` (expect 990 passed),\n   `pre-commit run --all-files`, `doc_state_sync.py --check`. Record the exact\n   counts; do not quote SESSION_CONTEXT's number without re-measuring.\n3. Confirm the worktree state matches `git status --short`: the WP-7 UI changes\n   are uncommitted and belong to Phase 1. Nothing else may ride along.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000062-5bf2e8b784ce",
+      "ordinal": 62,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 1 -- finish the WP-7 extension"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 1 -- finish the WP-7 extension"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 1 -- finish the WP-7 extension"
+        ]
+      },
+      "text_byte_start": 43907,
+      "text_byte_end": 45273,
+      "content_sha256": "5bf2e8b784ce311cdfe55fae3c4656427afa83b0c39186a050ef3f6f65523853",
+      "content": "### Phase 1 -- finish the WP-7 extension\n4. Write the failing assertions first: template tests for the `data-step=\"25\"`\n   value, and the frontend-gate checks for expander progress, back-to-top\n   collapse and the masthead. Run them and see them fail.\n5. Set `data-step=\"25\"` in `templates/unmatched.html` and let the reason detail\n   wrap at panel width. Keep the side-by-side grid, the four-column table, the\n   10-row initial state, the expander and the portrait markup.\n6. Extract the collapse path in `static/js/unmatched.js` into one function,\n   call it from the back-to-top handler, and fix the `50` fallback to `25`.\n7. Adjust `static/css/unmatched.css` for panel gaps, vertical rhythm, the\n   narrower four-column budget and the reason-detail wrap; verify the desktop\n   width rule instead of removing it.\n8. Rebuild `static/css/tailwind.css` through `tailwind_build.py` if a utility\n   changed, and confirm no drift.\n9. Run `node --check static/js/unmatched.js`, the focused tests, then the\n   two-engine frontend gate. Inspect computed panel width and alignment,\n   artwork size, both expander states and the collapse state.\n10. Update the extension plan's checkboxes, PLAYBOOK Sections 3-4 and\n    SESSION_CONTEXT Section 1; run `doc_state_sync.py --fix`; run the full\n    validation sequence.\n    Commit: `fix(ui): Align unmatched report with Results`\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000063-5133a1ff8fcc",
+      "ordinal": 63,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 2 -- document reconciliation"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 2 -- document reconciliation"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 2 -- document reconciliation"
+        ]
+      },
+      "text_byte_start": 45273,
+      "text_byte_end": 46515,
+      "content_sha256": "5133a1ff8fccf2a8d2e16e83fed3720d7b279b50c92bd2abf63e813450e63a10",
+      "content": "### Phase 2 -- document reconciliation\n11. Edit `DESIGN.md`: the four corrections first, then the added mechanisms,\n    one section at a time, re-reading the whole file rather than the diff.\n    Re-measure every number before it lands (see the correction table in\n    [Overview]); prefer describing a mechanism to quoting a count.\n12. Edit `docs/design/RECONCILIATION.md`: correct the stale section 7 row and\n    the override-table cell, then append new numbered sections for the\n    2026-09-11 frame, the mobile-strip override, and the audit pointer.\n13. Update `docs/AGENT_DOC_MAP.md` Section 3 so the Design row names all four\n    design documents.\n14. Edit `.docsync.toml`: add the `[[value]]` and `[[retired]]` declarations,\n    including the `docs/design/*` exemption for the frozen snapshot. Run\n    `doc_state_sync.py --check` immediately and fix every `DOC` diagnostic it\n    reports, including the siblings of each one -- grep the whole corpus for\n    the vocabulary of the property being changed, not the words of the new\n    text.\n15. Update PLAYBOOK Sections 3-4 and SESSION_CONTEXT for the documentation\n    pass; run the full validation sequence.\n    Commit: `docs(design): Reconcile the design record with the shipped system`\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000064-c7adc114c01c",
+      "ordinal": 64,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 3 -- the audit's incidental code defects"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 3 -- the audit's incidental code defects"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 3 -- the audit's incidental code defects"
+        ]
+      },
+      "text_byte_start": 46515,
+      "text_byte_end": 47397,
+      "content_sha256": "c7adc114c01c1da5afdd62df22bc42253777b7a14cf3d246363de6c0d86d22e2",
+      "content": "### Phase 3 -- the audit's incidental code defects\n16. Add the failing guards: the `font-weight` sweep in\n    `tests/test_template_shell.py`, the `--ss-shadow-chip` consumer assertion,\n    and the gate-side weight check. Confirm each fails today.\n17. Fix `static/css/shell.css`: the two `font-weight: 500` declarations, the\n    `--ss-shadow-chip` adoption on the active pill, and the 140 ms comment.\n18. Remove the dead `--ss-shadow-card` declaration in `static/css/heatmap.css`.\n19. Remove the dead `is-ready` write and give the 140 ms pair one owner across\n    `page_motion.js` and `shell.css`.\n20. Align the spotlight cross-fade pair and resolve the 1px focus offset.\n21. Rebuild Tailwind CSS if needed, run the full validation sequence.\n    Commit: `fix(ui): Remove dead and non-resolving style declarations`\n    (split into two commits if the cross-fade and focus items grow.)\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000065-679a10938ee0",
+      "ordinal": 65,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 4 -- WP-8 core: retire the legacy layer"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 4 -- WP-8 core: retire the legacy layer"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 4 -- WP-8 core: retire the legacy layer"
+        ]
+      },
+      "text_byte_start": 47397,
+      "text_byte_end": 48598,
+      "content_sha256": "679a10938ee085465b61dbad726dcd9f1e5937cf59b85f1adf8a51f7b15c4890",
+      "content": "### Phase 4 -- WP-8 core: retire the legacy layer\n22. Write the failing guard first: the frontend-gate check that a zero-count\n    heatmap cell's `fill` follows a theme toggle. Confirm it passes today, then\n    fails once `attributeFilter` is reverted -- that is the mutation proof.\n23. In one commit: move `initDarkModeObserver()` to `data-theme` on\n    `documentElement`; remove the `.dark-mode` write in `theme.js`; remove the\n    Bootstrap and `global.css` links and the `legacy_css` block from\n    `base.html`; delete the eight child overrides; delete\n    `static/css/global.css`; delete `--shell-accent-ink`; update every stale\n    comment that reasons about `global.css` or an unmigrated page.\n24. Apply the F-B21-23 asset contract in both inline SVGs using an SVG\n    `<style>` element for the stroke, delete the per-wrapper recolour list in\n    `shell.css`, and keep the three lockup tests green.\n25. Update `FINDINGS.md` (close F-B21-23, correct the voided D-34 item, record\n    that `.dark-mode` was load-bearing), rebuild Tailwind CSS, and run the full\n    validation sequence including both browsers.\n    Commit: `refactor(ui): Retire the legacy Bootstrap layer and the dual theme write`\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000066-662e3f1b6dc3",
+      "ordinal": 66,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 3,
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 5 -- sweep and close-out"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "[Implementation Order]",
+              "Phase 5 -- sweep and close-out"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "[Implementation Order]",
+          "Phase 5 -- sweep and close-out"
+        ]
+      },
+      "text_byte_start": 48598,
+      "text_byte_end": 49437,
+      "content_sha256": "662e3f1b6dc35bebe5d099b73dcf77b687b7efe7ffb8e61a037c62a1ddf4cec9",
+      "content": "### Phase 5 -- sweep and close-out\n26. Run WP-8's deterministic Bootstrap grep; it must return nothing.\n27. Run the mandated frontend and accessibility audit over the migrated\n    frontend and file its results; Batch 21 does not close without it.\n28. Write the HTML/CSS/JS linting disposition into `BATCH21_DEFINITION.md` WP-8\n    and repoint the `AGENT_NOTES.md` gap entry at it.\n29. Update `README.md`, `DEVELOPMENT.md` and SESSION_CONTEXT Sections 1/3.\n30. Owner E2E in Firefox including the downloaded save-as-image file in both\n    themes, then the standard close-out: archive the definition, update PLAYBOOK\n    Section 2, purge the log, mark the batch complete, and run `--check` to\n    confirm the root `BATCH21_DEFINITION.md` warning disappears.\n    Commit: `chore(close-out): Batch 21 complete; archive definition and purge log`\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000067-16a9c6061027",
+      "ordinal": 67,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "Audit disposition -- what this plan does with each audit item"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Audit disposition -- what this plan does with each audit item"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Audit disposition -- what this plan does with each audit item"
+        ]
+      },
+      "text_byte_start": 49437,
+      "text_byte_end": 49662,
+      "content_sha256": "16a9c6061027ac35109a420ede135a24a238e5769e3be8720642a96cdee1c2fa",
+      "content": "## Audit disposition -- what this plan does with each audit item\nNot every audit item is actionable here, and saying so is part of the work.\nThe `docs/design/` snapshot is frozen, so D-1 through D-34 cannot be applied to\nit.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000068-43dcfeadced0",
+      "ordinal": 68,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Implementation Plan",
+          "Audit disposition -- what this plan does with each audit item"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 49662,
+      "text_byte_end": 51547,
+      "content_sha256": "43dcfeadced032a4a53d6e93e9e9e10cb730a31fc7382f3d4a027be72813d93e",
+      "content": "| Audit item | Disposition |\n| --- | --- |\n| D-1, D-2 (token families, `--text-body` collision) | Recorded in `DESIGN.md` and declared in `.docsync.toml`. The external project rewrite is out of repository scope. |\n| D-3..D-8, D-12, D-14, D-22, D-23, D-27, D-31 (values, measures, copy) | The code wins by the 2026-09-11 frame. `DESIGN.md` and `RECONCILIATION.md` are updated to the shipped values; no code change. |\n| D-13 (scaling system), D-20 (dynamic spacing off), D-25 (eight breakpoints), D-28 (mark recolour), D-30 (gate-pinned geometry) | Recorded in `DESIGN.md` as first-class mechanisms. D-28 additionally drives the Phase 4 asset change. |\n| D-15, D-16 (stale repo document) | Fixed in `RECONCILIATION.md` (Phase 2). |\n| D-17, D-33, and the section C eyebrow divergence | Withdrawn or cosmetic by the 2026-09-11 frame; recorded as intentional aesthetic choices, not as defects. |\n| D-26 (component inventory), D-32 (Artist Spotlight) | Recorded as an inventory correction in `DESIGN.md`; no code change. |\n| D-34 (`::selection`, scrollbars) | Void: both sides of the divergence live in a file no page loads. Corrected in `FINDINGS.md`, not implemented. |\n| The decade-pill rule direction and \"disabled is not hidden\" | Recorded in `DESIGN.md` as a named principle; the shipped code is already correct and must not be changed back. |\n| The five incidental defects | Phases 3 and 4. |\n| The six architectural facts (one framework sheet per page, framework-neutral partials, the `.hidden` dependency, the 140 ms coupling, the stale-response convention, the ramp's single source) | Recorded in `DESIGN.md`; the 140 ms coupling also gets a code fix. |\n| The seven unread root tooling files, and `app.py` / `scrobblescope/` | **Out of scope and explicitly not claimed.** The audit states these were never read; no document written under this plan may assert anything about them. |",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000069-8397e83cd7cd",
+      "ordinal": 69,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Assumptions, limitations, and open owner decisions"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Assumptions, limitations, and open owner decisions"
+        ]
+      },
+      "text_byte_start": 51547,
+      "text_byte_end": 55047,
+      "content_sha256": "8397e83cd7cd8b98448cfde65af50c4d190472d97b07a7927005acb45b06af36",
+      "content": "## Assumptions, limitations, and open owner decisions\n**Assumptions.**\n1. The owner's 2026-09-11 reframing stands: on a migrated page the code is the\n   aesthetic authority and the design documents are behind it. Every value\n   correction therefore runs code -> document with no ruling required.\n2. `docs/design/` stays a byte-frozen import. If it is ever re-imported, the\n   digest in `tests/test_design_snapshot.py` updates in that same commit and\n   this plan's document corrections are re-checked against the new snapshot.\n3. The WP-7 extension's Task 1 contract (`3f59380`) is final. Reopening it\n   would invalidate the route and orchestrator test work in Phase 1.\n4. WP-8 keeps its number and its position last. `DOC007` in\n   `scripts/docsync/integrity.py` reads the WP headings, and renumbering WP-7\n   or WP-8 breaks citations in `PLAYBOOK.md`, `FINDINGS.md` and\n   `AGENT_NOTES.md`.\n5. The audit remains the reference for the *shape* of the design system while\n   the shipped code remains the reference for its *values*. Where they\n   conflict, the code wins and the audit sentence is corrected in\n   `DESIGN.md` rather than followed.\n6. The owner's side-by-side layout ruling outranks the approved spec's stacked\n   wording. If that is wrong, Phase 1 changes shape entirely and should be\n   stopped before it starts: rebuilding the layout the owner asked for would\n   fail three existing frontend-gate assertions.\n**Limitations.**\n- The audit's `--index-scale` count did not reproduce (111 occurrences in\n  `index.css` against the stated 102). Any count that reaches a document must\n  be measured in that session or replaced by a description of the mechanism.\n- Two audit claims were corrected by this investigation rather than followed:\n  `--shell-accent-ink` is not live (its only consumers are in the dead\n  `global.css`), and F-B21-23's `stroke: var(--bars-color)` must sit in an SVG\n  `<style>` element rather than a presentation attribute. Both are recorded\n  above with the evidence that corrected them.\n- The heatmap fill behaviour has no automated coverage today. Phase 4 creates\n  the first check for it; until that check exists, the retirement is unsafe to\n  ship.\n- `app.py` and `scrobblescope/` were read only where the audit names them.\n  Claims about server-authored copy, KPI payloads, phase labels and\n  `page_navigation` remain unverified here, as the audit itself says.\n**Open owner decisions this plan deliberately does not make.**\n1. **Would `implementation_plan.md` be kept or removed?** It is a working\n   artifact, not a governed document.\n2. **The fate of `docs/superpowers/plans/gemini_implementation_plan_unverified.md`**\n   (untracked, a prior unverified attempt at the same WP-7 ground).\n3. **The unmatched expander step: 20 or 25?** The owner said \"20 or 25\"; this\n   plan uses 25 and records it as a deviation, because neither WP-7 document\n   states a step size.\n4. **Does the serif figure face on Results stay?** The 2026-09-11 frame answers\n   this (yes, deliberate), but `DESIGN.md`'s Role Segregation Rule must be\n   restated to match, or the two documents contradict each other.\n5. **Does the theme gain a third \"System\" state?** The audit says F-B21-22 is\n   really asking for that; the current two-state logic is correct as written.\n6. **Is the F-B21-20 staging-order contract settled?** Every phase depends on\n   which answer the owner picks, so the plan records the order actually used\n   rather than silently reordering the repository procedure.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000070-ba16d6f44616",
+      "ordinal": 70,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Implementation Plan",
+              "Verification of this plan document"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Implementation Plan",
+              "Verification of this plan document"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Implementation Plan",
+          "Verification of this plan document"
+        ]
+      },
+      "text_byte_start": 55047,
+      "text_byte_end": 56115,
+      "content_sha256": "ba16d6f44616b710acfb9399f07384f5f94f5334ab34e07d98104f6c5eb34918",
+      "content": "## Verification of this plan document\n- Every file path above was checked against the working tree on 2026-09-11.\n  Line numbers refer to branch `test` at `3f59380` plus the uncommitted WP-7\n  changes described in Phase 1.\n- Every code claim was verified by grep or by reading the file, not inferred\n  from the audit: the two `font-weight: 500`s (`static/css/shell.css:575,610`),\n  `is-ready` (`static/js/page_motion.js:10`), `--ss-shadow-card`\n  (`static/css/heatmap.css:189`), the `--ss-shadow-chip` consumer count (zero),\n  `--shell-accent-ink`'s consumers (`global.css` only), the `legacy_css`\n  overrides (all eight page templates override an empty block),\n  `initDarkModeObserver`'s target (`static/js/heatmap.js:1375-1385`), the\n  140 ms pair (`static/css/shell.css:70`, `static/js/page_motion.js:30`),\n  `data-step=\"50\"` (`templates/unmatched.html:174`) and the back-to-top handler\n  (`static/js/unmatched.js:127-131`).\n- No production file, test, or governed document was edited while producing\n  this plan. The only file created is `implementation_plan.md`.\n",
+      "oversize_atomic": false
+    }
+  ]
+}

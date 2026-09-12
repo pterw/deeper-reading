@@ -1,0 +1,1070 @@
+{
+  "entries": [
+    {
+      "ordinal": 1,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "# Implementation Plan"
+        },
+        {
+          "text": "**Scope of this document:** make the repository, its plans and its design"
+        },
+        {
+          "text": "Derived 2026-09-11 from branch `test` at `3f59380`."
+        },
+        {
+          "text": "**Source read order used:** `AGENTS.md` (full), `docs/design/designsystemaudit.md`"
+        },
+        {
+          "text": "claim names."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 2,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## Progress -- where this plan stands, and where to pick it up"
+        },
+        {
+          "text": "**Owner of this status: this section. Do not restate it in [Implementation"
+        },
+        {
+          "text": "**State: Phase 1 complete and committed. Phases 2-5 not started. Three work"
+        },
+        {
+          "text": "items are uncommitted.** Nothing is pushed."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 3,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Phase | State | Evidence |"
+        },
+        {
+          "text": "| 0 Baseline | **Done** | guard exit 0; `pytest -q` 990 at open, 1020 now; docsync exit 0 |"
+        },
+        {
+          "text": "| 1 WP-7 refinement | **Done, committed** | `57d1474`; frontend gate 26 checks in 47 runs, chromium + firefox |"
+        },
+        {
+          "text": "| 2 Document reconciliation | **Not started** | the two live conflicts are listed below |"
+        },
+        {
+          "text": "| 5 WP-8 close-out | **Not started** | needs the mandated frontend/a11y audit |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 4,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Commits landed during this plan"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 5,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Commit | Subject |"
+        },
+        {
+          "text": "| `72615ed` | `feat(unmatched): Align report with Results and cap album fetch` -- the prior session's work, committed as a checkpoint |"
+        },
+        {
+          "text": "| `c2f14fa` | `chore(agents): Record the issue tracker and domain docs for agent skills` |"
+        },
+        {
+          "text": "| `57d1474` | `fix(ui): Refine the unmatched report disclosure` -- this plan's Phase 1 |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 6,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Uncommitted work at handoff, in the order it should be committed"
+        },
+        {
+          "text": "1. **Staged, all four gates observed green on it:** the F-B21-51 slice-1 gate"
+        },
+        {
+          "text": "archive. 480 insertions, 140 deletions."
+        },
+        {
+          "text": "2. **Unstaged:** the architecture-diagram rebuild -- `docs/ARCHITECTURE.md` and"
+        },
+        {
+          "text": "3. **Unstaged:** this plan's move into `docs/superpowers/plans/` and the"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 7,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Where to pick up"
+        },
+        {
+          "text": "1. Commit the staged set. Its PLAYBOOK entry and every gate result are recorded."
+        },
+        {
+          "text": "3. Commit this plan's move. Decide the fate of"
+        },
+        {
+          "text": "4. Start **Phase 2** with the conflict that actively misleads: the approved spec"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 8,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### What Phase 1 actually did, and how it diverged from the plan"
+        },
+        {
+          "text": "1. **The layout was not rebuilt.** The plan's Phase 1 step 5 said to restructure"
+        },
+        {
+          "text": "3. **The step size was chosen, not specified.** The owner allowed"
+        },
+        {
+          "text": "It entered with `72615ed`, not with Phase 1."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 9,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Open owner decisions carried into the handoff"
+        },
+        {
+          "text": "2. The unmatched expander step (20 vs 25) -- 25 is live."
+        },
+        {
+          "text": "4. Whether the theme gains a third"
+        },
+        {
+          "text": "5. The F-B21-20 staging-order contract."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 10,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Overview]"
+        },
+        {
+          "text": "Four facts shape the whole plan:"
+        },
+        {
+          "text": "**One audit instruction is a trap, and one is mechanically wrong.**"
+        },
+        {
+          "text": "Ordering chosen by the owner: **WP-7 refinement first, then document"
+        },
+        {
+          "text": "**The audit's repo-side list is already WP-8's shape.** The audit says so"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 11,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Audit states | Measured 2026-09-11 | Consequence |"
+        },
+        {
+          "text": "| `--index-scale` has 102 consumers | **111** `var(--index-scale` occurrences in `static/css/index.css` alone |"
+        },
+        {
+          "text": "| Incidental defect 3, `--shell-accent-ink`,"
+        },
+        {
+          "text": "The value is not live. Resolve it by deletion with `global.css`, not by re-pointing it."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 12,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Types]"
+        },
+        {
+          "text": "No new or changed Python type definitions. Task 1 of the WP-7 extension already"
+        },
+        {
+          "text": "**Already landed, treated as fixed interfaces (do not change):**"
+        },
+        {
+          "text": "`partition_albums_by_threshold(albums, min_plays, min_tracks) -> tuple[dict, dict]`"
+        },
+        {
+          "text": "**Retired names that must not survive in a prescriptive document:**"
+        },
+        {
+          "text": "- `--text-body` and `--text-muted` **as colours**: `--text-body: 1rem` is"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 13,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Files]"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 14,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 1 -- finish the WP-7 extension (uncommitted work in this worktree)"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 15,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| File | Change |"
+        },
+        {
+          "text": "| `templates/unmatched.html` | Keep the side-by-side `.unmatched-groups` grid"
+        },
+        {
+          "text": "Extract the expander's collapse branch (lines 91-106) into one named function"
+        },
+        {
+          "text": "| `static/css/tailwind.css` | Regenerated output, only if a utility class changes. Produced by `scripts/dev/tailwind_build.py`; never hand-edited. |"
+        },
+        {
+          "text": "| `tests/test_routes.py` | Assert the rendered group order, the `below_threshold` section's title and copy, and the threshold metric text for an item failing both minimums. |"
+        },
+        {
+          "text": "| `.claude/SESSION_CONTEXT.md` | Section 1 batch-status row and test count. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 16,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 2 -- document reconciliation to the audit"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 17,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| `DESIGN.md` | Correct the four claims the audit names (Modal Shadow row,"
+        },
+        {
+          "text": "| `docs/design/RECONCILIATION.md` | Correct the stale geometry row in section 7 (D-15: the gap is 2px, not 3px)"
+        },
+        {
+          "text": "| `docs/AGENT_DOC_MAP.md` | Section 3's Design row names only `docs/design/README.md`."
+        },
+        {
+          "text": "| `docs/design/designsystemaudit.md` | **Do not edit.** It is a dated, self-correcting record whose later sections supersede its earlier ones."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 18,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 3 -- the audit's incidental code defects"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 19,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| `static/css/shell.css` | Lines 575 and 610: `font-weight: 500` -> `400`"
+        },
+        {
+          "text": "| `static/css/heatmap.css` | Line 189: remove `box-shadow: var(--ss-shadow-card, none);`"
+        },
+        {
+          "text": "| `static/js/page_motion.js` | Line 10: remove `document.body.classList.add('is-ready')`"
+        },
+        {
+          "text": "| `tests/test_template_shell.py` | Pin the token table as it now stands"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 20,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 4 -- WP-8 core: retire the legacy layer"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 21,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| `static/js/heatmap.js` | `initDarkModeObserver()` (lines 1375-1385): observe `document.documentElement`"
+        },
+        {
+          "text": "| `static/css/global.css` | **Delete** (486 lines; no page loads it). |"
+        },
+        {
+          "text": "Keep the `0 0 453 74` viewBox and the bar feet at 63.50"
+        },
+        {
+          "text": "| `FINDINGS.md` | Close F-B21-23 (the asset contract now holds)"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 22,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 5 -- WP-8 sweep and close-out"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 23,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| `BATCH21_DEFINITION.md` | WP-8 gains the audit-derived item list and the `.dark-mode` observer trap in writing"
+        },
+        {
+          "text": "| `AGENT_NOTES.md` | Repoint the linting gap entry at that disposition, so the gap closes by a decision rather than by silence. |"
+        },
+        {
+          "text": "Batch 21 does not close without it."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 24,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Root artifact"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 25,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| File | Note |"
+        },
+        {
+          "text": "| `implementation_plan.md` (this file) | A working plan, not a governed document."
+        },
+        {
+          "text": "`docs/superpowers/plans/gemini_implementation_plan_unverified.md` is already untracked in this worktree and is a prior, unverified attempt at the WP-7 extension;"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 26,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Functions]"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 27,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Modified -- Phase 1"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 28,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Function | File | Change |"
+        },
+        {
+          "text": "| group expander click handler (anonymous, lines 89-125) | `static/js/unmatched.js` |"
+        },
+        {
+          "text": "| group back-to-top click handler (lines 127-131) | `static/js/unmatched.js` |"
+        },
+        {
+          "text": "| `syncResultsScale()` | `static/js/unmatched.js` | Unchanged; it already applies the Results scale variables the panel layout depends on."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 29,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Modified -- Phase 3"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 30,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| `revealPage()` | `static/js/page_motion.js` | Drop the `is-ready` class write; keep the `is-leaving` removal, which is the only class any stylesheet reads. |"
+        },
+        {
+          "text": "| `followLink()` | `static/js/page_motion.js` | Read the exit duration from its single owner instead of the hardcoded `140`. |"
+        },
+        {
+          "text": "| `updateZeroFills()`, `zeroFill()` | `static/js/heatmap.js` | Unchanged signatures."
+        },
+        {
+          "text": "| `applyTheme(isDark)` | `static/js/theme.js` | **Phase 4**: stop writing `.dark-mode` on `<body>`; keep the `data-theme` attribute write. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 31,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### New -- server side"
+        },
+        {
+          "text": "None. Task 1 of the WP-7 extension already added"
+        },
+        {
+          "text": "`fetch_top_albums_async`; this plan adds no production Python."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 32,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### New -- gate helpers"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 33,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| unmatched group-row helper (working name) | `scripts/dev/frontend_gate.py` | Count visible rows inside a `.unmatched-group`"
+        },
+        {
+          "text": "| font-weight sweep helper (working name) | `scripts/dev/frontend_gate.py` | Assert no element on a migrated page computes to weight 500 or 600, in both themes."
+        },
+        {
+          "text": "| heatmap theme-fill helper (working name) | `scripts/dev/frontend_gate.py` | Read a zero-count cell's `fill` before and after a theme toggle."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 34,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Classes]"
+        },
+        {
+          "text": "No Python class is added, removed, renamed or moved. `scrobblescope/` is"
+        },
+        {
+          "text": "**CSS class changes.**"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 35,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Class | File | Change |"
+        },
+        {
+          "text": "| `.unmatched-groups` | `templates/unmatched.html` | Unchanged. The responsive grid branch and `items-start` are the owner-ruled layout and are preserved. |"
+        },
+        {
+          "text": "| `.site-header__theme-choice--light`, `.site-header__theme-choice--dark` | `static/css/shell.css` | Lose `font-weight: 500` in their active states; gain `var(--ss-shadow-chip)` as the active-state shadow. |"
+        },
+        {
+          "text": "| `.hm-preview` | `static/css/heatmap.css` | Loses the dead `var(--ss-shadow-card, none)` declaration; keeps its existing border and surface. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 36,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "**Container-class contract this change depends on.** An SVG presentation"
+        },
+        {
+          "text": "is exactly how F-B21-21 shipped."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 37,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Dependencies]"
+        },
+        {
+          "text": "**No dependency changes.** This plan adds none, removes none, and changes no"
+        },
+        {
+          "text": "- `playwright==1.62.0` is already pinned and already drives"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 38,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Testing]"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 39,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Test-quality constraints"
+        },
+        {
+          "text": "1. **Prove each guard fails when the fix is reverted, and say so.** State the"
+        },
+        {
+          "text": "3. **Cover every state a reader can reach, not the one that loads.** The"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 40,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### New and modified Python tests"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 41,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| File | Test work |"
+        },
+        {
+          "text": "| `tests/test_unmatched.py` | Already covers the partition contract from Task 1. No change expected; re-run to prove the Phase 1 edits did not disturb it. |"
+        },
+        {
+          "text": "| `tests/test_design_snapshot.py` | No change. `designsystemaudit.md` is already in `REPOSITORY_OWNED_PATHS`"
+        },
+        {
+          "text": "| `tests/scripts/dev/` (existing gate-helper modules) | Add unit coverage for each new gate helper. A helper that cannot fail is not a guard. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 42,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Browser gate coverage (`scripts/dev/frontend_gate.py`, Chromium + Firefox)"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 43,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Zero-count heatmap cell `fill` changes on theme toggle to the new theme's empty colour | 4 | The `.dark-mode` retirement trap. Nothing watches this today. |"
+        },
+        {
+          "text": "| The Bootstrap grep returns nothing | 5 | WP-8's deterministic criterion 1. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 44,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Validation sequence per phase"
+        },
+        {
+          "text": "Run in order and do not advance on a failure:"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 45,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "python scripts/dev/tailwind_build.py"
+        },
+        {
+          "text": "node --check static/js/unmatched.js"
+        },
+        {
+          "text": "python scripts/doc_state_sync.py --check"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 46,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Then confirm `git diff --exit-code -- static/css/tailwind.css` is clean. Per"
+        },
+        {
+          "text": "**Documentation validation.** `doc_state_sync.py --check` must exit 0 with no"
+        },
+        {
+          "text": "is active and are not failures."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 47,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## Phase 1 design annex -- the unmatched report (frontend-design pass)"
+        },
+        {
+          "text": "It introduces no new colour, no new typeface and"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 48,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Brief"
+        },
+        {
+          "text": "An archival field-notebook report."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 49,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Colour"
+        },
+        {
+          "text": "No new hexes; every value is a shipped token."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 50,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Role | Token |"
+        },
+        {
+          "text": "| Section surface | `--results-surface` (the Results midpoint) |"
+        },
+        {
+          "text": "| The single primary action | `--color-primary` fill |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 51,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Type"
+        },
+        {
+          "text": "Roles only, from the shipped system."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 52,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Element | Role |"
+        },
+        {
+          "text": "| Page `h1` | `--font-serif` (Instrument Serif) |"
+        },
+        {
+          "text": "| Section album count | `--font-figure` (Gotham) |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 53,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Layout"
+        },
+        {
+          "text": "Reason panels sit **side by side**, sorted by reason, in the fixed order"
+        },
+        {
+          "text": "The owner ruled this layout explicitly"
+        },
+        {
+          "text": "collapses to a single column."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 54,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Desktop, 90rem measure -- panels share a top offset, keep natural height"
+        },
+        {
+          "text": "Mobile (below 1024px): one column, full width, no horizontal page scroll."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 55,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Alignment: left for prose and identity; right for every numeric column, so the"
+        },
+        {
+          "text": "One consequence of side-by-side that a stacked layout would not have: each"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 56,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Principles"
+        },
+        {
+          "text": "1. **The structure is the information.** Albums are grouped by *why* they were"
+        },
+        {
+          "text": "4. **Disabled is not hidden.** The fold hides rows but never removes them; the"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 57,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Self-critique -- generic defaults rejected"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 58,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Generic default | Replacement, and why |"
+        },
+        {
+          "text": "| Panels stretched to equal height | Panels keep their natural height (`items-start`). Stretching a short panel leaves dead space that reads as a rendering fault. |"
+        },
+        {
+          "text": "| `truncate` on the reason detail | Let it wrap. The panel is narrower side-by-side, and truncation would hide the text that explains the exclusion. |"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 59,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### What this annex changes in Phase 1"
+        },
+        {
+          "text": "The layout is **not** one of them: side-by-side panels stay. Phase 1 changes"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 60,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## [Implementation Order]"
+        },
+        {
+          "text": "**Step status is not tracked here. The Progress section above owns it** -- one"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 61,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 0 -- baseline (no edits)"
+        },
+        {
+          "text": "2. Confirm the pre-work baseline: `pytest -q` (expect 990 passed),"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 62,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 1 -- finish the WP-7 extension"
+        },
+        {
+          "text": "6. Extract the collapse path in `static/js/unmatched.js` into one function,"
+        },
+        {
+          "text": "    Commit: `fix(ui): Align unmatched report with Results`"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 63,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 2 -- document reconciliation"
+        },
+        {
+          "text": "    Commit: `docs(design): Reconcile the design record with the shipped system`"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 64,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 3 -- the audit's incidental code defects"
+        },
+        {
+          "text": "    Commit: `fix(ui): Remove dead and non-resolving style declarations`"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 65,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 4 -- WP-8 core: retire the legacy layer"
+        },
+        {
+          "text": "    Commit: `refactor(ui): Retire the legacy Bootstrap layer and the dual theme write`"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 66,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "### Phase 5 -- sweep and close-out"
+        },
+        {
+          "text": "27. Run the mandated frontend and accessibility audit over the migrated"
+        },
+        {
+          "text": "    Commit: `chore(close-out): Batch 21 complete; archive definition and purge log`"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 67,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## Audit disposition -- what this plan does with each audit item"
+        },
+        {
+          "text": "Not every audit item is actionable here, and saying so is part of the work."
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 68,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "| Audit item | Disposition |"
+        },
+        {
+          "text": "| D-1, D-2 (token families, `--text-body` collision) | Recorded in `DESIGN.md` and declared in `.docsync.toml`. The external project rewrite is out of repository scope. |"
+        },
+        {
+          "text": "| The seven unread root tooling files, and `app.py` / `scrobblescope/` | **Out of scope and explicitly not claimed.**"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 69,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## Assumptions, limitations, and open owner decisions"
+        },
+        {
+          "text": "**Assumptions.**"
+        },
+        {
+          "text": "**Limitations.**"
+        },
+        {
+          "text": "3. **The unmatched expander step: 20 or 25?** The owner said"
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 70,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "## Verification of this plan document"
+        },
+        {
+          "text": "(`templates/unmatched.html:174`) and the back-to-top handler"
+        },
+        {
+          "text": "- No production file, test, or governed document was edited while producing"
+        },
+        {
+          "text": "this plan. The only file created is `implementation_plan.md`."
+        }
+      ],
+      "constraints": []
+    }
+  ]
+}
