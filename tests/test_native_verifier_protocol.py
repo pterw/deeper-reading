@@ -94,3 +94,10 @@ def test_alternative_design_requires_architecture_stop_exhaustion_and_disclosure
     run["events"].insert(insert_at, {"type": "alternative_designed"})
     errors = errors_for(run)
     assert any("alternative_designed" in e and "architecture_stop" in e for e in errors), errors
+
+
+def test_native_event_entries_must_be_objects(tmp_path):
+    run = valid_run(tmp_path)
+    run["events"] = ["oops"]
+    errors = errors_for(run)
+    assert any("events[1] must be an object" in e for e in errors), errors

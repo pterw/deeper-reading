@@ -119,11 +119,41 @@ def test_traversal_report_has_one_chunk_mapping_with_locator_outcome_and_atomic_
     manifest = json.loads((tmp_path / "evidence" / "chunk-manifest.json").read_text(encoding="utf-8"))
     for chunk in manifest["chunks"]:
         assert chunk["id"] in text
-    assert "Locator" in text
-    assert "Outcome" in text
-    assert "Verified assertion / reason" in text
+    assert "## Run summary" in text
+    assert "## Chunk index" in text
+    assert "## Chunk details" in text
+    assert "| # | Chunk | Location | Kinds | Outcome | Atoms |" in text
+    assert "- Locator:" in text
+    assert "- Outcome:" in text
+    assert "**Assertions**" in text
     assert "Alpha proof." in text
     assert "Beta caveat." in text
+
+
+def test_first_run_report_is_grouped_complete_and_deterministic():
+    from scripts.chunk_common import render_traversal_report
+
+    fixture = ROOT / "tests" / "fixtures" / "deepseek-first-run"
+    manifest = json.loads((fixture / "chunk-manifest.json").read_text(encoding="utf-8"))
+    ledger = json.loads((fixture / "chunk-evidence-v1.json").read_text(encoding="utf-8"))
+    first = render_traversal_report(manifest, ledger)
+    second = render_traversal_report(manifest, ledger)
+    assert first == second
+    assert "## Run summary" in first
+    assert "## Chunk index" in first
+    assert "## Chunk details" in first
+    assert "Assertions: 192" in first
+    assert first.count("\n### ") == 70
+    assert first.count("\n- bytes `") == 192
+    for chunk in manifest["chunks"]:
+        assert chunk["id"] in first
+
+    # A chunk with multiple assertions gets one detail section, not one repeated locator row per atom.
+    multi = next(entry for entry in ledger["entries"] if len(entry.get("assertions", [])) > 1)
+    detail_start = first.index(f"### {multi['ordinal']:02d} · `{multi['chunk_id']}`")
+    next_heading = first.find("\n### ", detail_start + 1)
+    detail = first[detail_start: next_heading if next_heading >= 0 else None]
+    assert detail.count("<details><summary>Full locator</summary>") == 1
 
 
 def test_deliverable_contract_makes_traversal_report_user_visible():

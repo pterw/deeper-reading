@@ -12,6 +12,10 @@ def test_portable_extractors_are_runtime_payload():
         'scripts/extract_markdown.py',
         'scripts/chunk_common.py',
         'scripts/traversal_report.py',
+        'scripts/evidence_atoms.py',
+        'scripts/build_evidence.py',
+        'scripts/chunk_view.py',
+        'scripts/inspect_chunks.py',
     ]
     for rel in required:
         assert (ROOT / rel).is_file(), rel

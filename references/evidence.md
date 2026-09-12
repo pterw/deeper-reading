@@ -76,13 +76,28 @@ For `evidence`, every assertion/constraint object must contain non-empty `text` 
 
 If extraction emits 12 chunks, the ledger must contain 12 unique valid verdicts. Selected quotations, high-level summaries, or early relevant hits cannot shrink the universe.
 
+### Evidence construction and schema compatibility
+
+**Schema v1 remains accepted** for existing ledgers. Schema v1 atoms are identified by their exact text plus `chunk_byte_start` / `chunk_byte_end` span.
+
+The supported production builder, `scripts/build_evidence.py`, accepts draft verdicts and emits **schema v2**. Schema v2 preserves the same extractive byte contract and adds a deterministic `atom_id` derived from canonical chunk ID, atom kind, exact byte span, and a short SHA-256 of the exact text. `atom_id` is an address for later references; it is not evidence of semantic truth or model comprehension.
+
+Draft atoms may provide exact quoted text alone when that quote occurs exactly once in the canonical chunk. If the same quote occurs more than once, the binding is **ambiguous** and the draft must provide an **explicit byte span** selecting the intended occurrence. The builder validates that an explicit span reproduces the quoted UTF-8 bytes exactly. A missing quote, wrong span, duplicate/missing chunk verdict, or empty `non_match` reason fails without writing a partial ledger.
+
+```text
+python scripts/build_evidence.py evidence/chunk-manifest.json draft-evidence.json \
+  --out evidence/chunk-evidence.json
+```
+
+The builder fills canonical chunk IDs and hashes from the manifest rather than trusting draft copies. `chunk-evidence.json` remains the coverage authority paired with `chunk-manifest.json`; schema v2 does not create a separate semantic authority.
+
 ## Discrete traversal events
 
 The run event stream must include exactly one `chunk_verified` event per canonical manifest chunk, in manifest order. For 12 emitted chunks there are 12 discrete `chunk_verified` events before final verification. The event stream cannot stop at chunk 4 merely because the answer was found.
 
 ## Human-readable traversal proof
 
-`scripts/traversal_report.py --run-root <run-root>` renders `<run-root>/deliverables/TRAVERSAL_REPORT.md` from the canonical manifest/evidence pair. It maps each chunk ID to its locator, verdict, and every atomic extractive assertion/constraint or non-match reason.
+`scripts/traversal_report.py --run-root <run-root>` renders `<run-root>/deliverables/TRAVERSAL_REPORT.md` from the canonical manifest/evidence pair. The report is grouped by canonical chunk: a compact run summary and chunk index lead to one detail section per chunk, with its locator rendered once and all atomic assertions/constraints or the non-match reason nested beneath it.
 
 `TRAVERSAL_REPORT.md` is deterministic. `scripts/verify_run.py` regenerates the canonical report from the machine evidence and rejects a missing, forged, stale, hand-edited, or noncanonical report.
 

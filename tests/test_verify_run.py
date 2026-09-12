@@ -1,5 +1,10 @@
 import importlib.util
+import json
 from pathlib import Path
+import subprocess
+import sys
+
+import pytest
 
 from tests.run_fixture import REQUIRED_EVIDENCE_FILES, valid_run
 
@@ -204,3 +209,113 @@ def test_dod_output_exposes_terminal_predicates(tmp_path):
         "machine_checks_passed",
     }
     assert required <= set(dod["predicates"])
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["source", "preflight", "plan", "deliverable", "evidence", "qa", "fidelity", "chunking"],
+)
+def test_mapping_contracts_fail_diagnostically(tmp_path, field):
+    module = load_module()
+    run = valid_run(tmp_path)
+    run[field] = []
+    errors = module.validate_run(run)
+    assert any(f"{field} must be an object" in e for e in errors)
+
+
+def test_event_entries_must_be_objects(tmp_path):
+    module = load_module()
+    run = valid_run(tmp_path)
+    run["events"] = ["oops"]
+    errors = module.validate_run(run)
+    assert any("events[1] must be an object" in e for e in errors)
+
+
+def test_reproduced_extraction_timeout_is_a_violation(tmp_path, monkeypatch):
+    module = load_module()
+    source = tmp_path / "source.md"
+    source.write_text("# A\nproof\n", encoding="utf-8")
+    manifest = {
+        "source": {"format": "markdown", "uri": str(source)},
+        "chunking": {"max_bytes": 12000},
+    }
+
+    def timeout(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=args[0], timeout=module.EXTRACTION_TIMEOUT_SECONDS)
+
+    monkeypatch.setattr(module.subprocess, "run", timeout)
+    errors = []
+    module._reproduce_extraction_manifest(source, manifest, errors)
+    assert errors == [
+        f"reproduced extraction timed out after {module.EXTRACTION_TIMEOUT_SECONDS}s"
+    ]
+
+
+def test_cli_rejects_non_object_run_json_without_traceback(tmp_path):
+    ledger = tmp_path / "run.json"
+    ledger.write_text("[]\n", encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "FAIL:" in result.stdout
+    assert "Traceback" not in result.stdout + result.stderr
+    dod = json.loads((tmp_path / "dod.json").read_text(encoding="utf-8"))
+    assert dod["passed"] is False
+
+
+def _upgrade_fixture_ledger_to_v2(run):
+    sys.path.insert(0, str(ROOT / "scripts"))
+    from evidence_atoms import atom_id
+
+    ledger_path = Path(run["_ledger_path"]).parent / run["chunking"]["evidence_ledger"]
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger["schema_version"] = 2
+    for entry in ledger["entries"]:
+        for plural, singular in (("assertions", "assertion"), ("constraints", "constraint")):
+            for atom in entry.get(plural, []):
+                atom["atom_id"] = atom_id(
+                    entry["chunk_id"], singular,
+                    atom["chunk_byte_start"], atom["chunk_byte_end"], atom["text"],
+                )
+    ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
+    return ledger_path, ledger
+
+
+def test_schema_v2_atom_ids_are_accepted(tmp_path):
+    module = load_module()
+    run = valid_run(tmp_path)
+    ledger_path, _ = _upgrade_fixture_ledger_to_v2(run)
+    manifest_path = tmp_path / run["chunking"]["manifest"]
+    from scripts.chunk_common import render_traversal_report
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    (tmp_path / run["chunking"]["traversal_report"]).write_text(
+        render_traversal_report(manifest, ledger), encoding="utf-8"
+    )
+    errors = module.validate_run(run)
+    assert not [e for e in errors if "schema_version" in e or "atom_id" in e], errors
+
+
+def test_schema_v2_forged_atom_id_is_rejected(tmp_path):
+    module = load_module()
+    run = valid_run(tmp_path)
+    ledger_path, ledger = _upgrade_fixture_ledger_to_v2(run)
+    ledger["entries"][0]["assertions"][0]["atom_id"] = "forged"
+    ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
+    errors = module.validate_run(run)
+    assert any("atom_id does not match deterministic identity" in e for e in errors)
+
+
+def test_schema_v2_duplicate_atom_id_is_rejected(tmp_path):
+    module = load_module()
+    run = valid_run(tmp_path)
+    ledger_path, ledger = _upgrade_fixture_ledger_to_v2(run)
+    original = dict(ledger["entries"][0]["assertions"][0])
+    ledger["entries"][0]["constraints"] = [original]
+    ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
+    errors = module.validate_run(run)
+    assert any("duplicate atom_id" in e for e in errors)

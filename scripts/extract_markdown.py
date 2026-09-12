@@ -9,7 +9,7 @@ import re
 
 from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
-HEADING_RE = re.compile(r'^(#{1,3})\s+(.+?)\s*$')
+HEADING_RE = re.compile(r'^(#{1,6})\s+(.+?)\s*$')
 TABLE_SEP_RE = re.compile(r'^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$')
 FENCE_RE = re.compile(r'^\s*(```+|~~~+)')
 
@@ -21,7 +21,7 @@ def _heading_path(stack: list[str | None]) -> list[str]:
 def parse_markdown_blocks(text: str) -> list[Block]:
     lines = text.splitlines(keepends=True)
     blocks: list[Block] = []
-    headings: list[str | None] = [None, None, None]
+    headings: list[str | None] = [None] * 6
     i = 0
 
     while i < len(lines):
@@ -50,7 +50,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
             level = len(heading.group(1))
             title = heading.group(2).strip().strip('#').strip()
             headings[level - 1] = title
-            for idx in range(level, 3):
+            for idx in range(level, len(headings)):
                 headings[idx] = None
             blocks.append(Block(
                 stripped + '\n',

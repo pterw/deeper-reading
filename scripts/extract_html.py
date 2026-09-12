@@ -10,8 +10,13 @@ import re
 
 from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
-BLOCK_TAGS = {'p', 'li', 'blockquote', 'dt', 'dd', 'figcaption', 'caption'}
-SKIP_TAGS = {'script', 'style', 'noscript'}
+HEADING_LEVELS = {f'h{level}': level for level in range(1, 7)}
+SKIP_TAGS = {'script', 'style', 'noscript', 'template'}
+FLOW_BOUNDARY_TAGS = {
+    'address', 'article', 'aside', 'blockquote', 'body', 'dd', 'div', 'dt',
+    'figcaption', 'footer', 'header', 'html', 'li', 'main', 'nav', 'ol', 'p',
+    'section', 'ul',
+}
 
 
 def _clean(text: str) -> str:
@@ -22,11 +27,12 @@ class StructuralHTMLParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
         self.blocks: list[Block] = []
-        self.headings: list[str | None] = [None, None, None]
+        self.headings: list[str | None] = [None] * 6
         self.skip_depth = 0
-        self.capture_tag: str | None = None
-        self.capture: list[str] = []
-        self.capture_heading_path: list[str] = []
+        self.flow: list[str] = []
+        self.flow_heading_path: list[str] = []
+        self.heading_tag: str | None = None
+        self.heading_text: list[str] = []
         self.table_depth = 0
         self.table: list[str] = []
         self.table_heading_path: list[str] = []
@@ -37,14 +43,26 @@ class StructuralHTMLParser(HTMLParser):
     def _path(self) -> list[str]:
         return [value for value in self.headings if value is not None]
 
+    def _flush_flow(self) -> None:
+        text = _clean(''.join(self.flow))
+        if text:
+            self.blocks.append(Block(
+                text + '\n',
+                {'kind': 'text', 'heading_path': list(self.flow_heading_path)},
+            ))
+        self.flow = []
+        self.flow_heading_path = []
+
     def handle_starttag(self, tag: str, attrs) -> None:
         tag = tag.lower()
         if tag in SKIP_TAGS:
+            self._flush_flow()
             self.skip_depth += 1
             return
         if self.skip_depth:
             return
         if tag == 'table':
+            self._flush_flow()
             if self.table_depth == 0:
                 self.table = []
                 self.table_heading_path = self._path()
@@ -53,6 +71,7 @@ class StructuralHTMLParser(HTMLParser):
         if self.table_depth:
             return
         if tag == 'pre':
+            self._flush_flow()
             if self.pre_depth == 0:
                 self.pre = []
                 self.pre_heading_path = self._path()
@@ -60,10 +79,13 @@ class StructuralHTMLParser(HTMLParser):
             return
         if self.pre_depth:
             return
-        if tag in {'h1', 'h2', 'h3'} or tag in BLOCK_TAGS:
-            self.capture_tag = tag
-            self.capture = []
-            self.capture_heading_path = self._path()
+        if tag in HEADING_LEVELS:
+            self._flush_flow()
+            self.heading_tag = tag
+            self.heading_text = []
+            return
+        if tag in FLOW_BOUNDARY_TAGS:
+            self._flush_flow()
 
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
@@ -101,27 +123,22 @@ class StructuralHTMLParser(HTMLParser):
                             atomic_kind='pre',
                         ))
             return
-        if self.capture_tag != tag:
-            return
-        text = _clean(''.join(self.capture))
-        if text:
-            if tag in {'h1', 'h2', 'h3'}:
-                level = int(tag[1])
+        if self.heading_tag == tag:
+            text = _clean(''.join(self.heading_text))
+            if text:
+                level = HEADING_LEVELS[tag]
                 self.headings[level - 1] = text
-                for idx in range(level, 3):
+                for idx in range(level, len(self.headings)):
                     self.headings[idx] = None
-                path = self._path()
                 self.blocks.append(Block(
                     text + '\n',
-                    {'kind': 'heading', 'level': level, 'heading_path': path},
+                    {'kind': 'heading', 'level': level, 'heading_path': self._path()},
                 ))
-            else:
-                self.blocks.append(Block(
-                    text + '\n',
-                    {'kind': tag, 'heading_path': self.capture_heading_path},
-                ))
-        self.capture_tag = None
-        self.capture = []
+            self.heading_tag = None
+            self.heading_text = []
+            return
+        if tag in FLOW_BOUNDARY_TAGS:
+            self._flush_flow()
 
     def handle_data(self, data: str) -> None:
         if self.skip_depth:
@@ -133,14 +150,22 @@ class StructuralHTMLParser(HTMLParser):
         if self.pre_depth:
             self.pre.append(data)
             return
-        if self.capture_tag is not None:
-            self.capture.append(data)
+        if self.heading_tag is not None:
+            self.heading_text.append(data)
+            return
+        if data.strip() and not self.flow:
+            self.flow_heading_path = self._path()
+        self.flow.append(data)
+
+    def finish(self) -> None:
+        self._flush_flow()
 
 
 def extract(source: Path, *, max_bytes: int, source_uri: str | None = None) -> dict:
     parser = StructuralHTMLParser()
     parser.feed(source.read_text(encoding='utf-8-sig'))
     parser.close()
+    parser.finish()
     packed = pack_blocks(parser.blocks, max_bytes)
     return build_manifest(
         source,

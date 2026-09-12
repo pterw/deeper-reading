@@ -68,7 +68,7 @@ def _heading_level(paragraph: ET.Element) -> int | None:
     if style is None:
         return None
     value = style.get(f'{{{W}}}val') or ''
-    match = re.search(r'Heading\s*([123])$', value, re.IGNORECASE)
+    match = re.search(r'Heading\s*([1-6])$', value, re.IGNORECASE)
     if not match:
         return None
     return int(match.group(1))
@@ -90,7 +90,7 @@ def _table_text(table: ET.Element) -> str:
 
 def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
     blocks: list[Block] = []
-    headings: list[str | None] = [None, None, None]
+    headings: list[str | None] = [None] * 6
     block_index = 0
 
     def path() -> list[str]:
@@ -120,7 +120,7 @@ def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
                     level = _heading_level(child)
                     if level is not None:
                         headings[level - 1] = text
-                        for idx in range(level, 3):
+                        for idx in range(level, len(headings)):
                             headings[idx] = None
                     block_index += 1
                     locator = {

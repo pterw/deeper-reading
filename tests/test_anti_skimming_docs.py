@@ -116,3 +116,27 @@ def test_root_skill_states_run_root_is_the_output_proof_boundary():
     body = text("SKILL.md").lower()
     assert "run root" in body
     assert "output" in body and "proof boundary" in body
+
+
+def test_v02_evidence_and_report_docs_match_hardened_runtime():
+    evidence = text("references/evidence.md").lower()
+    deliverable = text("references/deliverable.md").lower()
+    html = text("references/html.md").lower()
+    docx = text("references/docx.md").lower()
+    markdown = text("references/lengthy-markdown.md").lower()
+    readme = text("README.md").lower()
+    skill = text("SKILL.md").lower()
+
+    assert "schema v1" in evidence and "remains accepted" in evidence
+    assert "schema v2" in evidence and "atom_id" in evidence
+    assert "ambiguous" in evidence and "explicit byte span" in evidence
+    assert "grouped by canonical chunk" in deliverable
+    assert "inspect_chunks.py" in deliverable
+    assert all(token in html for token in ("script", "style", "noscript", "template"))
+    assert "non-skipped dom text" in html and "exactly once" in html
+    assert "h1-h6" in html
+    assert "heading1" in docx and "heading6" in docx
+    assert "h1-h6" in markdown
+    assert "receipt-owned" in readme and "install root" in readme
+    assert "schema v2" in readme and "atom_id" in readme
+    assert "human audit" in skill

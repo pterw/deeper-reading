@@ -6,6 +6,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from pathlib import PurePosixPath
+import re
 import shutil
 import uuid
 from typing import Callable
@@ -16,6 +18,32 @@ from .prerequisites import PrerequisiteStatus
 
 class InstallError(RuntimeError):
     pass
+
+
+_WINDOWS_DRIVE_RE = re.compile(r'^[A-Za-z]:')
+
+
+def _managed_relpath(raw: object) -> Path:
+    if not isinstance(raw, str) or not raw.strip():
+        raise InstallError('managed payload path must be a non-empty relative path')
+    normalized = raw.replace('\\', '/')
+    if normalized.startswith('/') or normalized.startswith('//') or _WINDOWS_DRIVE_RE.match(normalized):
+        raise InstallError(f'managed payload path escapes install root: {raw!r}')
+    raw_parts = normalized.split('/')
+    if any(part in {'', '.', '..'} for part in raw_parts):
+        raise InstallError(f'managed payload path escapes install root: {raw!r}')
+    pure = PurePosixPath(normalized)
+    return Path(*pure.parts)
+
+
+def _managed_path(root: Path, raw: object) -> Path:
+    root = Path(root).resolve()
+    candidate = root / _managed_relpath(raw)
+    try:
+        candidate.resolve(strict=False).relative_to(root)
+    except ValueError as exc:
+        raise InstallError(f'managed payload path escapes install root: {raw!r}') from exc
+    return candidate
 
 
 def _sha256(path: Path) -> str:
@@ -61,7 +89,7 @@ def verify_installed(target_root: Path, expected_hashes: dict[str, str]) -> list
     if not (target / 'SKILL.md').is_file():
         errors.append('missing canonical SKILL.md at installed root')
     for rel, expected in expected_hashes.items():
-        path = target / rel
+        path = _managed_path(target, rel)
         if not path.is_file():
             errors.append(f'missing payload file: {rel}')
         elif _sha256(path) != expected:
@@ -88,7 +116,7 @@ def _upgrade_ownership(target_root: Path, expected_hashes: dict[str, str]) -> tu
         raise InstallError('existing target has no managed payload ownership record')
     modified: list[str] = []
     for rel, expected in old_owned.items():
-        path = target_root / rel
+        path = _managed_path(target_root, rel)
         if not path.is_file() or _sha256(path) != expected:
             modified.append(rel)
     if modified:
@@ -99,7 +127,7 @@ def _upgrade_ownership(target_root: Path, expected_hashes: dict[str, str]) -> tu
 
 def _prune_owned_files(stage: Path, stale: set[str]) -> None:
     for rel in sorted(stale, key=lambda x: len(Path(x).parts), reverse=True):
-        path = stage / rel
+        path = _managed_path(stage, rel)
         if path.is_file():
             path.unlink()
     for path in sorted((p for p in stage.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
@@ -258,12 +286,22 @@ def verify_installation(target_root: Path) -> dict:
         return {'passed': False, 'predicates': predicates, 'violations': violations}
 
     hash_ok = True
-    for rel, expected in (receipt.get('payload_hashes') or {}).items():
-        path = target / rel
+    owned = receipt.get('payload_hashes') or {}
+    if not isinstance(owned, dict) or not owned:
+        hash_ok = False
+        violations.append('receipt has no managed payload ownership record')
+        owned = {}
+    for rel, expected in owned.items():
+        try:
+            path = _managed_path(target, rel)
+        except InstallError as exc:
+            hash_ok = False
+            violations.append(str(exc))
+            continue
         if not path.is_file() or _sha256(path) != expected:
             hash_ok = False
             violations.append(f'payload hash mismatch or missing: {rel}')
-    predicates['payload_hashes_match'] = hash_ok and bool(receipt.get('payload_hashes'))
+    predicates['payload_hashes_match'] = hash_ok and bool(owned)
 
     predicates['document_profile_resolved'] = receipt.get('document_status', {}).get('state') == 'ready' and bool(receipt.get('document_profile'))
     if not predicates['document_profile_resolved']:
@@ -306,10 +344,12 @@ def uninstall_skill(target_root: Path, *, force: bool = False) -> dict:
         raise InstallError('installation receipt missing; refusing unmanaged uninstall')
     receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
     owned = receipt.get('payload_hashes') or {}
+    if not isinstance(owned, dict) or not owned:
+        raise InstallError('installation receipt has no managed payload ownership record')
 
     modified: list[str] = []
     for rel, expected in owned.items():
-        path = target / rel
+        path = _managed_path(target, rel)
         if path.is_file() and _sha256(path) != expected:
             modified.append(rel)
     if modified and not force:
@@ -317,7 +357,7 @@ def uninstall_skill(target_root: Path, *, force: bool = False) -> dict:
 
     removed: list[str] = []
     for rel in sorted(owned, key=lambda x: len(Path(x).parts), reverse=True):
-        path = target / rel
+        path = _managed_path(target, rel)
         if path.is_file():
             path.unlink()
             removed.append(rel)

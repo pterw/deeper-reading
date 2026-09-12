@@ -20,6 +20,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 from chunk_common import canonical_run_paths, render_traversal_report
+from evidence_atoms import atom_id as evidence_atom_id
 
 REQUIRED_PREFLIGHT = (
     "skill_read",
@@ -39,6 +40,7 @@ LEGACY_PREFLIGHT = (
 LEGACY_PROCESS_EVENTS = {"systematic_debugging", "brainstorming"}
 
 MAX_VERIFIED_CHUNK_BYTES = 12000
+EXTRACTION_TIMEOUT_SECONDS = 60
 
 EXTRACTOR_SCRIPTS = {
     "html": "extract_html.py",
@@ -100,6 +102,13 @@ def _load_json_file(path: Path, label: str, errors: list[str]) -> dict[str, Any]
     return value
 
 
+def _mapping(value: Any, label: str, errors: list[str]) -> dict[str, Any]:
+    if isinstance(value, dict):
+        return value
+    errors.append(f"{label} must be an object")
+    return {}
+
+
 def _reproduce_extraction_manifest(
     source_path: Path, manifest: dict[str, Any], errors: list[str]
 ) -> None:
@@ -137,7 +146,19 @@ def _reproduce_extraction_manifest(
                 errors.append("chunk manifest PDF backend is required for reproduced extraction")
                 return
             args.extend(["--backend", backend])
-        result = subprocess.run(args, capture_output=True, text=True, check=False)
+        try:
+            result = subprocess.run(
+                args,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=EXTRACTION_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired:
+            errors.append(
+                f"reproduced extraction timed out after {EXTRACTION_TIMEOUT_SECONDS}s"
+            )
+            return
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip()
             errors.append(f"reproduced extraction failed: {detail}")
@@ -152,7 +173,13 @@ def _reproduce_extraction_manifest(
 
 
 def _validate_atomic_extracts(
-    chunk_id: str, kind: str, values: Any, content_bytes: bytes, errors: list[str]
+    chunk_id: str,
+    kind: str,
+    values: Any,
+    content_bytes: bytes,
+    errors: list[str],
+    schema_version: int,
+    seen_atom_ids: set[str],
 ) -> int:
     if not isinstance(values, list):
         errors.append(f"chunk {chunk_id} {kind} must be a list of atomic extractive assertions")
@@ -175,6 +202,21 @@ def _validate_atomic_extracts(
         if content_bytes[start:end] != text.encode("utf-8"):
             errors.append(f"chunk {chunk_id} {singular} {index} extractive span does not match chunk bytes")
             continue
+        if schema_version == 2:
+            raw_atom_id = atom.get("atom_id")
+            if not isinstance(raw_atom_id, str) or not raw_atom_id:
+                errors.append(f"chunk {chunk_id} {singular} {index} atom_id is required for schema v2")
+                continue
+            if raw_atom_id in seen_atom_ids:
+                errors.append(f"duplicate atom_id: {raw_atom_id}")
+                continue
+            expected_atom_id = evidence_atom_id(chunk_id, singular, start, end, text)
+            if raw_atom_id != expected_atom_id:
+                errors.append(
+                    f"chunk {chunk_id} {singular} {index} atom_id does not match deterministic identity"
+                )
+                continue
+            seen_atom_ids.add(raw_atom_id)
         valid += 1
     return valid
 
@@ -187,9 +229,12 @@ def _validate_chunk_evidence(
     Returns (manifest_chunk_ids, evidenced_chunk_ids). Empty lists mean the
     authority could not be established; callers must not infer coverage.
     """
+    if "chunking" not in run:
+        errors.append("chunking contract is required")
+        return [], []
     chunking = run.get("chunking")
     if not isinstance(chunking, dict):
-        errors.append("chunking contract is required")
+        errors.append("chunking must be an object")
         return [], []
 
     raw_manifest_path = chunking.get("manifest")
@@ -216,7 +261,7 @@ def _validate_chunk_evidence(
     if actual_manifest_sha != raw_manifest_sha:
         errors.append("chunking.manifest_sha256 does not match manifest bytes")
 
-    source = run.get("source", {})
+    source = _mapping(run.get("source"), "source", errors)
     run_format = source.get("format")
     run_source_sha = source.get("sha256")
     run_source_uri = source.get("uri")
@@ -305,8 +350,10 @@ def _validate_chunk_evidence(
     if manifest.get("extracted_text_sha256") != _sha256_bytes(bytes(stream)):
         errors.append("chunk manifest extracted_text_sha256 does not match chunk stream")
 
-    if ledger.get("schema_version") != 1:
-        errors.append("chunk evidence schema_version must be 1")
+    schema_version = ledger.get("schema_version")
+    if schema_version not in {1, 2}:
+        errors.append("chunk evidence schema_version must be 1 or 2")
+        schema_version = 0
     if ledger.get("manifest_sha256") != actual_manifest_sha:
         errors.append("chunk evidence manifest_sha256 does not match manifest bytes")
     if ledger.get("source_sha256") != manifest_source.get("sha256"):
@@ -317,6 +364,7 @@ def _validate_chunk_evidence(
         return manifest_ids, []
 
     seen: set[str] = set()
+    seen_atom_ids: set[str] = set()
     evidenced_ids: list[str] = []
     for raw_entry in entries:
         if not isinstance(raw_entry, dict):
@@ -343,8 +391,14 @@ def _validate_chunk_evidence(
             content_bytes = str(chunk.get("content", "")).encode("utf-8")
             assertions = raw_entry.get("assertions", [])
             constraints = raw_entry.get("constraints", [])
-            valid_atoms = _validate_atomic_extracts(chunk_id, "assertions", assertions, content_bytes, errors)
-            valid_atoms += _validate_atomic_extracts(chunk_id, "constraints", constraints, content_bytes, errors)
+            valid_atoms = _validate_atomic_extracts(
+                chunk_id, "assertions", assertions, content_bytes, errors,
+                schema_version, seen_atom_ids,
+            )
+            valid_atoms += _validate_atomic_extracts(
+                chunk_id, "constraints", constraints, content_bytes, errors,
+                schema_version, seen_atom_ids,
+            )
             if valid_atoms == 0:
                 errors.append(
                     f"chunk {chunk_id} must record assertions/constraints or explicit non_match"
@@ -474,7 +528,7 @@ def _node_is_resolved(events: list[dict[str, Any]], node: str) -> bool:
 def validate_run(run: dict[str, Any]) -> list[str]:
     errors: list[str] = []
 
-    source = run.get("source", {})
+    source = _mapping(run.get("source"), "source", errors)
     if not source.get("uri"):
         errors.append("source.uri is required")
     if source.get("format") not in {"html", "pdf", "docx", "markdown"}:
@@ -488,26 +542,26 @@ def validate_run(run: dict[str, Any]) -> list[str]:
         errors.append("fidelity contract is required")
         fidelity = {}
     else:
-        fidelity = run.get("fidelity", {})
+        fidelity = _mapping(run.get("fidelity"), "fidelity", errors)
     if fidelity.get("preserved") is not True:
         errors.append("source fidelity must be preserved")
     substitutions = fidelity.get("substitutions", [])
     if not isinstance(substitutions, list):
         errors.append("fidelity.substitutions must be a list")
 
-    preflight = run.get("preflight", {})
+    preflight = _mapping(run.get("preflight"), "preflight", errors)
     for key in REQUIRED_PREFLIGHT:
         if preflight.get(key) is not True:
             errors.append(f"preflight.{key} must be true")
 
-    plan = run.get("plan", {})
+    plan = _mapping(run.get("plan"), "plan", errors)
     nodes = plan.get("nodes") or []
     if not plan.get("path"):
         errors.append("plan.path is required")
     if not isinstance(nodes, list) or not nodes:
         errors.append("plan.nodes must contain at least one node")
 
-    deliverable = run.get("deliverable", {})
+    deliverable = _mapping(run.get("deliverable"), "deliverable", errors)
     if not deliverable.get("requested"):
         errors.append("deliverable.requested is required")
     if deliverable.get("provided") is not True:
@@ -527,13 +581,20 @@ def validate_run(run: dict[str, Any]) -> list[str]:
         if not plan_path.is_file():
             errors.append(f"plan.path does not exist: {plan_path}")
 
-    manifest_chunk_ids, evidenced_chunk_ids = _validate_chunk_evidence(run, base_dir, errors)
+    if "chunking" not in run:
+        errors.append("chunking contract is required")
+        manifest_chunk_ids, evidenced_chunk_ids = [], []
+    elif not isinstance(run.get("chunking"), dict):
+        errors.append("chunking must be an object")
+        manifest_chunk_ids, evidenced_chunk_ids = [], []
+    else:
+        manifest_chunk_ids, evidenced_chunk_ids = _validate_chunk_evidence(run, base_dir, errors)
 
     if "qa" not in run:
         errors.append("qa contract is required")
         qa = {}
     else:
-        qa = run.get("qa", {})
+        qa = _mapping(run.get("qa"), "qa", errors)
     required_qa = qa.get("required", [])
     passed_qa = qa.get("passed", [])
     if not isinstance(required_qa, list) or not isinstance(passed_qa, list):
@@ -543,7 +604,7 @@ def validate_run(run: dict[str, Any]) -> list[str]:
         for check in missing_qa:
             errors.append(f"qa missing required check: {check}")
 
-    evidence = run.get("evidence", {})
+    evidence = _mapping(run.get("evidence"), "evidence", errors)
     for key in REQUIRED_EVIDENCE:
         value = evidence.get(key)
         if not isinstance(value, str) or not value.strip():
@@ -569,8 +630,18 @@ def validate_run(run: dict[str, Any]) -> list[str]:
         if not deliverable_path.is_file():
             errors.append(f"deliverable path does not exist: {deliverable_path}")
 
-    events: list[dict[str, Any]] = run.get("events", [])
-    types = _event_types(run)
+    raw_events = run.get("events", [])
+    if not isinstance(raw_events, list):
+        errors.append("events must be a list")
+        events: list[dict[str, Any]] = []
+    else:
+        events = []
+        for index, event in enumerate(raw_events, start=1):
+            if not isinstance(event, dict):
+                errors.append(f"events[{index}] must be an object")
+                continue
+            events.append(event)
+    types = [str(event.get("type", "")) for event in events]
 
     verified_events = [event for event in events if event.get("type") == "chunk_verified"]
     verified_event_ids = [str(event.get("chunk_id", "")) for event in verified_events]
@@ -708,7 +779,13 @@ def validate_run(run: dict[str, Any]) -> list[str]:
 
 
 def build_dod(run: dict[str, Any], errors: list[str]) -> dict[str, Any]:
-    events = run.get("events", [])
+    raw_events = run.get("events", [])
+    events = [event for event in raw_events if isinstance(event, dict)] if isinstance(raw_events, list) else []
+    source = run.get("source") if isinstance(run.get("source"), dict) else {}
+    preflight = run.get("preflight") if isinstance(run.get("preflight"), dict) else {}
+    plan = run.get("plan") if isinstance(run.get("plan"), dict) else {}
+    fidelity = run.get("fidelity") if isinstance(run.get("fidelity"), dict) else {}
+    deliverable = run.get("deliverable") if isinstance(run.get("deliverable"), dict) else {}
     verification_errors = [e for e in errors if "verification" in e]
     plan_errors = [e for e in errors if e.startswith("plan.") or "resolved plan node" in e]
     failure_errors = [
@@ -737,11 +814,11 @@ def build_dod(run: dict[str, Any], errors: list[str]) -> dict[str, Any]:
     ]
 
     predicates = {
-        "source_identity_verified": run.get("source", {}).get("identity_verified") is True,
+        "source_identity_verified": source.get("identity_verified") is True,
         "skill_preflight_complete": all(
-            run.get("preflight", {}).get(k) is True for k in REQUIRED_PREFLIGHT
+            preflight.get(k) is True for k in REQUIRED_PREFLIGHT
         ),
-        "plan_present": bool(run.get("plan", {}).get("path")) and bool(run.get("plan", {}).get("nodes")),
+        "plan_present": bool(plan.get("path")) and bool(plan.get("nodes")),
         "plan_resolved": not plan_errors,
         "output_containment_valid": not containment_errors,
         "source_coverage_complete": not any(
@@ -755,10 +832,10 @@ def build_dod(run: dict[str, Any], errors: list[str]) -> dict[str, Any]:
             )
         ),
         "failure_protocol_respected": not failure_errors,
-        "source_fidelity_preserved": run.get("fidelity", {}).get("preserved") is True and not fidelity_errors,
+        "source_fidelity_preserved": fidelity.get("preserved") is True and not fidelity_errors,
         "format_qa_complete": not any(e.startswith("qa ") or e.startswith("qa.") for e in errors),
-        "requested_deliverable_produced": run.get("deliverable", {}).get("provided") is True and not deliverable_errors,
-        "deliverable_provided": run.get("deliverable", {}).get("provided") is True and not deliverable_errors,
+        "requested_deliverable_produced": deliverable.get("provided") is True and not deliverable_errors,
+        "deliverable_provided": deliverable.get("provided") is True and not deliverable_errors,
         "evidence_complete": not any(e.startswith("evidence.") for e in errors),
         "no_unresolved_required_failures": not any("unresolved failed node" in e for e in errors),
         "fresh_final_verification": any(
@@ -786,9 +863,22 @@ def main() -> int:
         print("FAIL: dod.json must be written to <run-root>/dod.json")
         return 1
 
-    run = json.loads(ledger.read_text(encoding="utf-8"))
-    run["_ledger_path"] = str(ledger)
-    errors = validate_run(run)
+    try:
+        loaded = json.loads(ledger.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        loaded = None
+        errors = [f"run ledger is not valid JSON: {exc}"]
+    else:
+        errors = []
+
+    if not isinstance(loaded, dict):
+        run: dict[str, Any] = {"_ledger_path": str(ledger)}
+        if loaded is not None:
+            errors.append("run ledger must contain a JSON object")
+    else:
+        run = loaded
+        run["_ledger_path"] = str(ledger)
+        errors.extend(validate_run(run))
     dod = build_dod(run, errors)
 
     canonical_dod.parent.mkdir(parents=True, exist_ok=True)

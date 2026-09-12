@@ -51,3 +51,10 @@ def test_failure_recovery_is_package_owned():
     assert "failure_diagnosed" in text
     assert "alternative_designed" in text
     assert "Superpowers" not in text
+
+
+def test_root_docs_do_not_overclaim_evidence_semantics():
+    skill = read("SKILL.md").lower()
+    evidence = read("references/evidence.md").lower()
+    assert "semantic truth" in skill or "semantic truth" in evidence
+    assert "model comprehension" in skill or "model comprehension" in evidence
