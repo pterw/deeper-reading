@@ -4,7 +4,8 @@ This reference defines the package-owned document state machine.
 
 ## 1. Establish the traversal contract
 
-Read root `SKILL.md`, resolve the runtime profile, read the required references/format guide, and invoke the package-owned `exhaustive-document-traversal` module.
+Read root `SKILL.md`, enter the bundled module for the current lifecycle state,
+and let that module load its owned references before its gate.
 
 For substantial work, create a **document-specific** `<run-root>/plan.md` through `planning-document-traversal` before execution. Plans must enumerate source acquisition, extraction, canonical chunk generation, exhaustive chunk traversal, deliverables, failure boundaries, and final verification.
 

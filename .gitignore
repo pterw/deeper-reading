@@ -19,6 +19,7 @@ build/
 dist/
 *.egg-info/
 *.zip
+*.tgz
 
 # Local run outputs / scratch evidence
 runs/

@@ -4,7 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/pterw/deeper-reading?color=blue&style=flat-square)](https://github.com/pterw/deeper-reading/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/pterw/deeper-reading/ci.yml?branch=main&style=flat-square)](https://github.com/pterw/deeper-reading/actions)
-[![Tests](https://img.shields.io/badge/tests-261%20passed-brightgreen?style=flat-square)](tests/)
+[![Tests](https://img.shields.io/badge/tests-270%20passed-brightgreen?style=flat-square)](tests/)
 [![Spec](https://img.shields.io/badge/spec-agentskills.io-8a2be2?style=flat-square)](https://agentskills.io)
 [![Dependencies](https://img.shields.io/badge/dependencies-zero%20external-success?style=flat-square)](references/dependencies.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
@@ -264,7 +264,40 @@ For PDF/DOCX visual fidelity, use the runtime's resolved visual/structural QA ca
 
 # Installation & Quick Start
 
-### 1. One-Command Automatic Installation
+## npm CLI (recommended)
+
+Install the command-line package:
+
+```bash
+npm install -g deeper-reading
+```
+
+This installs the CLI package only. It does not write to an Agent Skills directory. Inspect the resolved target and runtime state without mutation:
+
+```bash
+npx deeper-reading doctor --target auto --scope user --json
+```
+
+Install the skill only with the explicit command:
+
+```bash
+deeper-reading install --target auto --scope user --json
+```
+
+The Node installer itself uses Node.js 20 or newer and does not require Python. The installed extraction and verification scripts require Python 3.10 through 3.13. The npm package has no lifecycle hook that writes into an Agent Skills directory. The existing Python installer remains supported; see [Standalone Installer Usage](installer/USAGE.md).
+
+| Command | Purpose |
+| :--- | :--- |
+| `doctor` | Report target, package, document-profile, and Python runtime readiness without mutation. |
+| `install` | Install the manifest-owned payload transactionally; add `--dry-run` to preview. |
+| `verify` | Re-hash installed files and verify receipt, discovery, and runtime readiness. |
+| `uninstall` | Remove receipt-owned files; add `--force` only to remove modified managed files. |
+
+All commands accept `--target`, `--scope`, `--document-profile`, and `--json`. Project scope accepts `--project-dir PATH` and defaults it to the current directory. Blocked or failed operations exit with status 2. Use `--help` or `<command> --help` for the complete option list.
+
+## Python installer
+
+### One-command automatic installation
 
 Clone the repository and run the auto-detecting installer wrapper:
 
@@ -497,6 +530,7 @@ Already-verified upstream work stays verified.
 
 ```text
 deeper-reading/
+├── package.json
 ├── SKILL.md
 ├── VERSION
 ├── MANIFEST.json
@@ -524,6 +558,12 @@ deeper-reading/
 │   ├── traversal_report.py
 │   └── verify_run.py
 ├── installer/
+│   ├── node/
+│   │   ├── adapters.js
+│   │   ├── cli.js
+│   │   ├── core.js
+│   │   ├── manifest.js
+│   │   └── prerequisites.js
 │   ├── install.py
 │   ├── install.sh
 │   ├── install.ps1
@@ -534,6 +574,8 @@ deeper-reading/
 │   ├── USAGE.md
 │   └── adapters/
 └── tests/
+  ├── node/
+  └── npm/
 ```
 
 `SKILL.md` remains the canonical Agent Skill entrypoint at the package root.
@@ -590,6 +632,14 @@ A 20-page paper can contain the answer on page 6, the caveat on page 14, and the
 # License
 
 MIT. See [`LICENSE`](LICENSE).
+
+## v0.2.1 phase-gated reference loading
+
+References now load at the lifecycle gate that requires them instead of all at activation. The root `SKILL.md` keeps lifecycle order and routes to the bundled module for the current state; each module owns the references and helper guidance for its own boundary -- activation and contract establishment, planning, extraction, traversal, failure diagnosis and recovery, and verification -- and loads them before its gate.
+
+Phase receipts are recorded in `evidence/skill-preflight.md`. `required_references_read` remains the final compatibility aggregate over those receipts.
+
+The v0.2.0 machine evidence contract is unchanged: `run.json`, `dod.json`, event names, manifest and evidence schemas, verifier predicates, canonical chunk construction, and source-bound assertions all behave as before.
 
 ## v0.2 hardening and evidence substrate
 

@@ -4,6 +4,27 @@ The canonical skill entrypoint remains `../SKILL.md`. The installer copies the m
 
 The normal runtime is sovereign and **standalone**: the package includes its own process skills plus bundled extractors for PDF, DOCX, HTML, and Markdown. No external process framework is required.
 
+## Node CLI
+
+Node.js 20 or newer can install, inspect, verify, and uninstall the skill without a Python installer runtime. Installing the npm package does not install the skill:
+
+```text
+npm install -g deeper-reading
+```
+
+Use an explicit command for every Agent Skills mutation:
+
+```text
+npx deeper-reading doctor --target auto --scope user --json
+deeper-reading install --target auto --scope user --json
+deeper-reading verify --target auto --scope user --json
+deeper-reading uninstall --target auto --scope user --json
+```
+
+`doctor` is read-only. `install --dry-run` computes the transaction without writing it. `uninstall --force` permits removal of modified receipt-owned files; unowned files remain preserved. For project scope, pass `--scope project --project-dir PATH`; omitted `--project-dir` defaults to the current directory. `--document-profile` accepts `standalone` or `oai-native`. `--json` emits structured output. Blocked or failed operations exit with status 2.
+
+The Node installer does not require Python. The installed extraction and verification scripts require Python 3.10 through 3.13, and `doctor` reports installer readiness separately from Python runtime readiness. No npm lifecycle hook writes into an Agent Skills directory. The Python commands below remain supported.
+
 ## Inspect first
 
 ```text

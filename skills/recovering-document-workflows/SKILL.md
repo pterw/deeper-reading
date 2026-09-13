@@ -9,6 +9,11 @@ description: Use when diagnosed recovery branches are exhausted or an architectu
 
 Recovery redesign is a terminal branch of diagnosis, not the first fallback. `alternative_designed` is allowed only after `paths_exhausted` and `disclosure`.
 
+## Phase inputs
+
+Before alternative design or plan revision, re-check
+[`failure-recovery`](../../references/failure-recovery.md).
+
 ## Exhausted-path sequence
 
 1. Enter `architecture_stop` when the current path is no longer viable.

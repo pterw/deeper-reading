@@ -9,6 +9,12 @@ description: Use when a written traversal plan is ready and document nodes must 
 
 Execute **one bounded** plan node at a time. A node advances only after its output is inspected and its proving evidence is recorded.
 
+## Phase inputs
+
+Before the first traversal node, read
+[`evidence`](../../references/evidence.md) and
+[`anti-patterns`](../../references/anti-patterns.md).
+
 ## Loop
 
 1. Start the smallest unresolved node.

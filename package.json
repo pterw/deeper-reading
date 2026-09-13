@@ -1,0 +1,41 @@
+{
+  "name": "deeper-reading",
+  "version": "0.2.1",
+  "description": "Exhaustive document traversal and anti-skimming for agentic workflows",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "deeper-reading": "installer/node/cli.js"
+  },
+  "files": [
+    "LICENSE",
+    "MANIFEST.json",
+    "README.md",
+    "SKILL.md",
+    "VERSION",
+    "installer/node",
+    "references",
+    "scripts",
+    "skills",
+    "!**/__pycache__",
+    "!**/*.pyc"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/node/*.test.js",
+    "test:pack-smoke": "node --test tests/npm/npm-pack-smoke.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pterw/deeper-reading.git"
+  },
+  "homepage": "https://github.com/pterw/deeper-reading#readme",
+  "bugs": {
+    "url": "https://github.com/pterw/deeper-reading/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -19,10 +19,26 @@ Before document processing, establish and record:
 ```
 
 - `skill_read`: root `SKILL.md` was read in full.
-- `required_references_read`: every reference required by the selected source/format path was read in full.
+- `required_references_read`: every reference required by the selected
+  source/format path was read in full before its authoritative gate. The final
+  value is the compatibility aggregate over the phase receipts below.
 - `helper_help_read`: bundled extractor/verifier help needed for the run was read before first use.
 - `runtime_profile_resolved`: `standalone` or `oai-native` is explicit.
 - `traversal_plan_ready`: the package-owned planning phase produced the written traversal plan before substantial execution.
+
+## Phase receipts
+
+`evidence/skill-preflight.md` records each selected-path reference before its
+gate is crossed:
+
+| Reference path | Required gate | Completed |
+|---|---|---|
+| `references/prerequisites.md` | Activation and contract establishment | yes |
+
+Add one row for every reference selected by the actual source, format, failure,
+and verification path. A missing or late row keeps
+`required_references_read` false. The table is human-auditable evidence; it
+does not add a machine schema or event type.
 
 ## Package-owned process sequence
 

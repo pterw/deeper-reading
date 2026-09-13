@@ -11,13 +11,14 @@ PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 
 EXCLUDED_PARTS = {'__pycache__', '.pytest_cache', '.git'}
 EXCLUDED_NAMES = {'.install-receipt.json'}
+EXCLUDED_SUFFIXES = {'.pyc', '.tgz'}
 
 
 def _included(path: Path, root: Path) -> bool:
     rel = path.relative_to(root)
     if any(part in EXCLUDED_PARTS for part in rel.parts):
         return False
-    if path.name in EXCLUDED_NAMES or path.suffix == '.pyc':
+    if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES:
         return False
     return path.is_file()
 
