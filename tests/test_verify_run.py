@@ -244,9 +244,9 @@ def test_reproduced_extraction_timeout_is_a_violation(tmp_path, monkeypatch):
         raise subprocess.TimeoutExpired(cmd=args[0], timeout=module.EXTRACTION_TIMEOUT_SECONDS)
 
     monkeypatch.setattr(module.subprocess, "run", timeout)
-    errors = []
-    module._reproduce_extraction_manifest(source, manifest, errors)
-    assert errors == [
+    findings = []
+    module._reproduce_extraction_manifest(source, manifest, findings)
+    assert [f.message for f in findings] == [
         f"reproduced extraction timed out after {module.EXTRACTION_TIMEOUT_SECONDS}s"
     ]
 
