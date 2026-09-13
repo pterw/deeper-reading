@@ -258,7 +258,18 @@ The portable runtime payload bundles extraction tools rather than assuming `/hom
 
 Markdown splitting follows `#`, `##`, and `###` structure while keeping fenced code blocks and Markdown tables atomic. Oversized atomic blocks remain intact rather than being split just to satisfy a nominal chunk-size target.
 
-For PDF/DOCX visual fidelity, use the runtime's resolved visual/structural QA capabilities in addition to text traversal.
+## Extractor capability matrix
+
+The traversal and evidence contract is identical for all four formats: one canonical manifest, exactly one byte-anchored verdict per chunk, ordered `chunk_verified` events, one deterministic `TRAVERSAL_REPORT.md`, one `verify_run.py` pass. What differs is extraction depth -- and the package fails closed rather than silently degrading.
+
+| Format | Backend | Heading provenance | Atomic structures | Standalone limits |
+|---|---|---|---|---|
+| Markdown | pure stdlib | H1-H6 | fenced code blocks, tables | none beyond text traversal |
+| HTML | pure stdlib (`html.parser`) | H1-H6 | tables, `<pre>`; drops `script`/`style`/`noscript`/`template` | no CSS, generated content, or figure interpretation |
+| DOCX | pure stdlib (`zipfile` + ElementTree) | Heading1-Heading6 | -- | no layout, tracked changes, comments, or field values |
+| PDF | external backend required | page locators | -- | text only: no OCR for scanned pages, no equations/figures; encrypted files need `--password` |
+
+PDF is the one format that needs an external text backend (`pypdf`, `pymupdf`, `pdfplumber`, or the `pdftotext` binary), auto-detected in that order. When no backend exists the extractor fails closed with a named error instead of degrading silently. For PDF/DOCX visual fidelity, use the runtime's resolved visual/structural QA capabilities in addition to text traversal, and record what the backend actually proved in `evidence/format-qa.md`.
 
 ---
 
@@ -282,6 +293,12 @@ Install the skill only with the explicit command:
 
 ```bash
 deeper-reading install --target auto --scope user --json
+```
+
+No global install yet? `npx` runs the packaged CLI directly, and the npm package carries the full manifest-owned payload -- so this single call installs the skill without any lifecycle hook:
+
+```bash
+npx deeper-reading install --target auto --scope user --json
 ```
 
 The Node installer itself uses Node.js 20 or newer and does not require Python. The installed extraction and verification scripts require Python 3.10 through 3.13. The npm package has no lifecycle hook that writes into an Agent Skills directory. The existing Python installer remains supported; see [Standalone Installer Usage](installer/USAGE.md).
@@ -471,6 +488,45 @@ Exit code `0` means the machine-checkable traversal predicates passed.
 That includes reproducing the canonical chunk universe from the original bound source rather than blindly trusting the supplied manifest.
 
 It does **not** waive required visual/structural QA for PDF/DOCX content that cannot be proven from extracted text alone.
+
+---
+
+# Finding your deliverables
+
+Every substantial run emits all proof into one **run root** -- the folder the traversal names as its output boundary. One document, one run root; a new document means a new folder. Nothing is ever written outside it.
+
+```text
+<run-root>\
+├── run.json                          <- the run ledger; binds every path below
+├── plan.md                           <- the pre-committed traversal plan
+├── dod.json                          <- verifier-written predicates (passed/violations)
+├── deliverables\                     <- START HERE
+│   ├── TRAVERSAL_REPORT.md           <- chunk-by-chunk proof ledger (human-readable)
+│   ├── PLAN_AUDIT_FINDINGS.md        <- the requested audit/ADR, traceable to chunks
+│   └── FINAL_VERIFICATION.md         <- hash-bound proof contract
+└── evidence\
+    ├── chunk-manifest.json           <- canonical chunk universe
+    ├── chunk-evidence.json           <- one verdict per chunk, schema v2
+    ├── skill-preflight.md            <- preflight booleans + phase receipts
+    ├── source-manifest.md            <- bound source identity
+    ├── failure-ledger.md             <- failure_diagnosed records
+    ├── format-qa.md                  <- declared QA rows
+    └── verification-log.txt          <- fresh proving commands
+```
+
+`deliverables/TRAVERSAL_REPORT.md` is the human-readable proof: grouped by canonical chunk, with the locator and every atomic assertion nested beneath it. It is rendered from the machine evidence pair and rejected if hand-edited.
+
+## The proof contract
+
+`deliverables/FINAL_VERIFICATION.md` records the run root inside itself, the source SHA-256, the chunk and verdict counts, and a SHA-256 digest of every emitted artifact. Anyone can re-prove the run with one command from the deeper-reading root:
+
+```bash
+python scripts/verify_run.py /path/to/run/run.json
+```
+
+The verifier re-extracts the source, requires the reproduced chunk universe to match exactly, re-hashes every chunk against its `content_sha256`, regenerates `TRAVERSAL_REPORT.md` and requires byte equality, then rewrites `dod.json`. Exit 0 with all declared deliverables present is the passing state.
+
+A completed reference run ships with the repository at `tests/fixtures/deepseek-first-run/` (70 chunks, 192 assertions) and the meta-test pattern is documented in `installer/USAGE.md`.
 
 ---
 
