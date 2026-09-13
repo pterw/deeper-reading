@@ -9,6 +9,11 @@ description: Use when a document-workflow node fails, produces unexpected output
 
 A failed node must produce `failure_diagnosed` **before** repair, re-chunking, sibling traversal, fallback traversal, or downstream work.
 
+## Phase inputs
+
+After a node fails and before diagnosis or repair, read
+[`failure-recovery`](../../references/failure-recovery.md).
+
 ## Diagnosis
 
 Record the failed node, exact operation, observed error/output, affected source/chunk, and the smallest evidenced root cause. Compare against a known-good neighboring node or the governing format contract when useful.

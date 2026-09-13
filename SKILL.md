@@ -32,20 +32,25 @@ START
 
 The **run root is the output and proof boundary**: source manifests, chunk evidence, traversal proof, requested deliverables, and verification evidence must resolve inside that run namespace.
 
-## Required package-owned skills
+## Phase-gated loading
 
-Read the applicable module in full before that phase:
+The root owns lifecycle order. Read the bundled module for the current state in
+full; that module owns the references and helper guidance required before its
+gate. Do not preload modules for states that have not been reached.
 
-- `skills/exhaustive-document-traversal/SKILL.md`
-- `skills/planning-document-traversal/SKILL.md`
-- `skills/executing-document-traversal/SKILL.md`
-- `skills/debugging-document-workflows/SKILL.md`
-- `skills/recovering-document-workflows/SKILL.md`
-- `skills/verifying-exhaustive-traversal/SKILL.md`
+| Current lifecycle state | Bundled module |
+|---|---|
+| Enter and establish the contract | `skills/exhaustive-document-traversal/SKILL.md` |
+| Write the traversal plan | `skills/planning-document-traversal/SKILL.md` |
+| Acquire and extract the selected format | Reuse `skills/exhaustive-document-traversal/SKILL.md` and load its selected-format inputs |
+| Execute bounded traversal nodes | `skills/executing-document-traversal/SKILL.md` |
+| Diagnose a failed node | `skills/debugging-document-workflows/SKILL.md` |
+| Redesign after exhausted recovery paths | `skills/recovering-document-workflows/SKILL.md` |
+| Prove final completion | `skills/verifying-exhaustive-traversal/SKILL.md` |
 
-## Required references
-
-Read these in full when this skill activates: `references/prerequisites.md`, `references/runtime-profiles.md`, `references/control-flow.md`, `references/dependencies.md`, `references/source-acquisition.md`, `references/deliverable.md`, `references/evidence.md`, `references/definition-of-done.md`, `references/failure-recovery.md`, `references/anti-patterns.md`, plus the applicable format reference and `references/lengthy-markdown.md` for large Markdown.
+Return to this table only when the lifecycle state changes. A module may
+require a later module after its own transition succeeds; it may not move a
+later module or reference earlier.
 
 ## Execution invariants
 
@@ -63,5 +68,7 @@ Read these in full when this skill activates: `references/prerequisites.md`, `re
 ## Definition of Done
 
 Done requires the exact requested deliverable, a complete atomic evidence ledger for every canonical chunk, deterministic `TRAVERSAL_REPORT.md`, resolved failure/recovery ordering, required format QA, fresh verification after the last material event, and `scripts/verify_run.py` exit 0 on current evidence.
+
+The terminal contracts are `references/deliverable.md`, `references/evidence.md`, and `references/definition-of-done.md`; the last of these is the predicate authority for this gate. Document-dependency resolution is owned by `references/dependencies.md`.
 
 A useful answer found early is never permission to stop traversal.

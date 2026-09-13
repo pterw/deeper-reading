@@ -143,6 +143,16 @@ The verifier's reproduction scratch may live in an OS temporary directory becaus
 
 `run.json` also identifies source identity/fidelity, runtime/document profile, skill preflight, written plan, execution events, format QA, and requested deliverable. Evidence paths are resolved relative to `run.json` and must land at the canonical run-root locations.
 
+### Skill preflight receipts
+
+`evidence/skill-preflight.md` records each selected-path reference before its
+gate is crossed. Use exactly these row fields: `Reference path`, `Required gate`,
+and `Completed`.
+
+The final `required_references_read` aggregate cannot be true when a
+selected-path row is missing, incomplete, or recorded after its gate. The table
+is human-auditable evidence; it adds no machine schema or event type.
+
 Core event vocabulary includes `plan_written`, `execution_started`, `node_started`, `chunk_verified`, `node_passed`, `node_failed`, `failure_diagnosed`, `node_rechunked`, `node_recovered`, `node_superseded`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, `verification_started`, `verification_passed`, and `done`.
 
 `evidence/failure-ledger.md` exists even for clean runs (`No failures.` is sufficient). `evidence/verification-log.txt` records fresh final proving actions after the last material change.

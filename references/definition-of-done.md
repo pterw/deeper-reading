@@ -9,7 +9,7 @@ A run is DONE only when every required predicate below has fresh evidence.
 | Predicate | Proof required |
 |---|---|
 | Source identity is established | `evidence/source-manifest.md` records URI/file identity, format, authority, and version/date when material. |
-| Skill preflight is complete | `evidence/skill-preflight.md` records `skill_read`, `required_references_read`, `helper_help_read`, `runtime_profile_resolved`, and `traversal_plan_ready`; `run.json` references the current preflight state. |
+| Skill preflight is complete | `evidence/skill-preflight.md` records `skill_read`, `required_references_read`, `helper_help_read`, `runtime_profile_resolved`, and `traversal_plan_ready`, plus complete phase receipts (a `Reference path` / `Required gate` / `Completed` row) for every reference selected by the actual path; `run.json` references the current preflight state. |
 | Plan exists and is resolved | `<run-root>/plan.md` exists; every required plan node is completed or explicitly superseded by an approved revised plan. |
 | Output containment is valid | Every emitted machine artifact resolves under `<run-root>/evidence/`, every generated user file resolves under `<run-root>/deliverables/`, the traversal report is `deliverables/TRAVERSAL_REPORT.md`, and `run.json`/`plan.md`/`dod.json` occupy their canonical root paths. |
 | Source coverage is complete | The **extractor manifest is the authoritative coverage universe**. Every emitted chunk has **exactly one** bound entry in `evidence/chunk-evidence.json`: atomic extractive assertions/constraints bound to exact chunk bytes, or explicit `non_match` with a reason. |

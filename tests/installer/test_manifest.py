@@ -51,3 +51,9 @@ def test_manifest_parser_rejects_path_traversal(tmp_path: Path):
     (root / 'SKILL.md').write_text('---\nname: deeper-reading\ndescription: Use when testing.\n---\n', encoding='utf-8')
     errors = validate_manifest(load_manifest(path), root)
     assert any('traversal' in error.lower() or 'outside' in error.lower() for error in errors)
+
+
+def test_npm_control_plane_is_not_installed_as_skill_payload():
+    manifest = json.loads((ROOT / 'MANIFEST.json').read_text(encoding='utf-8'))
+    assert 'package.json' not in manifest['payload']
+    assert 'installer/node' not in manifest['payload']

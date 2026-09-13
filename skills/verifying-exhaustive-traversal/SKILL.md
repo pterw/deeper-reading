@@ -9,6 +9,13 @@ description: Use when all planned document traversal nodes are resolved and comp
 
 `done` is reachable only after fresh verification reproduces the canonical source traversal and proves every required predicate from current bytes.
 
+## Phase inputs
+
+Before final verification, re-check
+[`definition-of-done`](../../references/definition-of-done.md) and
+[`evidence`](../../references/evidence.md), then run
+`python ../../scripts/verify_run.py --help` before the final verifier call.
+
 ## Final verification
 
 1. Re-extract the original bound source with the bundled extractor.
