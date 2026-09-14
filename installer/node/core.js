@@ -16,6 +16,7 @@ import { randomUUID } from "node:crypto";
 import { withTargetLock } from "./locking.js";
 import {
   InstallerError,
+  physicalPath,
   managedPath,
   payloadHashes,
   sha256File,
@@ -197,7 +198,7 @@ function copyPayload(packageRoot, stage, manifest) {
 
 function prepare(options) {
   const packageRoot = path.resolve(options.packageRoot);
-  const targetRoot = path.resolve(options.targetRoot);
+  const targetRoot = physicalPath(options.targetRoot);
   const errors = validateManifest(options.manifest, packageRoot);
   if (errors.length) throw new InstallerError(errors.join("; "));
   if (options.documentStatus.state !== "ready") {
@@ -315,7 +316,7 @@ function installLocked(options) {
 }
 
 export function verifyInstallation(targetRoot) {
-  const target = path.resolve(targetRoot);
+  const target = physicalPath(targetRoot);
   const predicates = {
     canonical_root: false,
     receipt_written: false,
