@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
+import tempfile
 from zipfile import ZIP_DEFLATED, ZipFile
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
@@ -12,10 +14,16 @@ PACKAGE_ROOT = Path(__file__).resolve().parents[1]
 EXCLUDED_PARTS = {'__pycache__', '.pytest_cache', '.git'}
 EXCLUDED_NAMES = {'.install-receipt.json'}
 EXCLUDED_SUFFIXES = {'.pyc', '.tgz'}
+RELEASE_FILES = {'LICENSE', 'MANIFEST.json', 'README.md', 'SKILL.md', 'VERSION',
+                 'CHANGELOG.md', 'CONTRIBUTING.md', 'package.json',
+                 'requirements-optional.txt'}
+RELEASE_DIRECTORIES = {'installer', 'references', 'scripts', 'skills'}
 
 
 def _included(path: Path, root: Path) -> bool:
     rel = path.relative_to(root)
+    if rel.as_posix() not in RELEASE_FILES and rel.parts[0] not in RELEASE_DIRECTORIES:
+        return False
     if any(part in EXCLUDED_PARTS for part in rel.parts):
         return False
     if path.name in EXCLUDED_NAMES or path.suffix in EXCLUDED_SUFFIXES:
@@ -25,17 +33,38 @@ def _included(path: Path, root: Path) -> bool:
 
 def build_distribution(package_root: Path, output_path: Path) -> Path:
     root = Path(package_root).resolve()
-    output = Path(output_path).resolve()
+    if not (root / 'SKILL.md').is_file():
+        raise ValueError('package root must contain SKILL.md')
+    requested = Path(output_path).absolute()
+    if requested.is_symlink():
+        raise ValueError('archive output must not be a symbolic link')
+    output = requested.resolve()
+    if output.suffix.lower() != '.zip':
+        raise ValueError('archive output must have a .zip extension')
+    if output.is_relative_to(root) and output.relative_to(root).parts[0] != 'dist':
+        raise ValueError('archives inside the package must be written under dist/')
+    files = []
+    for path in sorted(root.rglob('*')):
+        if not _included(path, root):
+            continue
+        if not path.resolve().is_relative_to(root) or path.is_symlink():
+            raise ValueError(f'release file must be a regular contained file: {path}')
+        if output.exists() and path.samefile(output):
+            raise ValueError(f'archive would overwrite source: {path}')
+        files.append(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     prefix = 'deeper-reading'
-    with ZipFile(output, 'w', compression=ZIP_DEFLATED) as zf:
-        for path in sorted(root.rglob('*')):
-            if not _included(path, root):
-                continue
-            if path.resolve() == output:
-                continue
-            rel = path.relative_to(root).as_posix()
-            zf.write(path, f'{prefix}/{rel}')
+    with tempfile.NamedTemporaryFile(dir=output.parent, prefix='.deeper-reading-',
+                                     suffix='.zip', delete=False) as handle:
+        temporary = Path(handle.name)
+    try:
+        with ZipFile(temporary, 'w', compression=ZIP_DEFLATED) as zf:
+            for path in files:
+                rel = path.relative_to(root).as_posix()
+                zf.write(path, f'{prefix}/{rel}')
+        os.replace(temporary, output)
+    finally:
+        temporary.unlink(missing_ok=True)
     return output
 
 
@@ -92,5 +121,9 @@ def main(argv=None) -> int:
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except (OSError, ValueError) as exc:
+        print(f'FAIL: {exc}', file=sys.stderr)
+        raise SystemExit(1)
 

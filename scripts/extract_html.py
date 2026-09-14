@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from html.parser import HTMLParser
 from pathlib import Path
+from script_io import run_cli
 import re
 
 from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
@@ -194,4 +195,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

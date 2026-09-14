@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from script_io import run_cli, write_text_atomic
 
 from chunk_common import canonical_run_paths, render_traversal_report
 
@@ -34,11 +35,12 @@ def main() -> int:
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(render_traversal_report(manifest, evidence), encoding="utf-8")
+    if not isinstance(manifest, dict) or not isinstance(evidence, dict):
+        raise ValueError("manifest and evidence must be JSON objects")
+    write_text_atomic(out, render_traversal_report(manifest, evidence), inputs=[manifest_path, evidence_path], root=args.run_root)
     print(f"Wrote traversal report to {out}")
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

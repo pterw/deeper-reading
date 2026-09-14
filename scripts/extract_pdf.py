@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+from importlib.metadata import version
 from pathlib import Path
+from script_io import run_cli
 import shutil
 import subprocess
+import re
 
 from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
@@ -25,10 +28,10 @@ def _extract_pypdf(source: Path, password: str | None) -> list[str]:
 def _extract_pymupdf(source: Path, password: str | None) -> list[str]:
     import fitz
     doc = fitz.open(str(source))
-    if doc.needs_pass:
-        if password is None or not doc.authenticate(password):
-            raise RuntimeError('PDF is encrypted; provide --password')
     try:
+        if doc.needs_pass:
+            if password is None or not doc.authenticate(password):
+                raise RuntimeError('PDF is encrypted; provide --password')
         return [page.get_text('text') or '' for page in doc]
     finally:
         doc.close()
@@ -48,7 +51,10 @@ def _extract_pdftotext(source: Path, password: str | None) -> list[str]:
     if password:
         args.extend(['-upw', password])
     args.extend([str(source), '-'])
-    result = subprocess.run(args, capture_output=True, check=False)
+    try:
+        result = subprocess.run(args, capture_output=True, check=False, timeout=45)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError('pdftotext timed out after 45s') from exc
     if result.returncode != 0:
         stderr = result.stderr.decode('utf-8', errors='replace')
         raise RuntimeError(f'pdftotext failed: {stderr.strip()}')
@@ -111,24 +117,38 @@ def _page_blocks(pages: list[str]) -> list[Block]:
 
 
 def _pack_pages(blocks: list[Block], max_bytes: int) -> list[dict]:
-    nonempty = [block for block in blocks if block.text]
-    packed = pack_blocks(nonempty, max_bytes)
-    present_pages: set[int] = set()
-    for item in packed:
-        locators = item.get('locator', {}).get('blocks', [])
-        pages = sorted({p for loc in locators for p in loc.get('pages', [])})
-        item['locator']['pages'] = pages
-        present_pages.update(pages)
+    if max_bytes < 1:
+        raise ValueError('max_bytes must be >= 1')
+    packed = []
     for block in blocks:
-        page = block.locator['pages'][0]
-        if page not in present_pages:
+        if block.text:
+            fragments = pack_blocks([block], max_bytes)
+            for item in fragments:
+                item['locator']['pages'] = block.locator['pages']
+            packed.extend(fragments)
+        else:
             packed.append({
                 'content': '',
                 'locator': dict(block.locator),
                 'oversize_atomic': False,
             })
-    packed.sort(key=lambda item: min(item.get('locator', {}).get('pages', [10**9])))
     return packed
+
+
+def backend_provenance(selected: str) -> dict:
+    if selected == 'pdftotext':
+        try:
+            result = subprocess.run([shutil.which('pdftotext'), '-v'], capture_output=True,
+                                    text=True, check=False, timeout=5)
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError('pdftotext version probe timed out') from exc
+        match = re.search(r'pdftotext version\s+(\S+)', result.stdout + result.stderr)
+        if result.returncode != 0 or not match:
+            raise RuntimeError('could not establish pdftotext version')
+        revision = match[1]
+    else:
+        revision = version({'pypdf':'pypdf', 'pymupdf':'PyMuPDF', 'pdfplumber':'pdfplumber'}[selected])
+    return {'backend': f'{selected} {revision}', 'format':'pdf', 'capabilities':['text']}
 
 
 def extract(
@@ -149,7 +169,7 @@ def extract(
     else:
         pages = _extract_pdftotext(source, password)
     packed = _pack_pages(_page_blocks(pages), max_bytes)
-    return build_manifest(
+    manifest = build_manifest(
         source,
         'pdf',
         packed,
@@ -158,6 +178,8 @@ def extract(
         source_uri=source_uri,
         backend=selected,
     )
+    manifest['extraction'] = backend_provenance(selected)
+    return manifest
 
 
 def main() -> int:
@@ -185,4 +207,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

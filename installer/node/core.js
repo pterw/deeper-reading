@@ -13,6 +13,7 @@ import {
 } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { withTargetLock } from "./locking.js";
 import {
   InstallerError,
   managedPath,
@@ -222,8 +223,12 @@ export function buildInstallPlan(options) {
 }
 
 export function installSkill(options) {
-  const prepared = prepare(options);
   if (options.dryRun) return buildInstallPlan(options);
+  return withTargetLock(options.targetRoot, (targetRoot) => installLocked({ ...options, targetRoot }));
+}
+
+function installLocked(options) {
+  const prepared = prepare(options);
   const { packageRoot, targetRoot, expectedHashes, hadTarget, staleOwned } = prepared;
   const parent = path.dirname(targetRoot);
   mkdirSync(parent, { recursive: true });
@@ -392,6 +397,10 @@ export function verifyInstallation(targetRoot) {
 }
 
 export function uninstallSkill(targetRoot, options = {}) {
+  return withTargetLock(targetRoot, (target) => uninstallLocked(target, options));
+}
+
+function uninstallLocked(targetRoot, options) {
   const target = path.resolve(targetRoot);
   const loaded = requireOwnedInstallation(loadOwnedInstallation(target), {
     missing: "installation receipt missing; refusing unmanaged operation",

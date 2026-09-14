@@ -140,6 +140,7 @@ def test_mutation_deletes_install_receipt(tmp_path):
         '/tmp/outside.txt',
         '../outside.txt',
         'C:/outside.txt',
+        'C:foo',
         r'C:\outside.txt',
         r'\\server\share\outside.txt',
     ],

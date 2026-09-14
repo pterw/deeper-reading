@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+from script_io import run_cli
 import re
 import zipfile
 import xml.etree.ElementTree as ET
@@ -177,4 +178,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

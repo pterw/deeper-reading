@@ -21,7 +21,11 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 from chunk_common import canonical_run_paths, render_traversal_report
 from evidence_atoms import atom_id as evidence_atom_id
-from verification_findings import Finding
+if __package__:
+    from .verification_findings import Finding, codes_of, group_by_predicate
+else:
+    from verification_findings import Finding, codes_of, group_by_predicate
+from script_io import run_cli, validate_output, write_text_atomic
 
 REQUIRED_PREFLIGHT = (
     "skill_read",
@@ -182,6 +186,10 @@ def _reproduce_extraction_manifest(
                 "reproduction.timeout", "source_coverage_complete",
                 f"reproduced extraction timed out after {EXTRACTION_TIMEOUT_SECONDS}s",
             ))
+            return
+        except OSError as exc:
+            findings.append(Finding('reproduction.spawn.failed', 'source_coverage_complete',
+                                    f'reproduced extraction could not start: {exc}'))
             return
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip()
@@ -398,6 +406,10 @@ def _validate_chunk_evidence(
 
     if source_path is not None and source_path.is_file():
         _reproduce_extraction_manifest(source_path, manifest, findings)
+
+    if run_format == 'pdf' and run.get('extraction') != manifest.get('extraction'):
+        findings.append(Finding('extraction.manifest.mismatch', 'format_qa_complete',
+                                'run extraction provenance must match the reproduced PDF manifest'))
 
     if manifest.get("schema_version") != 1:
         findings.append(Finding(
@@ -663,9 +675,12 @@ def _validate_chunk_evidence(
 
 def _validate_run_root_paths(run: dict[str, Any], base_dir: Path, findings: list[Finding]) -> None:
     run_root = _resolved(base_dir)
+    def at_canonical_path(actual: Path, expected: Path) -> bool:
+        return _is_within(actual, run_root) and _same_path(actual, expected)
+
     canonical = canonical_run_paths(run_root)
     ledger_path = _resolved(Path(str(run.get("_ledger_path", run_root / "run.json"))))
-    if not _same_path(ledger_path, run_root / "run.json"):
+    if not at_canonical_path(ledger_path, run_root / "run.json"):
         findings.append(Finding(
             "containment.ledger", "output_containment_valid",
             "run ledger must be <run-root>/run.json",
@@ -674,7 +689,7 @@ def _validate_run_root_paths(run: dict[str, Any], base_dir: Path, findings: list
     plan = run.get("plan", {})
     raw_plan = plan.get("path") if isinstance(plan, dict) else None
     if isinstance(raw_plan, str) and raw_plan.strip():
-        if not _same_path(_resolve_path(run_root, raw_plan), run_root / "plan.md"):
+        if not at_canonical_path(_resolve_path(run_root, raw_plan), run_root / "plan.md"):
             findings.append(Finding(
                 "containment.plan", "output_containment_valid",
                 "plan.path must be <run-root>/plan.md",
@@ -684,21 +699,21 @@ def _validate_run_root_paths(run: dict[str, Any], base_dir: Path, findings: list
     if isinstance(chunking, dict):
         raw_manifest = chunking.get("manifest")
         if isinstance(raw_manifest, str) and raw_manifest.strip():
-            if not _same_path(_resolve_path(run_root, raw_manifest), canonical["manifest"]):
+            if not at_canonical_path(_resolve_path(run_root, raw_manifest), canonical["manifest"]):
                 findings.append(Finding(
                     "containment.manifest", "output_containment_valid",
                     "chunking.manifest must be <run-root>/evidence/chunk-manifest.json",
                 ))
         raw_ledger = chunking.get("evidence_ledger")
         if isinstance(raw_ledger, str) and raw_ledger.strip():
-            if not _same_path(_resolve_path(run_root, raw_ledger), canonical["chunk_evidence"]):
+            if not at_canonical_path(_resolve_path(run_root, raw_ledger), canonical["chunk_evidence"]):
                 findings.append(Finding(
                     "containment.evidence_ledger", "output_containment_valid",
                     "chunking.evidence_ledger must be <run-root>/evidence/chunk-evidence.json",
                 ))
         raw_report = chunking.get("traversal_report")
         if isinstance(raw_report, str) and raw_report.strip():
-            if not _same_path(_resolve_path(run_root, raw_report), canonical["traversal_report"]):
+            if not at_canonical_path(_resolve_path(run_root, raw_report), canonical["traversal_report"]):
                 findings.append(Finding(
                     "containment.traversal_report", "output_containment_valid",
                     "chunking.traversal_report must be <run-root>/deliverables/TRAVERSAL_REPORT.md",
@@ -721,7 +736,7 @@ def _validate_run_root_paths(run: dict[str, Any], base_dir: Path, findings: list
             if not isinstance(raw, str) or not raw.strip():
                 continue
             actual = _resolve_path(run_root, raw)
-            if _same_path(actual, expected):
+            if at_canonical_path(actual, expected):
                 continue
             if key == "plan_status":
                 findings.append(Finding(
@@ -744,14 +759,14 @@ def _validate_run_root_paths(run: dict[str, Any], base_dir: Path, findings: list
     if isinstance(deliverable, dict):
         raw_report = deliverable.get("traversal_report")
         if isinstance(raw_report, str) and raw_report.strip():
-            if not _same_path(_resolve_path(run_root, raw_report), canonical["traversal_report"]):
+            if not at_canonical_path(_resolve_path(run_root, raw_report), canonical["traversal_report"]):
                 findings.append(Finding(
                     "containment.deliverable.report", "output_containment_valid",
                     "deliverable.traversal_report must be <run-root>/deliverables/TRAVERSAL_REPORT.md",
                 ))
         for raw_path in deliverable.get("paths", []) or []:
             path = _resolve_path(run_root, raw_path)
-            if not _is_within(path, run_root / "deliverables"):
+            if not (_is_within(path, run_root) and _is_within(path, run_root / "deliverables")):
                 findings.append(Finding(
                     "containment.deliverable.paths", "output_containment_valid",
                     "deliverable path must live under <run-root>/deliverables",
@@ -771,6 +786,17 @@ def _node_is_resolved(events: list[dict[str, Any]], node: str) -> bool:
 
 
 def validate_findings(run: dict[str, Any]) -> list[Finding]:
+    """Malformed input fails with findings rather than an unhandled exception."""
+    if not isinstance(run, dict):
+        return [Finding('json.ledger.type', 'machine_checks_passed', 'run ledger must contain a JSON object')]
+    try:
+        return _validate_findings(run)
+    except (TypeError, ValueError, OSError, RecursionError) as exc:
+        return [Finding('ledger.validation.error', 'machine_checks_passed',
+                        f'run validation failed: {type(exc).__name__}: {exc}')]
+
+
+def _validate_findings(run: dict[str, Any]) -> list[Finding]:
     findings: list[Finding] = []
 
     source = _mapping(run.get("source"), "source", findings)
@@ -779,12 +805,12 @@ def validate_findings(run: dict[str, Any]) -> list[Finding]:
             "source.uri.required", "source_identity_verified",
             "source.uri is required",
         ))
-    if source.get("format") not in {"html", "pdf", "docx", "markdown"}:
+    if source.get("format") not in ("html", "pdf", "docx", "markdown"):
         findings.append(Finding(
             "source.format.invalid", "source_identity_verified",
             "source.format must be html, pdf, docx, or markdown",
         ))
-    if source.get("authority") not in {"primary", "approved-secondary"}:
+    if source.get("authority") not in ("primary", "approved-secondary"):
         findings.append(Finding(
             "source.authority.invalid", "source_identity_verified",
             "source.authority must be primary or approved-secondary",
@@ -794,6 +820,8 @@ def validate_findings(run: dict[str, Any]) -> list[Finding]:
             "source.identity.unverified", "source_identity_verified",
             "source.identity_verified must be true",
         ))
+
+    _check_backend_provenance(run, findings)
 
     if "fidelity" not in run:
         findings.append(Finding(
@@ -1167,18 +1195,75 @@ def _as_findings(run: dict[str, Any], items: list[Any]) -> list[Finding]:
     holding display text still get full predicate truth without any
     message-to-code guessing.
     """
-    if items and isinstance(items[0], Finding):
+    if items and all(isinstance(item, Finding) for item in items):
         return list(items)
+    if any(not isinstance(item, str) for item in items):
+        raise TypeError('expected a homogeneous list of findings or display messages')
     findings = validate_findings(run)
-    assert [f.message for f in findings] == list(items), (
-        "legacy messages no longer match validate_findings output")
+    if [f.message for f in findings] != list(items):
+        raise ValueError('legacy messages no longer match validate_findings output')
     return findings
 
 
-def build_dod(run: dict[str, Any], errors: list[Any]) -> dict[str, Any]:
-    from verification_findings import codes_of, group_by_predicate
+BACKEND_CAPABILITIES = {
+    "pypdf": ("text",),
+    "pdftotext": ("text",),
+    # These adapters currently return text only, even when a library offers more.
+    "pymupdf": ("text",),
+    "pdfplumber": ("text",),
+}
 
+
+def _check_backend_provenance(run: dict[str, Any], findings: list[Finding]) -> None:
+    source = run.get('source')
+    if not isinstance(source, dict) or source.get("format") != "pdf":
+        return
+    extraction = run.get("extraction")
+    if not isinstance(extraction, dict) or not isinstance(extraction.get('backend'), str) or not extraction['backend'].strip():
+        findings.append(Finding(
+            "extraction.backend.missing", "format_qa_complete",
+            "extraction.backend is required for pdf runs", detail="pdf",
+        ))
+        return
+    backend = str(extraction["backend"]).split()[0].lower()
+    caps = BACKEND_CAPABILITIES.get(backend, ())
+    if not caps:
+        findings.append(Finding('extraction.backend.unknown', 'format_qa_complete',
+                                f'unsupported recorded PDF backend: {backend}', detail=backend))
+    if extraction.get('format') != 'pdf':
+        findings.append(Finding('extraction.format.mismatch', 'format_qa_complete',
+                                'extraction.format must be pdf for PDF runs'))
+    declared = extraction.get('capabilities')
+    if not isinstance(declared, list) or declared != list(caps):
+        findings.append(Finding('extraction.capabilities.mismatch', 'format_qa_complete',
+                                f'extraction.capabilities must match the text adapter: {list(caps)}'))
+    qa = run.get("qa", {})
+    required = qa.get('required', []) if isinstance(qa, dict) else []
+    passed = qa.get('passed', []) if isinstance(qa, dict) else []
+    checks = (required if isinstance(required, list) else []) + (passed if isinstance(passed, list) else [])
+    seen = set()
+    for check in checks:
+        if not isinstance(check, str):
+            findings.append(Finding('extraction.qa.type', 'format_qa_complete', 'PDF QA checks must be strings'))
+            continue
+        if check in seen:
+            continue
+        seen.add(check)
+        if "ocr" in check.lower() and "ocr" not in caps:
+            findings.append(Finding(
+                "extraction.qa.mismatch", "format_qa_complete",
+                f"QA check {check} requires a capability the recorded backend "
+                f"{backend} does not declare",
+                detail=check,
+            ))
+
+
+def build_dod(run: dict[str, Any], errors: list[Any]) -> dict[str, Any]:
     findings = _as_findings(run, errors)
+    return _build_dod_from_findings(run, findings)
+
+
+def _build_dod_from_findings(run: dict[str, Any], findings: list[Finding]) -> dict[str, Any]:
     by_predicate = group_by_predicate(findings)
     codes = codes_of(findings)
 
@@ -1214,12 +1299,15 @@ def build_dod(run: dict[str, Any], errors: list[Any]) -> dict[str, Any]:
         ) and not failed("fresh_final_verification"),
         "machine_checks_passed": not findings,
     }
-    return {
+    result = {
         "passed": not findings,
         "violations": [f.message for f in findings],
         "codes": codes,
         "predicates": predicates,
     }
+    if 'extraction' in run:
+        result['extraction'] = run['extraction']
+    return result
 
 
 def main() -> int:
@@ -1231,6 +1319,7 @@ def main() -> int:
     ledger = args.ledger.resolve()
     run_root = ledger.parent
     canonical_dod = canonical_run_paths(run_root)["dod"]
+    validate_output(canonical_dod, inputs=[ledger], root=run_root)
     if args.write_dod is not None and not _same_path(args.write_dod, canonical_dod):
         print("FAIL: dod.json must be written to <run-root>/dod.json")
         return 1
@@ -1245,7 +1334,7 @@ def main() -> int:
 
     if not isinstance(loaded, dict):
         run: dict[str, Any] = {"_ledger_path": str(ledger)}
-        if loaded is not None:
+        if not errors:
             findings = [Finding(
                 "json.ledger.type", "machine_checks_passed",
                 "run ledger must contain a JSON object",
@@ -1259,10 +1348,9 @@ def main() -> int:
         run = loaded
         run["_ledger_path"] = str(ledger)
         findings = validate_findings(run)
-    dod = build_dod(run, findings)
+    dod = _build_dod_from_findings(run, findings)
 
-    canonical_dod.parent.mkdir(parents=True, exist_ok=True)
-    canonical_dod.write_text(json.dumps(dod, indent=2) + "\n", encoding="utf-8")
+    write_text_atomic(canonical_dod, json.dumps(dod, indent=2) + "\n", inputs=[ledger], root=run_root)
 
     if findings:
         for f in findings:
@@ -1274,4 +1362,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

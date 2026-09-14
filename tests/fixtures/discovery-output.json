@@ -1,0 +1,22 @@
+[
+  {"host":"copilot","output":"[{\"name\":\"deeper-reading\",\"description\":\"Read\",\"source\":\"user\",\"path\":\"/skills/deeper-reading/SKILL.md\",\"enabled\":true}]","state":"verified"},
+  {"host":"copilot","output":"[{\"name\":\"deeper-reading-extra\",\"enabled\":true}]","state":"missing"},
+  {"host":"copilot","output":"[{\"name\":\"prefix-deeper-reading\",\"enabled\":true}]","state":"missing"},
+  {"host":"copilot","output":"[{\"name\":\"other\",\"description\":\"deeper-reading\",\"path\":\"/deeper-reading\",\"enabled\":true}]","state":"missing"},
+  {"host":"copilot","output":"[{\"name\":\"deeper-reading\",\"enabled\":false}]","state":"missing"},
+  {"host":"copilot","output":"[{\"name\":\"deeper-reading\",\"enabled\":\"true\"}]","state":"failed"},
+  {"host":"copilot","output":"[{\"name\":\"deeper-reading\"}]","state":"failed"},
+  {"host":"copilot","output":"[]","state":"missing"},
+  {"host":"copilot","output":"null","state":"failed"},
+  {"host":"copilot","output":"No skills found. Search directory: /skills/deeper-reading","state":"failed"},
+  {"host":"gemini","output":"Discovered Agent Skills:\n\ndeep-reading [Enabled]\n  Description: unrelated\n  Location:    /skills/deeper-reading\n\ndeეპer [Disabled]\n  Description: other\n  Location:    /skills/other\n\n","state":"missing"},
+  {"host":"gemini","output":"Discovered Agent Skills:\n\ndeeper-reading [Enabled]\n  Description: Read documents\n  Location:    /skills/deeper-reading/SKILL.md\n\n","state":"verified"},
+  {"host":"gemini","output":"\u001b[1mDiscovered Agent Skills:\u001b[22m\n\n\u001b[1mdeeper-reading\u001b[22m \u001b[32m[Enabled]\u001b[39m\n  Description: Read\n  Location:    /skills/deeper-reading\n\n","state":"verified"},
+  {"host":"gemini","output":"Discovered Agent Skills:\n\ndeeper-reading-extra [Enabled]\n  Description: deeper-reading\n  Location:    /skills/deeper-reading\n\n","state":"missing"},
+  {"host":"gemini","output":"Discovered Agent Skills:\n\ndeeper-reading [Disabled]\n  Description: Read\n  Location:    /skills/deeper-reading\n\n","state":"missing"},
+  {"host":"gemini","output":"Discovered Agent Skills:\n\ndeeper-reading [Enabled]\n","state":"failed"},
+  {"host":"gemini","output":"No skills discovered.\n","state":"missing"},
+  {"host":"gemini","output":"No skills found. Search directory: /skills/deeper-reading","state":"failed"},
+  {"host":"gemini","output":"deeper-reading","state":"failed"},
+  {"host":"gemini","output":"","state":"failed"}
+]

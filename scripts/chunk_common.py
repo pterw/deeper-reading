@@ -9,6 +9,10 @@ import json
 from pathlib import Path
 import re
 from typing import Any, Iterable
+try:
+    from script_io import validate_output, write_text_atomic
+except ModuleNotFoundError:
+    from .script_io import validate_output, write_text_atomic
 
 try:
     from chunk_view import block_kinds, compact_locator
@@ -39,7 +43,9 @@ def manifest_output_path(*, out: Path | None, run_root: Path | None) -> Path:
     if (out is None) == (run_root is None):
         raise ValueError("exactly one of out or run_root is required")
     if run_root is not None:
-        return canonical_run_paths(run_root)["manifest"]
+        result = canonical_run_paths(run_root)["manifest"]
+        validate_output(result, root=run_root)
+        return result
     assert out is not None
     return out
 
@@ -348,5 +354,5 @@ def render_traversal_report(manifest: dict[str, Any], ledger: dict[str, Any]) ->
 
 
 def write_manifest(manifest: dict[str, Any], out: Path) -> None:
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+    write_text_atomic(out, json.dumps(manifest, indent=2, ensure_ascii=False) + '\n',
+                      inputs=[Path(manifest['source']['path'])])

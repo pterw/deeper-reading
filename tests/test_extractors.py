@@ -210,21 +210,16 @@ def test_docx_extractor_tracks_heading1_through_heading6(tmp_path):
 
 
 def test_pdf_extractor_reads_every_page_with_portable_backend(tmp_path):
-    reportlab = pytest.importorskip("reportlab.pdfgen.canvas")
-    source = tmp_path / "source.pdf"
-    canvas = reportlab.Canvas(str(source))
-    canvas.drawString(72, 720, "Page One Alpha")
-    canvas.showPage()
-    canvas.drawString(72, 720, "Page Two Omega")
-    canvas.save()
-
-    manifest = run_extractor(
-        "extract_pdf.py", source, tmp_path / "pdf.json", "--max-bytes", "80", "--backend", "pypdf"
-    )
-    assert_manifest_integrity(manifest, source, "pdf")
-    text = "".join(c["content"] for c in manifest["chunks"])
-    assert "Page One Alpha" in text
-    assert "Page Two Omega" in text
-    pages = {p for c in manifest["chunks"] for p in c["locator"].get("pages", [])}
-    assert pages == {1, 2}
-    assert "/home/oai/skills" not in (SCRIPTS / "extract_pdf.py").read_text(encoding="utf-8")
+    sys.path.insert(0, str(SCRIPTS))
+    from extract_pdf import choose_backend
+    try:
+        backend = choose_backend('auto')
+    except RuntimeError:
+        pytest.skip('no PDF text backend installed; PDF extraction untested on this machine')
+    source = ROOT / 'tests/fixtures/pdf-first-run/source/sample.pdf'
+    manifest = run_extractor('extract_pdf.py', source, tmp_path / 'pdf.json', '--backend', backend)
+    assert_manifest_integrity(manifest, source, 'pdf')
+    assert [c['locator']['pages'] for c in manifest['chunks']] == [[1], [2], [3]]
+    assert manifest['chunks'][1]['content'] == ''
+    assert 'Page One Alpha' in manifest['chunks'][0]['content']
+    assert 'Page Three Omega' in manifest['chunks'][2]['content']

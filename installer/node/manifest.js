@@ -3,6 +3,8 @@ import {
   accessSync,
   constants,
   existsSync,
+  lstatSync,
+  readlinkSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -15,17 +17,22 @@ export class InstallerError extends Error {}
 const EXCLUDED_DIRECTORIES = new Set(["__pycache__", ".pytest_cache"]);
 const WINDOWS_DRIVE = /^[A-Za-z]:/;
 
-function physicalPath(candidate) {
-  let probe = path.resolve(candidate);
-  const suffix = [];
-  while (!existsSync(probe)) {
-    const parent = path.dirname(probe);
-    if (parent === probe) break;
-    suffix.unshift(path.basename(probe));
-    probe = parent;
+export function physicalPath(candidate, links = 0) {
+  const absolute = path.resolve(candidate);
+  if (links > 40) throw new InstallerError(`too many symbolic links: ${absolute}`);
+  try {
+    if (lstatSync(absolute).isSymbolicLink()) {
+      // Resolve dangling aliases too: the target can temporarily be absent
+      // between backup and replacement while its sibling lock remains held.
+      return physicalPath(path.resolve(path.dirname(absolute), readlinkSync(absolute)), links + 1);
+    }
+    return realpathSync.native(absolute);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    const parent = path.dirname(absolute);
+    if (parent === absolute) return absolute;
+    return path.join(physicalPath(parent, links), path.basename(absolute));
   }
-  const physicalBase = existsSync(probe) ? realpathSync.native(probe) : probe;
-  return path.resolve(physicalBase, ...suffix);
 }
 
 function isInside(root, candidate) {
