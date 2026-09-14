@@ -2,6 +2,7 @@ import { accessSync, constants } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { discoveryState } from "./discovery.js";
 
 export const TARGET_NAMES = ["auto", "generic-agents", "copilot", "codex", "gemini", "claude"];
 const SKILL_NAME = "deeper-reading";
@@ -52,14 +53,27 @@ export function getAdapter(name, options = {}) {
       return path.resolve(projectDir, projectBase, "skills", SKILL_NAME);
     },
     discoveryVerify(skillName) {
-      const command = name === "copilot" ? ["copilot", "skill", "list"]
+      const command = name === "copilot" ? ["copilot", "skill", "list", "--json"]
         : name === "gemini" ? ["gemini", "skills", "list"] : null;
       if (!command || !this.detect())
         return { state: "not-available", evidence: [`${name} has no available stable discovery command`] };
-      const result = spawnSync(command[0], command.slice(1), { encoding: "utf8", timeout: 30000 });
-      const evidence = [`exit=${result.status}`, result.stdout.trim(), result.stderr.trim()];
-      if (result.status !== 0) return { state: "failed", evidence };
-      return { state: result.stdout.includes(skillName) ? "verified" : "missing", evidence };
+      let result;
+      try {
+        result = spawnSync(command[0], command.slice(1), {
+          encoding: "utf8", timeout: 30000, env: options.env || process.env
+        });
+      } catch (error) {
+        return { state: "failed", evidence: [`${error.code || error.name}: ${error.message}`] };
+      }
+      const stdout = result.stdout == null ? "" : String(result.stdout);
+      const stderr = result.stderr == null ? "" : String(result.stderr);
+      const evidence = [`exit=${result.status}`, stdout.trim(), stderr.trim()];
+      if (result.error) evidence.push(`${result.error.code || result.error.name}: ${result.error.message}`);
+      if (result.signal) evidence.push(`signal=${result.signal}`);
+      if (result.error || result.signal || result.status !== 0) return { state: "failed", evidence };
+      const state = discoveryState(name, stdout, skillName);
+      if (state === "failed") evidence.push(`unrecognized ${command.join(" ")} output`);
+      return { state, evidence };
     }
   };
 }

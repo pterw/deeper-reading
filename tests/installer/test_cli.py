@@ -11,6 +11,7 @@ CLI = ROOT/'installer'/'install.py'
 def run_cli(tmp_path: Path, *args):
     env = os.environ.copy()
     env['HOME'] = str(tmp_path/'home')
+    env['USERPROFILE'] = str(tmp_path/'home')
     (tmp_path/'home').mkdir(exist_ok=True)
     return subprocess.run([sys.executable, str(CLI), *args], cwd=ROOT, env=env, capture_output=True, text=True)
 

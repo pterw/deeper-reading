@@ -23,6 +23,29 @@ Owned by this package:
 
 No external process framework is required for normal runtime orchestration.
 
+## PDF provenance
+
+For a PDF run, copy the extractor manifest's `extraction` object into `run.json`:
+
+```json
+{"extraction": {"backend": "pypdf 5.3.0", "format": "pdf", "capabilities": ["text"]}}
+```
+
+Use the actual backend and version emitted locally, not the example value.
+The verifier requires this object, compares it with the independently reproduced
+manifest, rejects unknown backends or overstated capabilities, and includes the
+record in `dod.json`. Text backends cannot justify an `ocr-verified` QA claim.
+Richer QA still needs separately recorded evidence from an approved provider;
+it is not inferred from a text library's possible capabilities.
+
+PDF manifests made before 0.2.3 must be regenerated along with their evidence:
+chunks now respect page boundaries, including empty pages, and record backend
+versions. Changing a backend/version can change text extraction and requires
+fresh evidence. Extraction accepts `--password` for encrypted files, but final
+verification currently has no password input; it fails closed rather than
+storing credentials in a ledger. Use an explicitly approved decrypted source
+with its own identity and fidelity record if final verification is required.
+
 The standalone extractors guarantee basic text traversal only. When a task depends on visual layout, equations, figures, scanned text, forms, comments, tracked changes, or other structure they cannot establish, the run must either use an approved enhancement profile/provider or fail closed before claiming that capability was verified.
 
 ## oai-native

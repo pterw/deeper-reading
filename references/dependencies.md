@@ -42,6 +42,17 @@ Never infer syntax from earlier conversations or from similarly named helpers.
 
 ## standalone basic extraction
 
+HTML, Markdown and DOCX use the Python standard library. PDF text extraction
+requires an optional backend: `pypdf`, `PyMuPDF`, `pdfplumber`, or an existing
+`pdftotext` executable, in that detection order. A bundled command does not
+mean a bundled PDF parser. `requirements-optional.txt` declares `pypdf` for
+users who choose to install a Python backend (`python -m pip install -r
+requirements-optional.txt`). An already installed pdftotext needs no additional
+Python package. No dependency is installed automatically.
+
+The implemented PDF adapters expose text only. Library support for geometry
+does not establish layout QA; none of these extraction paths proves OCR.
+
 Basic portable text extraction is bundled with this skill in `scripts/extract_html.py`, `scripts/extract_markdown.py`, `scripts/extract_docx.py`, and `scripts/extract_pdf.py`. Do not require an external document skill merely to perform basic exhaustive text extraction and chunk-manifest generation.
 
 External document skills are **advanced capability providers** for operations such as visual rendering, OCR, forms, conversion, or other format-specific QA not supplied by the bundled core. Resolve them only when the requested task actually requires those capabilities.

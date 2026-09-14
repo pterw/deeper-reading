@@ -77,6 +77,7 @@ def test_install_refuses_existing_unmanaged_skill_root(tmp_path):
         '/tmp/outside.txt',
         '../outside.txt',
         'C:/outside.txt',
+        'C:foo',
         r'C:\outside.txt',
         r'\\server\share\outside.txt',
     ],

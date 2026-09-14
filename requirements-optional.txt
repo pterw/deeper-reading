@@ -1,0 +1,2 @@
+# Optional PDF text backend. HTML, Markdown and DOCX use the standard library.
+pypdf

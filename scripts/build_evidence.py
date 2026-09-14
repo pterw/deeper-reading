@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+from script_io import run_cli, write_text_atomic
 from typing import Any
 
 from evidence_atoms import EvidenceBindingError, bind_atom
@@ -136,8 +137,7 @@ def main(argv: list[str] | None = None) -> int:
     except (EvidenceBindingError, OSError) as exc:
         print(f"FAIL: {exc}")
         return 1
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    write_text_atomic(args.out, json.dumps(ledger, indent=2, ensure_ascii=False) + "\n", inputs=[args.manifest, args.draft])
     assertions = sum(len(entry.get("assertions", [])) for entry in ledger["entries"])
     constraints = sum(len(entry.get("constraints", [])) for entry in ledger["entries"])
     print(
@@ -148,4 +148,4 @@ def main(argv: list[str] | None = None) -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(run_cli(main))

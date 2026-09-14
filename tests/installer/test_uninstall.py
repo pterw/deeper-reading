@@ -53,6 +53,7 @@ def test_force_uninstall_removes_modified_owned_file_but_not_unowned(tmp_path):
         '/tmp/outside.txt',
         '../outside.txt',
         'C:/outside.txt',
+        'C:foo',
         r'C:\outside.txt',
         r'\\server\share\outside.txt',
     ],

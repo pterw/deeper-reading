@@ -111,7 +111,7 @@ test("install refuses an existing root without a receipt", (t) => {
 
 test("receipt path spellings outside the target are rejected before uninstall", (t) => {
   const malicious = [
-    "/tmp/outside.txt", "../outside.txt", "C:/outside.txt",
+    "/tmp/outside.txt", "../outside.txt", "C:/outside.txt", "C:foo",
     "C:\\outside.txt", "\\\\server\\share\\outside.txt"
   ];
   for (const raw of malicious) {

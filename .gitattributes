@@ -1,0 +1,2 @@
+# Preserve PDF offsets and fixture hashes across Windows/Linux checkouts.
+*.pdf binary

@@ -5,6 +5,7 @@ import shutil
 import subprocess
 
 from .base import SKILL_NAME, VerificationResult, require_project
+from .discovery import discovery_state
 
 
 class GeminiAdapter:
@@ -22,8 +23,14 @@ class GeminiAdapter:
     def discovery_verify(self, skill_name: str) -> VerificationResult:
         if not self.detect():
             return VerificationResult('not-available', ('gemini CLI not found',))
-        proc = subprocess.run(['gemini', 'skills', 'list'], capture_output=True, text=True, check=False, timeout=30)
-        evidence = (f'exit={proc.returncode}', proc.stdout.strip(), proc.stderr.strip())
+        try:
+            proc = subprocess.run(['gemini', 'skills', 'list'], capture_output=True, text=True, check=False, timeout=30)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return VerificationResult('failed', (f'{type(exc).__name__}: {exc}',))
+        evidence = (f'exit={proc.returncode}', (proc.stdout or '').strip(), (proc.stderr or '').strip())
         if proc.returncode != 0:
             return VerificationResult('failed', evidence)
-        return VerificationResult('verified' if skill_name in proc.stdout else 'missing', evidence)
+        state = discovery_state('gemini', proc.stdout or '', skill_name)
+        if state == 'failed':
+            evidence += ('unrecognized gemini skills list output',)
+        return VerificationResult(state, evidence)

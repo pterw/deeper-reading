@@ -1,6 +1,6 @@
 {
   "name": "deeper-reading",
-  "version": "0.2.1",
+  "version": "0.2.3",
   "description": "Exhaustive document traversal and anti-skimming for agentic workflows",
   "license": "MIT",
   "type": "module",

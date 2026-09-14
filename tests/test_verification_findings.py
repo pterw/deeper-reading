@@ -79,3 +79,26 @@ def test_false_preflight_emits_the_key_code():
                         "preflight.traversal_plan_ready.false")
     assert f.detail == "traversal_plan_ready"
     assert f.message == "preflight.traversal_plan_ready must be true"
+
+
+def test_finding_catalogue_matches_all_declared_check_sites():
+    """Catalogue consistency is structural coverage, not branch execution proof."""
+    import ast
+    from pathlib import Path
+    from scripts.verification_findings import CATALOGUE, PREDICATES
+    from scripts.verify_run import REQUIRED_EVIDENCE, REQUIRED_PREFLIGHT
+    tree = ast.parse((Path(__file__).parents[1] / 'scripts/verify_run.py').read_text())
+    declared = set()
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'Finding'):
+            continue
+        code, predicate = node.args[:2]
+        if isinstance(code, ast.Constant):
+            declared.add((code.value, predicate.value))
+        else:
+            template = ''.join(part.value if isinstance(part, ast.Constant) else '{key}' for part in code.values)
+            keys = REQUIRED_PREFLIGHT if template.startswith('preflight.') else REQUIRED_EVIDENCE
+            declared.update((template.format(key=key), predicate.value) for key in keys)
+    assert set(CATALOGUE) == declared
+    assert len({code for code, _ in CATALOGUE}) == len(CATALOGUE)
+    assert all(predicate in PREDICATES for _, predicate in CATALOGUE)

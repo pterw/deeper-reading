@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from contextlib import contextmanager, nullcontext
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -18,6 +19,32 @@ from .prerequisites import PrerequisiteStatus
 
 class InstallError(RuntimeError):
     pass
+
+
+@contextmanager
+def _target_lock(target: Path):
+    """Shared Python/Node mkdir protocol; never steal a possibly live lock.
+
+    The caller resolves target before entry and holds this sibling directory
+    through every rollback and cleanup operation, including uninstall.
+    """
+    lock = target.parent / f'.{target.name}.install-lock'
+    try:
+        target.parent.mkdir(parents=True, exist_ok=True)
+        lock.mkdir()
+    except FileExistsError as exc:
+        raise InstallError(f'installation target is locked: {lock}; retry after the active operation finishes') from exc
+    except OSError as exc:
+        raise InstallError(f'cannot acquire installation lock: {lock}: {exc}') from exc
+    try:
+        yield
+    finally:
+        # Only an owner that successfully created the directory can release it.
+        # Never recursively delete lock contents or recover by age/PID guessing.
+        try:
+            lock.rmdir()
+        except OSError as exc:
+            raise InstallError(f'cannot release installation lock: {lock}: {exc}') from exc
 
 
 _WINDOWS_DRIVE_RE = re.compile(r'^[A-Za-z]:')
@@ -160,98 +187,99 @@ def install_skill(
         raise InstallError(f'Document profile not ready: {document_status.state}')
 
     expected_hashes = payload_hashes(package_root, manifest)
-    had_target = target_root.exists()
-    stale_owned: set[str] = set()
-    if had_target:
-        _, stale_owned = _upgrade_ownership(target_root, expected_hashes)
-
-    if dry_run:
-        return {
-            'state': 'dry-run',
-            'target': str(target_root),
-            'payload_files': sorted(expected_hashes),
-            'stale_owned_files': sorted(stale_owned),
-            'document_profile': document_profile,
-        }
-
-    parent = target_root.parent
-    parent.mkdir(parents=True, exist_ok=True)
-    token = uuid.uuid4().hex
-    stage = parent / f'.{target_root.name}.stage-{token}'
-    backup = parent / f'.{target_root.name}.backup-{token}'
-    replaced = False
-
-    def inject(point: str) -> None:
-        if failure_injector is not None:
-            failure_injector(point)
-
-    try:
+    with nullcontext() if dry_run else _target_lock(target_root):
+        had_target = target_root.exists()
+        stale_owned: set[str] = set()
         if had_target:
-            shutil.copytree(target_root, stage)
-            _prune_owned_files(stage, stale_owned)
-        else:
-            stage.mkdir()
-        _copy_payload(package_root, stage, manifest)
-        staged_errors = verify_installed(stage, expected_hashes)
-        if staged_errors:
-            raise InstallError('; '.join(staged_errors))
-        inject('after-stage')
+            _, stale_owned = _upgrade_ownership(target_root, expected_hashes)
 
-        if had_target:
-            os.replace(target_root, backup)
-            inject('after-backup')
-        os.replace(stage, target_root)
-        replaced = True
-        inject('after-replace')
+        if dry_run:
+            return {
+                'state': 'dry-run',
+                'target': str(target_root),
+                'payload_files': sorted(expected_hashes),
+                'stale_owned_files': sorted(stale_owned),
+                'document_profile': document_profile,
+            }
 
-        installed_errors = verify_installed(target_root, expected_hashes)
-        if installed_errors:
-            raise InstallError('; '.join(installed_errors))
-        inject('after-verify')
+        parent = target_root.parent
+        parent.mkdir(parents=True, exist_ok=True)
+        token = uuid.uuid4().hex
+        stage = parent / f'.{target_root.name}.stage-{token}'
+        backup = parent / f'.{target_root.name}.backup-{token}'
+        replaced = False
 
-        discovery_evidence = ()
-        if discovery_verifier is not None:
-            discovery = discovery_verifier(manifest['skill']['name'])
-            discovery_state = discovery.state
-            discovery_evidence = tuple(getattr(discovery, 'evidence', ()))
-            if discovery_state not in {'verified', 'not-available'}:
-                raise InstallError(f'host discovery verification failed: {discovery_state}: {discovery_evidence}')
+        def inject(point: str) -> None:
+            if failure_injector is not None:
+                failure_injector(point)
 
-        receipt = {
-            'skill': manifest['skill']['name'],
-            'version': (package_root / 'VERSION').read_text(encoding='utf-8').strip(),
-            'target': target_name,
-            'scope': scope,
-            'installed_root': str(target_root),
-            'runtime_profile': runtime_profile,
-            'document_profile': document_profile,
-            'document_status': asdict(document_status),
-            'host_discovery': {'state': discovery_state, 'evidence': list(discovery_evidence)},
-            'payload_hashes': expected_hashes,
-            'installed_at': datetime.now(timezone.utc).isoformat(),
-        }
-        receipt_path = target_root / '.install-receipt.json'
-        receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8')
-        inject('after-receipt')
-
-        _remove_tree(backup)
-        return {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
-    except Exception as exc:
         try:
-            _remove_tree(stage)
-            if replaced:
-                _remove_tree(target_root)
-            if backup.exists():
-                os.replace(backup, target_root)
-        except Exception as rollback_exc:
-            raise InstallError(f'{exc}; rollback failed: {rollback_exc}') from rollback_exc
-        if isinstance(exc, InstallError):
-            raise
-        raise InstallError(str(exc)) from exc
-    finally:
-        _remove_tree(stage)
-        if backup.exists() and target_root.exists():
+            if had_target:
+                shutil.copytree(target_root, stage)
+                _prune_owned_files(stage, stale_owned)
+            else:
+                stage.mkdir()
+            _copy_payload(package_root, stage, manifest)
+            staged_errors = verify_installed(stage, expected_hashes)
+            if staged_errors:
+                raise InstallError('; '.join(staged_errors))
+            inject('after-stage')
+
+            if had_target:
+                os.replace(target_root, backup)
+                inject('after-backup')
+            os.replace(stage, target_root)
+            replaced = True
+            inject('after-replace')
+
+            installed_errors = verify_installed(target_root, expected_hashes)
+            if installed_errors:
+                raise InstallError('; '.join(installed_errors))
+            inject('after-verify')
+
+            discovery_evidence = ()
+            if discovery_verifier is not None:
+                discovery = discovery_verifier(manifest['skill']['name'])
+                discovery_state = discovery.state
+                discovery_evidence = tuple(getattr(discovery, 'evidence', ()))
+                if discovery_state not in {'verified', 'not-available'}:
+                    raise InstallError(f'host discovery verification failed: {discovery_state}: {discovery_evidence}')
+
+            receipt = {
+                'skill': manifest['skill']['name'],
+                'version': (package_root / 'VERSION').read_text(encoding='utf-8').strip(),
+                'target': target_name,
+                'scope': scope,
+                'installed_root': str(target_root),
+                'runtime_profile': runtime_profile,
+                'document_profile': document_profile,
+                'document_status': asdict(document_status),
+                'host_discovery': {'state': discovery_state, 'evidence': list(discovery_evidence)},
+                'payload_hashes': expected_hashes,
+                'installed_at': datetime.now(timezone.utc).isoformat(),
+            }
+            receipt_path = target_root / '.install-receipt.json'
+            receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+            inject('after-receipt')
+
             _remove_tree(backup)
+            return {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
+        except Exception as exc:
+            try:
+                _remove_tree(stage)
+                if replaced:
+                    _remove_tree(target_root)
+                if backup.exists():
+                    os.replace(backup, target_root)
+            except Exception as rollback_exc:
+                raise InstallError(f'{exc}; rollback failed: {rollback_exc}') from rollback_exc
+            if isinstance(exc, InstallError):
+                raise
+            raise InstallError(str(exc)) from exc
+        finally:
+            _remove_tree(stage)
+            if backup.exists() and target_root.exists():
+                _remove_tree(backup)
 
 
 def verify_installation(target_root: Path) -> dict:
@@ -339,40 +367,41 @@ def verify_installation(target_root: Path) -> dict:
 
 def uninstall_skill(target_root: Path, *, force: bool = False) -> dict:
     target = Path(target_root).expanduser().resolve()
-    receipt_path = target / '.install-receipt.json'
-    if not receipt_path.is_file():
-        raise InstallError('installation receipt missing; refusing unmanaged uninstall')
-    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
-    owned = receipt.get('payload_hashes') or {}
-    if not isinstance(owned, dict) or not owned:
-        raise InstallError('installation receipt has no managed payload ownership record')
+    with _target_lock(target):
+        receipt_path = target / '.install-receipt.json'
+        if not receipt_path.is_file():
+            raise InstallError('installation receipt missing; refusing unmanaged uninstall')
+        receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+        owned = receipt.get('payload_hashes') or {}
+        if not isinstance(owned, dict) or not owned:
+            raise InstallError('installation receipt has no managed payload ownership record')
 
-    modified: list[str] = []
-    for rel, expected in owned.items():
-        path = _managed_path(target, rel)
-        if path.is_file() and _sha256(path) != expected:
-            modified.append(rel)
-    if modified and not force:
-        raise InstallError('modified owned files: ' + ', '.join(sorted(modified)))
+        modified: list[str] = []
+        for rel, expected in owned.items():
+            path = _managed_path(target, rel)
+            if path.is_file() and _sha256(path) != expected:
+                modified.append(rel)
+        if modified and not force:
+            raise InstallError('modified owned files: ' + ', '.join(sorted(modified)))
 
-    removed: list[str] = []
-    for rel in sorted(owned, key=lambda x: len(Path(x).parts), reverse=True):
-        path = _managed_path(target, rel)
-        if path.is_file():
-            path.unlink()
-            removed.append(rel)
+        removed: list[str] = []
+        for rel in sorted(owned, key=lambda x: len(Path(x).parts), reverse=True):
+            path = _managed_path(target, rel)
+            if path.is_file():
+                path.unlink()
+                removed.append(rel)
 
-    if receipt_path.exists():
-        receipt_path.unlink()
+        if receipt_path.exists():
+            receipt_path.unlink()
 
-    for path in sorted((p for p in target.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
+        for path in sorted((p for p in target.rglob('*') if p.is_dir()), key=lambda p: len(p.parts), reverse=True):
+            try:
+                path.rmdir()
+            except OSError:
+                pass
         try:
-            path.rmdir()
+            target.rmdir()
         except OSError:
             pass
-    try:
-        target.rmdir()
-    except OSError:
-        pass
 
-    return {'state': 'uninstalled', 'removed': removed, 'preserved_root': target.exists()}
+        return {'state': 'uninstalled', 'removed': removed, 'preserved_root': target.exists()}

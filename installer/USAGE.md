@@ -78,3 +78,39 @@ installer/install.sh doctor --target gemini
 ```
 
 The wrappers contain no installer logic; they delegate to `install.py`.
+
+## Concurrent operations and interrupted installs
+
+Python and Node share an atomic directory lock named
+`.SKILL-NAME.install-lock` beside the physical target directory. Install,
+upgrade, and uninstall refuse a locked target before reading its ownership
+state. The owner retains the lock through replacement, discovery, receipt
+writing, rollback, and final cleanup. Different targets can proceed independently.
+Dry-run remains read-only and does not acquire a lock; its plan is a snapshot,
+not a reservation. Older installer versions do not honor this protocol and
+must not run concurrently with these versions against the same target.
+
+Normal success and handled failure release the lock. Abrupt termination can
+leave a lock plus stage/backup directories. Locks are never stolen based on age
+or a process ID. If a lock persists, stop all installers for that target,
+inspect the target, receipt and backup/stage siblings, and restore a consistent
+installation before manually removing the empty lock directory and retrying.
+Do not remove a live lock or discard a backup needed for recovery.
+
+## Discovery output contracts
+
+Copilot uses `copilot skill list --json` and requires an exact `name` with
+boolean `enabled: true`, following the
+[Copilot command reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#managing-skills-non-interactively).
+Gemini uses `gemini skills list` and parses the named, enabled records emitted by
+[Gemini's list command](https://github.com/google-gemini/gemini-cli/blob/main/packages/cli/src/commands/skills/list.ts),
+including its description and location fields and optional ANSI styling.
+These contracts were checked on 2026-09-14; the shared test fixtures model them
+and are not captures from a user's installed CLI.
+
+Names appearing only in descriptions, locations or diagnostics never prove
+discovery. Disabled skills count as missing. Unsupported or malformed output
+fails discovery and rolls back installation, as do subprocess failures.
+Older Copilot versions without JSON listing need upgrading; there is no
+substring-based compatibility fallback. Failures preserve command error
+details instead of assuming output streams always exist.

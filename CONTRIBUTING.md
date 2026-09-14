@@ -13,13 +13,14 @@ Thank you for helping improve **`deeper-reading`**!
    - Every single emitted chunk must receive exactly one atomic extractive `evidence` verdict (with exact byte offsets) or an explicit `non_match` reason.
    - Finding an early match or useful fact is never authorization to stop traversal.
 
-2. **Tamper-Proof Verification**:
+2. **Source-Bound Verification**:
    - `scripts/verify_run.py` re-extracts the original source bytes independently using the bundled extractor.
    - Forged or hand-edited manifests cannot shrink the required coverage universe.
 
-3. **Standard-Library Only for Core Extractors**:
-   - Bundled extractors (`extract_html.py`, `extract_docx.py`, `extract_markdown.py`, `extract_pdf.py`) must operate with zero mandatory third-party package dependencies.
-   - PDF extraction uses runtime backend detection (`pypdf`, `pymupdf`, `pdfplumber`, `pdftotext`).
+3. **Explicit Runtime Dependencies**:
+   - HTML, DOCX and Markdown extractors use the Python standard library.
+   - PDF extraction requires a detected backend (`pypdf`, `pymupdf`, `pdfplumber`, `pdftotext`); adapters must record its version and actual capabilities.
+   - Backend installation is opt-in. CI installs `requirements-optional.txt` to exercise PDF fixtures.
 
 4. **Package-Owned Process Skills**:
    - Orchestration is self-contained in `skills/` (`exhaustive-document-traversal`, `planning-document-traversal`, `executing-document-traversal`, `debugging-document-workflows`, `recovering-document-workflows`, `verifying-exhaustive-traversal`).
@@ -34,7 +35,9 @@ Before submitting any pull request or committing changes:
 ```bash
 python -m pytest
 ```
-All 192+ tests (unit tests, mutation tests, anti-skimming ledger tests, and installer transaction tests) must pass.
+All tests must pass. Installer changes also require `npm test` and
+`npm run test:pack-smoke`. Cross-runtime transaction tests need Node.js;
+CI enforces the named skip budgets in `tests/check_skip_budget.py`.
 
 ### 2. Verify the Installer
 ```bash
