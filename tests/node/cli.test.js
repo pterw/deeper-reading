@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { parseJson, runNodeCli } from "./helpers.js";
+import { physicalPath } from "../../installer/node/manifest.js";
 
 test("doctor is read-only and reports installer and Python states separately", (t) => {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-cli-"));
@@ -36,7 +37,7 @@ test("project scope defaults project-dir to cwd and dry-run mutates nothing", (t
   const data = parseJson(result.stdout);
   assert.equal(result.status, 0);
   assert.equal(data.state, "dry-run");
-  assert.equal(data.target, path.join(project, ".agents", "skills", "deeper-reading"));
+  assert.equal(data.target, physicalPath(path.join(project, ".agents", "skills", "deeper-reading")));
   assert.equal(existsSync(data.target), false);
 });
 

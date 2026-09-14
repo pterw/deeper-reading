@@ -77,7 +77,13 @@ def _backend_available(name: str) -> bool:
             import pdfplumber  # noqa: F401
             return True
         if name == 'pdftotext':
-            return shutil.which('pdftotext') is not None
+            if shutil.which('pdftotext') is None:
+                return False
+            try:
+                backend_provenance('pdftotext')
+                return True
+            except Exception:
+                return False
     except Exception:
         return False
     return False
@@ -142,8 +148,9 @@ def backend_provenance(selected: str) -> dict:
                                     text=True, check=False, timeout=5)
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError('pdftotext version probe timed out') from exc
-        match = re.search(r'pdftotext version\s+(\S+)', result.stdout + result.stderr)
-        if result.returncode != 0 or not match:
+        output = (result.stdout or '') + (result.stderr or '')
+        match = re.search(r'pdftotext version\s+(\S+)', output)
+        if not match:
             raise RuntimeError('could not establish pdftotext version')
         revision = match[1]
     else:
