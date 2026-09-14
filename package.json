@@ -24,7 +24,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/node/*.test.js",
+    "test": "node --test tests/node/adapters.test.js tests/node/cli.test.js tests/node/core.test.js tests/node/discovery.test.js tests/node/manifest.test.js tests/node/parity.test.js tests/node/prerequisites.test.js",
     "test:pack-smoke": "node --test tests/npm/npm-pack-smoke.test.js"
   },
   "repository": {
