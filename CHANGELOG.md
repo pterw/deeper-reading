@@ -25,6 +25,22 @@
   `source.local_path` in `run.json` still resolves there (a path relative to the
   run folder moves with it). The extraction reproduction no longer compares the
   absolute `source.path`; the bytes stay bound by `sha256` and `size`.
+- Installers (Windows): `--target copilot`, `--target gemini` and `--target auto`
+  now work when the host CLI is a `.cmd` shim, in both the Python and Node
+  installers. Only `PATH` entries are searched, never the current directory. A
+  `.cmd` or `.bat` host path containing any of `" % & | < > ^ ! ( ) , ; =` or a
+  line break is refused: host discovery is reported as `failed` and the shim is
+  not run.
+- Installers: if removing the old backup fails after an upgrade has put the new
+  version in place, the install stays committed instead of rolling back. The
+  install result gains an additive `warnings` key naming the leftover backup to
+  remove by hand.
+- Installers: a corrupt install receipt (invalid JSON, not an object, or
+  `payload_hashes`, `document_status` or `host_discovery` not an object) makes
+  install, verify and uninstall stop with `invalid installation receipt` (exit
+  2) and remove nothing.
+- Node installer: `install` with an unready document profile now reports
+  `state: blocked` with exit 2 and changes nothing, as the Python installer does.
 
 ### Compatibility
 
