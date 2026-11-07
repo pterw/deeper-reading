@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from installer.prerequisites import BUNDLED_EXTRACTORS, document_profile_status
 
 

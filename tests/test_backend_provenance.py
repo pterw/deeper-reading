@@ -1,5 +1,3 @@
-import pytest
-
 from scripts.verification_findings import codes_of, finding_by_code
 from scripts.verify_run import validate_findings
 

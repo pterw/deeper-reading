@@ -46,7 +46,7 @@ def test_build_dod_no_longer_parses_prose():
 
 
 def test_findings_path_and_message_path_agree(tmp_path):
-    from scripts.verify_run import _as_findings, build_dod, validate_findings
+    from scripts.verify_run import build_dod, validate_findings
 
     run = valid_run(tmp_path)
     run["_ledger_path"] = str(tmp_path / "run.json")
