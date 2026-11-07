@@ -147,6 +147,97 @@ def test_html_extractor_keeps_visible_text_once_and_excludes_skipped_content(tmp
         assert excluded not in text
 
 
+@pytest.mark.parametrize(
+    ("html", "expected", "heading_path"),
+    [
+        ("<h1>Only title unclosed<p>All the body text</p>", ["Only title unclosed", "All the body text"], None),
+        ("<h1>Alpha intro<h2>Beta</h2><p>Body</p>", ["Alpha intro", "Beta", "Body"], None),
+        ("<h3>Closed with wrong</h4><p>b</p>", ["Closed with wrong", "b"], None),
+        ("<div><h1>T</div>text", ["T", "text"], ["T"]),
+        ("<h1><div>Title</div></h1><p>b</p>", ["Title", "b"], ["Title"]),
+        ("<table><caption>Cap</caption><tr><td>a<td>b</tr></table>", ["Cap", "a", "b"], None),
+        ("<table><tr><td>one <b>two</b> three</td></tr></table>", ["one two three"], None),
+        ("<p>line one<br>line two</p>", ["line one", "line two"], None),
+        ("<h1>Ti<br>tle</h1>", ["Ti tle"], None),
+        ("<details><summary>Sum</summary>Detail text</details>", ["Sum", "Detail", "text"], None),
+        ("<div>a<hr>b</div>", ["a", "b"], None),
+        ("<form>Name<input>Value</form>", ["Name", "Value"], None),
+        ("<p>A<span>B</span></p>", ["AB"], None),
+        ("<p>The<wbr>word</p>", ["Theword"], None),
+        ("<h1>Only title at eof", ["Only title at eof"], ["Only title at eof"]),
+        ("<h3>Closed with wrong</h4>trailing", ["Closed with wrong", "trailing"], ["Closed with wrong"]),
+        ("<h1> <div>Title</div></h1>", ["Title"], ["Title"]),
+        ("<h1>T</h1> <br>after", ["T", "after"], ["T"]),
+        ("<h1>Head<table><tr><td>x</td></tr></table>", ["Head", "x"], None),
+        ("<h1>Head<pre>code</pre>", ["Head", "code"], None),
+        ("<table><tr><td>a<br>b</td></tr></table>", ["a", "b"], None),
+        (
+            "<table><tr><td>outer1<table><tr><td>inner</td></tr></table>outer2</td></tr></table>",
+            ["outer1", "inner", "outer2"],
+            None,
+        ),
+        ("<table><tr><td>only cell text", ["only cell text"], None),
+        ("<p>x</p><table><tr><td>lost", ["x", "lost"], None),
+        ("<p>x</p><pre>code line one\ncode two",["x", "code line one", "code two"], None),
+        ("<table><tr><td><ul><li>one</li><li>two</li></ul></td></tr></table>", ["one", "two"], None),
+        ("<table><tr><td>one<p>two</p></td></tr></table>", ["one", "two"], None),
+        ("<table><tr><td><p>one</p>two</td></tr></table>", ["one", "two"], None),
+        ("<table><tr><td>outer1<table>inner</table></td></tr></table>", ["outer1", "inner"], None),
+        ("before<details>inside</details>", ["before", "inside"], None),
+        ("<table><tr><td>a<hr>b</td></tr></table>", ["a", "b"], None),
+        ("<pre>a<br>b</pre>", ["a", "b"], None),
+        ("<table><tr><td>a<table><tr><td>b", ["a", "b"], None),
+        ("<table><tr><td>a<div>b</div></td></tr></table>", ["a", "b"], None),
+        ("<table><tr><td>a<ul>b</ul></td></tr></table>", ["a", "b"], None),
+        ("<table><tr><td>a<ol>b</ol></td></tr></table>", ["a", "b"], None),
+        ("<table><tr><td>a<h3>b</h3></td></tr></table>", ["a", "b"], None),
+    ],
+)
+def test_html_extractor_keeps_every_word_separate_and_unlost(tmp_path, html, expected, heading_path):
+    source = tmp_path / "case.html"
+    source.write_text(html, encoding="utf-8")
+    manifest = run_extractor("extract_html.py", source, tmp_path / "case.json")
+    words = "".join(c["content"] for c in manifest["chunks"]).split()
+    pos = 0
+    for phrase in expected:
+        want = phrase.split()
+        hits = [i for i in range(pos, len(words)) if words[i : i + len(want)] == want]
+        assert hits, (phrase, words)
+        pos = hits[0] + len(want)
+    if heading_path is not None:
+        last = expected[-1].split()[-1]
+        chunk = next(c for c in manifest["chunks"] if last in c["content"])
+        assert chunk["locator"].get("heading_path") == heading_path
+
+
+def test_html_table_keeps_row_layout(tmp_path):
+    source = tmp_path / "rows.html"
+    source.write_text("<table><tr><td>a<td>b</tr><tr><td>c</tr></table>", encoding="utf-8")
+    manifest = run_extractor("extract_html.py", source, tmp_path / "rows.json")
+    assert [c["content"].rstrip("\n") for c in manifest["chunks"]] == ["a\tb\t\nc"]
+
+
+@pytest.mark.parametrize(
+    ("html", "words"),
+    [
+        ("<table><tr><td>c3</td></tr></table>after", ["c3", "after"]),
+        ("<table><tr><td>c3</td></tr></table><p>after</p>", ["c3", "after"]),
+        ("<pre>code</pre>after", ["code", "after"]),
+        ("<pre>code</pre><p>after</p>", ["code", "after"]),
+        ("<table><tr><td>c3</td></tr></table><h2>Head</h2>", ["c3", "Head"]),
+    ],
+)
+def test_html_atomic_blocks_never_glue_to_the_next_block(tmp_path, html, words):
+    source = tmp_path / "glue.html"
+    source.write_text(html, encoding="utf-8")
+    manifest = run_extractor("extract_html.py", source, tmp_path / "glue.json")
+    contents = [c["content"] for c in manifest["chunks"]]
+    assert "".join(contents).split() == words
+    for chunk in manifest["chunks"]:
+        assert chunk["content"].endswith("\n")
+        assert not chunk["content"].endswith("\n\n")
+
+
 def _write_minimal_docx(path: Path) -> None:
     ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
     document = (
