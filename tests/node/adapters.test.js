@@ -3,7 +3,7 @@ import { chmodSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:f
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { detectTarget, getAdapter } from "../../installer/node/adapters.js";
+import { detectTarget, getAdapter, resolveCommand } from "../../installer/node/adapters.js";
 
 test("all adapters match the Python user and project roots", (t) => {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-adapters-"));
@@ -48,4 +48,54 @@ test("auto detection uses copilot, gemini, codex, claude order", (t) => {
   assert.equal(detectTarget({ env }), "claude");
   rmSync(path.join(sandbox, `claude${suffix}`));
   assert.equal(detectTarget({ env }), "generic-agents");
+});
+
+const HOSTS = ["claude", "codex", "copilot", "gemini"];
+const WIN = process.platform === "win32";
+function sandboxDir(t) {
+  const directory = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-resolve-"));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  return directory;
+}
+function writeExecutable(directory, filename) {
+  const file = path.join(directory, filename);
+  writeFileSync(file, "", "utf8");
+  chmodSync(file, 0o755);
+  return file;
+}
+
+for (const host of HOSTS) test(`resolution ignores the current directory: ${host}`, (t) => {
+  const here = sandboxDir(t);
+  const elsewhere = sandboxDir(t);
+  writeExecutable(here, WIN ? `${host}.cmd` : host);
+  const previous = process.cwd();
+  const env = { PATH: elsewhere, PATHEXT: ".CMD;.EXE" };
+  process.chdir(here);
+  try {
+    assert.equal(resolveCommand(host, { env }), null);
+    assert.equal(getAdapter(host, { env }).detect(), false);
+    assert.equal(detectTarget({ env }), "generic-agents");
+  } finally {
+    process.chdir(previous);
+  }
+});
+
+for (const host of HOSTS) test(`PATHEXT members that cannot be launched are skipped: ${host}`, (t) => {
+  const directory = sandboxDir(t);
+  writeExecutable(directory, WIN ? `${host}.ps1` : `${host}.PS1`);
+  const env = { PATH: directory, PATHEXT: ".PS1" };
+  assert.equal(resolveCommand(host, { env }), null);
+  assert.equal(getAdapter(host, { env }).detect(), false);
+});
+
+test("resolution strips quotes, skips empty entries and follows PATHEXT order", (t) => {
+  const first = sandboxDir(t);
+  const second = sandboxDir(t);
+  const wanted = writeExecutable(second, WIN ? "copilot.cmd" : "copilot");
+  const env = { PATH: ["", `"${first}"`, `"${second}"`].join(path.delimiter), PATHEXT: ".BAT;.CMD" };
+  assert.equal(resolveCommand("copilot", { env }), wanted);
+  if (!WIN) return;
+  writeExecutable(second, "copilot.bat");
+  assert.equal(resolveCommand("copilot", { env }), path.join(second, "copilot.bat"));
+  assert.equal(resolveCommand("copilot", { env: { ...env, PATHEXT: ".CMD;.BAT" } }), wanted);
 });
