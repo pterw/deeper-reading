@@ -55,3 +55,30 @@ def test_npm_control_plane_is_not_installed_as_skill_payload():
     manifest = json.loads((ROOT / 'MANIFEST.json').read_text(encoding='utf-8'))
     assert 'package.json' not in manifest['payload']
     assert 'installer/node' not in manifest['payload']
+
+
+def _payload_files(manifest: dict) -> set[str]:
+    files: set[str] = set()
+    for entry in manifest['payload']:
+        path = ROOT / entry
+        found = [path] if path.is_file() else [p for p in path.rglob('*') if p.is_file()]
+        files.update(p.relative_to(ROOT).as_posix() for p in found)
+    return files
+
+
+def test_payload_markdown_links_resolve_inside_payload():
+    import posixpath
+    import re
+
+    manifest = json.loads((ROOT / 'MANIFEST.json').read_text(encoding='utf-8'))
+    files = _payload_files(manifest)
+    broken = []
+    for rel in sorted(f for f in files if f.endswith('.md')):
+        text = (ROOT / rel).read_text(encoding='utf-8')
+        for link in re.findall(r'\]\(([^)\s]+)\)', text):
+            if re.match(r'[A-Za-z][A-Za-z0-9+.-]*:|#', link):
+                continue
+            target = posixpath.normpath(posixpath.join(posixpath.dirname(rel), link.split('#')[0]))
+            if target not in files:
+                broken.append(f'{rel} -> {link}')
+    assert broken == []

@@ -52,6 +52,8 @@ test("manifest validates the canonical package and enumerates forward-slash path
   const hashes = payloadHashes(ROOT, manifest);
   assert.ok(hashes["SKILL.md"]);
   assert.ok(hashes["scripts/verify_run.py"]);
+  assert.ok(hashes["LICENSE"], "LICENSE ships so both installers copy the MIT notice");
+  assert.ok(files.some((file) => path.basename(file) === "LICENSE"));
   assert.equal(Object.keys(hashes).some((name) => name.includes("\\")), false);
 });
 
