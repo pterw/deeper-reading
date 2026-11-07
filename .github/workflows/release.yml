@@ -107,17 +107,20 @@ jobs:
       - name: Publish to npm
         run: |
           VERSION="$(cat VERSION)"
-          if out="$(npm view "deeper-reading@$VERSION" version 2>&1)"; then
+          # The answer is read from stdout only: a notice npm prints on stderr
+          # (an update hint, a config warning) must not turn a found version
+          # into an error.
+          if out="$(npm view "deeper-reading@$VERSION" version 2> npm-view.err)"; then
             status=0
           else
             status=$?
           fi
           if [ "$status" -eq 0 ] && [ "$out" = "$VERSION" ]; then
             echo "::notice::deeper-reading@$VERSION is already on npm; skipping the publish."
-          elif [ "$status" -ne 0 ] && printf '%s' "$out" | grep -q 'E404'; then
+          elif [ "$status" -ne 0 ] && grep -q 'E404' npm-view.err; then
             npm publish
           else
-            echo "::error::npm view deeper-reading@$VERSION failed (status $status): $out"
+            echo "::error::npm view deeper-reading@$VERSION failed (status $status): $out $(cat npm-view.err)"
             exit 1
           fi
 
