@@ -1,0 +1,8 @@
+# The workflows pin actions by commit SHA; this keeps those pins current.
+# The package has no runtime dependencies to audit.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

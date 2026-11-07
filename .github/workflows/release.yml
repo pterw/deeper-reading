@@ -1,0 +1,165 @@
+name: Release
+
+# The owner pushes an annotated vX.Y.Z tag. The CI gates run on it, the owner
+# approves the npm-release environment, npm publishes by trusted publishing
+# (OIDC with provenance, no token), then the GitHub Release is made with the
+# CHANGELOG section as notes and the distribution ZIP attached.
+#
+# A manual run (workflow_dispatch) is a rehearsal: the same gates, label
+# check, `npm publish --dry-run` and ZIP build, with no publish and no release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# No top-level concurrency: the called gate's group evaluates with this caller's
+# values (Release-<run_id>), so a group here built the same way would deadlock.
+
+jobs:
+  gates:
+    uses: ./.github/workflows/ci.yml
+
+  rehearse:
+    if: github.event_name == 'workflow_dispatch'
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+
+      # The same check the publish applies, against the tag this VERSION would get.
+      - name: Check the release labels agree
+        run: python tools/release_check.py --tag "v$(cat VERSION)"
+
+      - name: Rehearse the npm publish
+        run: npm publish --dry-run
+
+      - name: Build the release archive
+        run: python installer/distribution.py --out dist/deeper-reading.zip
+
+  # A tag on a commit that is not on main must never reach npm. This job has no
+  # environment, so the owner is never asked to approve such a tag.
+  tag-on-main:
+    if: github.event_name == 'push'
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Check the tagged commit is on main
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor "$SHA" origin/main; then
+            echo "::error::Tagged commit $SHA is not on main; refusing to publish."
+            exit 1
+          fi
+
+  publish:
+    if: github.event_name == 'push'
+    needs: [gates, tag-on-main]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm-release
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
+      # Fails before the publish, which cannot be undone, when the tag, VERSION,
+      # package.json or the dated CHANGELOG section disagree. Values go through
+      # env, never interpolated into the script text.
+      - name: Check the tag, versions and CHANGELOG agree
+        env:
+          TAG: ${{ github.ref_name }}
+        run: python3 tools/release_check.py --tag "$TAG"
+
+      # Safe to re-run, and the first release may be hand-published by the owner
+      # before the trusted publisher exists: a version already on npm is skipped,
+      # a missing package or version (E404) is published, any other error fails.
+      - name: Publish to npm
+        run: |
+          VERSION="$(cat VERSION)"
+          # The answer is read from stdout only: a notice npm prints on stderr
+          # (an update hint, a config warning) must not turn a found version
+          # into an error.
+          if out="$(npm view "deeper-reading@$VERSION" version 2> npm-view.err)"; then
+            status=0
+          else
+            status=$?
+          fi
+          if [ "$status" -eq 0 ] && [ "$out" = "$VERSION" ]; then
+            echo "::notice::deeper-reading@$VERSION is already on npm; skipping the publish."
+          elif [ "$status" -ne 0 ] && grep -q 'E404' npm-view.err; then
+            npm publish
+          else
+            echo "::error::npm view deeper-reading@$VERSION failed (status $status): $out $(cat npm-view.err)"
+            exit 1
+          fi
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+
+      - name: Make the GitHub Release
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python tools/release_check.py --tag "$TAG" --notes notes.md
+          archive="dist/deeper-reading-${TAG#v}.zip"
+          python installer/distribution.py --out "$archive"
+          (cd dist && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256")
+          # Re-runnable, and never left as a draft: create without assets
+          # publishes at once, edit un-drafts, and the assets are then uploaded
+          # (--clobber) in both cases.
+          if view_out="$(gh release view "$TAG" 2>&1)"; then
+            exists=yes
+          elif printf '%s' "$view_out" | grep -q 'release not found'; then
+            exists=no
+          else
+            echo "::error::gh release view $TAG failed: $view_out"
+            exit 1
+          fi
+          if [ "$exists" = yes ]; then
+            gh release edit "$TAG" --title "$TAG" --notes-file notes.md --draft=false
+          else
+            gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md
+          fi
+          gh release upload "$TAG" --clobber "$archive" "$archive.sha256"

@@ -38,3 +38,14 @@ Thumbs.db
 
 # Local logs
 *.log
+
+# Local agent state. AGENTS.md holds the shared rules; CLAUDE.md is a
+# maintainer's local Claude Code pointer, .claude/ holds local skills and
+# settings, and .superpowers/ holds plan ledgers.
+/CLAUDE.md
+.claude/
+.superpowers/
+
+# Local architecture-review renders; the findings that matter go into a plan.
+/*architecture-review-*.html
+docs/superpowers/plans/architecture-review-*.html

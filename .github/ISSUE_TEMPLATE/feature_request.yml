@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest a change or addition
+labels: []
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What can you not do today, or what goes wrong?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behaviour
+      description: What should happen instead?
+    validations:
+      required: true
+  - type: input
+    id: affects
+    attributes:
+      label: Format or host affected
+      description: For example PDF, DOCX, HTML, Markdown, or an install target such as copilot or codex.
+    validations:
+      required: false
