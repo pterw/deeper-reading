@@ -166,6 +166,11 @@ def build_manifest(
     source_uri: str | None = None,
     backend: str | None = None,
 ) -> dict[str, Any]:
+    if not ''.join(str(item['content']) for item in packed_chunks).strip():
+        message = f'{source_format}: no extractable text'
+        if source_format == 'pdf':
+            message += ' (no text layer; OCR is needed, use the oai-native profile)'
+        raise ValueError(message)
     source_bytes = source_path.read_bytes()
     source_hash = sha256_bytes(source_bytes)
     chunks: list[dict[str, Any]] = []
