@@ -135,7 +135,7 @@ The run event stream must include exactly one `chunk_verified` event per canonic
 
 ## Canonical-universe reproduction
 
-The supplied manifest is not trusted merely because its own hashes are self-consistent. `scripts/verify_run.py` re-runs the bundled extractor against the bound source bytes with the manifest's extraction parameters and requires the reproduced manifest to match exactly. A forged 4-chunk manifest derived from a source that canonically emits 12 chunks therefore fails.
+The supplied manifest is not trusted merely because its own hashes are self-consistent. `scripts/verify_run.py` re-runs the bundled extractor against the bound source bytes with the manifest's extraction parameters and requires the reproduced manifest to match exactly, except that the absolute `source.path` is not compared (`source.sha256` and `size_bytes` still bind the bytes, and the run folder may have moved). A relative `source.local_path` in `run.json` resolves against the run folder. A forged 4-chunk manifest derived from a source that canonically emits 12 chunks therefore fails.
 
 The verifier's reproduction scratch may live in an OS temporary directory because it is ephemeral and automatically cleaned. It cannot satisfy any run evidence predicate; only canonical files inside `<run-root>` count toward DoD.
 
@@ -146,12 +146,19 @@ The verifier's reproduction scratch may live in an OS temporary directory becaus
 ### Skill preflight receipts
 
 `evidence/skill-preflight.md` records each selected-path reference before its
-gate is crossed. Use exactly these row fields: `Reference path`, `Required gate`,
-and `Completed`.
+gate is crossed. Write it as a Markdown table with the columns `Reference path`,
+`Required gate`, and `Completed`, one row per selected-path reference:
 
-The final `required_references_read` aggregate cannot be true when a
-selected-path row is missing, incomplete, or recorded after its gate. The table
-is human-auditable evidence; it adds no machine schema or event type.
+| Reference path | Required gate | Completed |
+| --- | --- | --- |
+| references/evidence.md | before the evidence ledger is built | yes |
+
+The agent must not set the final `required_references_read` aggregate to true
+while a selected-path row is missing, incomplete, or recorded after its gate.
+The verifier checks only that the aggregate is true and that the file exists; it
+does not read the rows. The table is human-audited evidence; it adds no machine
+schema or event type. See [Definition of done](definition-of-done.md) for which
+proofs are only existence-checked.
 
 Core event vocabulary includes `plan_written`, `execution_started`, `node_started`, `chunk_verified`, `node_passed`, `node_failed`, `failure_diagnosed`, `node_rechunked`, `node_recovered`, `node_superseded`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, `verification_started`, `verification_passed`, and `done`.
 
@@ -166,3 +173,121 @@ python scripts/verify_run.py <run-root>/run.json
 The verifier writes `<run-root>/dod.json`. Exit 0 means the machine-checkable traversal predicates passed. It does not waive required visual/structural QA for PDF/DOCX figures, equations, tables, native fields, comments, or layout.
 
 In `dod.json`, `predicates.deliverable_provided` is a derived alias that always equals `predicates.requested_deliverable_produced`.
+
+## Worked first run
+
+One complete run over a one-chunk source. A test extracts the labelled blocks below verbatim and drives them through the real scripts to `passed: true`, so they cannot drift from the verifier. Run the commands from the skill root (so `scripts/...` resolves) and use `python` or `py`, whichever your runtime has.
+
+The source, saved as `<run-root>/source/source.md`:
+
+```markdown source.md
+# Pump notes
+
+The pump must be primed. Do not start a dry pump. The pump must be primed again after service.
+```
+
+Placeholders: `<run-root>` is the run folder, `<source>` is `<run-root>/source/source.md`, and `<source-uri>` is the value of `source.uri` in `run.json`. Extract, bind the draft verdicts, then render the report:
+
+```sh first-run
+python scripts/extract_markdown.py <source> --run-root <run-root> --source-uri <source-uri>
+python scripts/build_evidence.py <run-root>/evidence/chunk-manifest.json <run-root>/draft-evidence.json --out <run-root>/evidence/chunk-evidence.json
+python scripts/traversal_report.py --run-root <run-root>
+```
+
+The draft verdicts, saved as `<run-root>/draft-evidence.json` before `build_evidence.py` runs. Verdicts are keyed by `ordinal`. The quote `The pump must be primed` occurs twice in the chunk, so the draft gives an explicit span; the offsets count UTF-8 bytes in the chunk `content` of the manifest (extraction normalises whitespace, so they are not source-file offsets):
+
+```json draft-evidence.json
+{
+  "entries": [
+    {
+      "ordinal": 1,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "The pump must be primed",
+          "chunk_byte_start": 13,
+          "chunk_byte_end": 36
+        }
+      ],
+      "constraints": []
+    }
+  ]
+}
+```
+
+A chunk with nothing relevant gets `{"ordinal": 2, "outcome": "non_match", "reason": "No claim relevant to the request; chunk traversed."}` instead.
+
+Two hashes go into `run.json`. Compute each with this command, run once for the source file and once for `<run-root>/evidence/chunk-manifest.json` (`<file>` is that path; `sha256sum` is not used because PowerShell lacks it):
+
+```sh sha256
+python -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" <file>
+```
+
+Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative to the run folder (`source/source.md`); `<SOURCE_SHA256>` and `<MANIFEST_SHA256>` come from the `sha256` command; `<CHUNK_ID>` and `<CHUNK_SHA256>` are `chunks[0].id` and `chunks[0].content_sha256` of the manifest. For a run with more chunks, repeat the `chunk_verified` and `node_started` / `node_passed` event triple and one `plan.nodes` entry for every chunk, in manifest order. This is the final state after `done` is appended; the `qa.required` names are the format checks your run owes (see [Definition of done](definition-of-done.md)).
+
+```json run.json
+{
+  "source": {
+    "uri": "https://example.org/pump-notes",
+    "local_path": "<SOURCE_PATH>",
+    "sha256": "<SOURCE_SHA256>",
+    "format": "markdown",
+    "authority": "primary",
+    "identity_verified": true
+  },
+  "fidelity": {"preserved": true, "substitutions": []},
+  "preflight": {
+    "skill_read": true,
+    "required_references_read": true,
+    "helper_help_read": true,
+    "runtime_profile_resolved": true,
+    "traversal_plan_ready": true
+  },
+  "plan": {"path": "plan.md", "nodes": ["acquire", "<CHUNK_ID>"]},
+  "events": [
+    {"type": "plan_written"},
+    {"type": "execution_started"},
+    {"type": "node_started", "node": "acquire"},
+    {"type": "node_passed", "node": "acquire", "evidence": "evidence/source-manifest.md"},
+    {"type": "node_started", "node": "<CHUNK_ID>"},
+    {"type": "chunk_verified", "chunk_id": "<CHUNK_ID>", "chunk_sha256": "<CHUNK_SHA256>", "evidence": "evidence/chunk-evidence.json"},
+    {"type": "node_passed", "node": "<CHUNK_ID>", "evidence": "evidence/chunk-evidence.json"},
+    {"type": "verification_started"},
+    {"type": "verification_passed", "evidence": "evidence/verification-log.txt"},
+    {"type": "done"}
+  ],
+  "chunking": {
+    "manifest": "evidence/chunk-manifest.json",
+    "manifest_sha256": "<MANIFEST_SHA256>",
+    "evidence_ledger": "evidence/chunk-evidence.json",
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md"
+  },
+  "qa": {"required": ["markdown-structure"], "passed": ["markdown-structure"]},
+  "deliverable": {
+    "requested": "answer",
+    "provided": true,
+    "paths": [],
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md"
+  },
+  "evidence": {
+    "plan_status": "plan.md",
+    "skill_preflight": "evidence/skill-preflight.md",
+    "source_manifest": "evidence/source-manifest.md",
+    "chunk_ledger": "evidence/chunk-evidence.json",
+    "failure_ledger": "evidence/failure-ledger.md",
+    "verification_log": "evidence/verification-log.txt",
+    "format_qa": "evidence/format-qa.md",
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md"
+  }
+}
+```
+
+All eight files named in `evidence` must exist. `build_evidence.py` creates `evidence/chunk-evidence.json` and `traversal_report.py` creates `deliverables/TRAVERSAL_REPORT.md`; the agent writes the other six (`plan.md`, `evidence/skill-preflight.md`, `evidence/source-manifest.md`, `evidence/failure-ledger.md`, `evidence/verification-log.txt`, `evidence/format-qa.md`). The verifier checks that several of them exist, not what they say; see [Definition of done](definition-of-done.md).
+
+Run the verifier last. It may run before `done` is appended (it then enforces node resolution), and it is re-run after `done` is appended:
+
+```sh verify
+python scripts/verify_run.py <run-root>/run.json
+```
+
+Exit 0 and `"passed": true` in `<run-root>/dod.json` mean the machine-checkable predicates hold. A run that stops short of the last chunk fails here; that is the only failing shape this section shows.
