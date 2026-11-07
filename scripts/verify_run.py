@@ -476,7 +476,9 @@ def _validate_chunk_evidence(
                     "coverage.chunk.oversize", "source_coverage_complete",
                     f"non-atomic chunk exceeds max_bytes: {chunk_id}", detail=chunk_id,
                 ))
-            if raw_chunk.get("oversize_atomic") is True and not raw_chunk.get("locator", {}).get("atomic_kind"):
+            locator = raw_chunk.get("locator")
+            atomic_kind = locator.get("atomic_kind") if isinstance(locator, dict) else None
+            if raw_chunk.get("oversize_atomic") is True and not atomic_kind:
                 findings.append(Finding(
                     "coverage.chunk.atomic_kind.missing", "source_coverage_complete",
                     f"oversize_atomic chunk lacks atomic_kind: {chunk_id}", detail=chunk_id,
@@ -791,7 +793,7 @@ def validate_findings(run: dict[str, Any]) -> list[Finding]:
         return [Finding('json.ledger.type', 'machine_checks_passed', 'run ledger must contain a JSON object')]
     try:
         return _validate_findings(run)
-    except (TypeError, ValueError, OSError, RecursionError) as exc:
+    except Exception as exc:
         return [Finding('ledger.validation.error', 'machine_checks_passed',
                         f'run validation failed: {type(exc).__name__}: {exc}')]
 

@@ -17,6 +17,10 @@
 - Verifier: a ledger with unresolved nodes or unresolved failures now fails
   before `done` is appended (`done.node.unresolved`,
   `done.failure.unresolved`); such ledgers used to pass until `done` existed.
+- Verifier: any exception raised while validating a ledger now yields
+  `ledger.validation.error` and rewrites `dod.json` with `passed: false` (a
+  stale passing `dod.json` no longer survives); a non-object chunk `locator`
+  reports `coverage.chunk.atomic_kind.missing` instead of crashing.
 
 ### Compatibility
 
