@@ -2,10 +2,9 @@
 
 ## 0.2.3 - 2026-11-07
 
-Combines the v0.2.2 structured-verification work with installer and script hardening.
-
-- First release on npm (`npx deeper-reading`), and on GitHub Releases with the
-  distribution ZIP and its SHA-256.
+Combines the v0.2.2 structured-verification work with installer and script
+hardening. It is the first release on npm (`npx deeper-reading`), and on GitHub
+Releases with the distribution ZIP and its SHA-256.
 
 - Shared Python/Node transaction locks cover ownership reads, staging,
   replacement, discovery, receipts, rollback, cleanup and uninstall.
@@ -41,5 +40,3 @@ Combines the v0.2.2 structured-verification work with installer and script harde
   exhaustive executed coverage of every individual finding code remains a
   separate test-coverage task. Existing mutation tests and new regression tests
   cover the demonstrated failures; no universal parser/security guarantee is claimed.
-
-This is a release candidate; no release tag or package publication is implied.
