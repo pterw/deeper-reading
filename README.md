@@ -35,7 +35,10 @@ node installer/node/cli.js doctor --target generic-agents --json
 node installer/node/cli.js install --target generic-agents --scope project --project-dir . --json
 ```
 
-The Python installer is also supported:
+The Python installer is also supported. It is not on PyPI or npm: it needs a
+checkout of this repository or the `deeper-reading-<version>.zip` asset on the
+[GitHub Release](https://github.com/pterw/deeper-reading/releases). Unzip the
+archive and run these commands from the extracted `deeper-reading/` folder:
 
 ```sh
 python installer/install.py doctor --target generic-agents --json
@@ -59,6 +62,18 @@ allows removing modified owned files; it never bypasses containment in the
 resolved install root. Installation verification checks recorded discovery
 state, not a fresh semantic assessment of the host.
 
+### After installing
+
+1. Run `verify` with the same `--target` and `--scope` you installed with, for
+   example `npx deeper-reading verify --target auto --scope user --json`.
+2. The skill lands in a per-target skills directory; see
+   [Skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots)
+   for the path of each target and scope.
+3. Start a task by naming the skill, for example "Use deeper-reading to read
+   this report end to end", so the host loads it.
+4. To remove it, run `uninstall` with the same target, scope and project directory. Only
+   receipt-owned files are removed.
+
 Both installers share a per-target lock across install, upgrade and uninstall,
 including rollback and cleanup. Contention fails clearly; retry after the active
 operation finishes. Older installers do not honor the lock. See
@@ -75,9 +90,9 @@ discovery formats and compatibility requirements.
 | PDF | Optional text backend | Ordered page locators; empty pages remain represented | OCR, graphics, equations and visual layout |
 
 PDF backends are detected in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then
-`pdftotext`. To choose the declared optional Python backend, install
-[requirements-optional.txt](https://github.com/pterw/deeper-reading/blob/main/requirements-optional.txt) in your environment. An existing pdftotext executable
-also works. No backend is installed automatically.
+`pdftotext`. To choose the declared optional Python backend, run
+`python -m pip install pypdf` in your environment. An existing pdftotext
+executable also works. No backend is installed automatically.
 
 The shipped PDF adapters return text only. A library having layout features
 does not mean this extraction path proves layout. See [PDF guidance](references/pdf.md)
@@ -165,9 +180,7 @@ checks pass; failures exit nonzero. The report is derived from machine evidence
 and checked against the deterministic rendering.
 
 The CLI guards against overwriting its inputs, writes complete output artifacts
-atomically, and checks run-root output containment. Optional human verification
-notes are useful, but the verifier does not automatically generate or certify an
-all-artifact digest report called `FINAL_VERIFICATION.md`.
+atomically, and checks run-root output containment.
 
 ## PDF provenance and migration
 
