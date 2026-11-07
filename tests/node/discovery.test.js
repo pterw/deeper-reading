@@ -5,7 +5,7 @@ import {syncBuiltinESMExports} from 'node:module';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import {getAdapter, hostPathRefusal, resolveCommand, unsafeShimPath} from '../../installer/node/adapters.js';
+import {getAdapter, hostPathRefusal, resolveCommand, unsafeShimPath, usablePathDirectory} from '../../installer/node/adapters.js';
 
 const cases = JSON.parse(readFileSync(new URL('../fixtures/discovery-output.json', import.meta.url), 'utf8'));
 const actualSpawn = childProcess.spawnSync;
@@ -86,6 +86,11 @@ test('unsafeShimPath returns the first offending character of the refusal set', 
   for (const character of REFUSED) assert.equal(unsafeShimPath(`C:\\npm\\a${character}b\\copilot.cmd`), character);
   assert.equal(unsafeShimPath('C:\\npm prefix\\copilot.cmd'), null);
   assert.equal(unsafeShimPath('C:\\a%b&c\\copilot.cmd'), '%');
+});
+
+for (const row of resolution.path_entries) test(`path entry usability: ${row.entry}`, t => {
+  if ((row.platform ?? (WIN ? 'win32' : 'posix')) !== (WIN ? 'win32' : 'posix')) return t.skip('row is for another host separator');
+  assert.equal(usablePathDirectory(row.entry, WIN) !== null, row.usable);
 });
 
 for (const item of resolution.cases) test(`host resolution table: ${item.id}`, t => {

@@ -1,5 +1,18 @@
 {
   "refusal_characters": ["\"", "%", "&", "|", "<", ">", "^", "!", "(", ")", ",", ";", "=", "\r", "\n"],
+  "path_entries": [
+    {"entry": "bin", "usable": false},
+    {"entry": "./tools", "usable": false},
+    {"entry": "..\\tools", "usable": false},
+    {"entry": ".", "usable": false},
+    {"entry": "\\tools", "usable": false, "platform": "win32"},
+    {"entry": "C:tools", "usable": false, "platform": "win32"},
+    {"entry": "C:\\tools", "usable": true, "platform": "win32"},
+    {"entry": "\\\\server\\share\\bin", "usable": true, "platform": "win32"},
+    {"entry": "\"C:\\tools\"", "usable": true, "platform": "win32"},
+    {"entry": "/usr/bin", "usable": true, "platform": "posix"},
+    {"entry": "\"/usr/bin\"", "usable": true, "platform": "posix"}
+  ],
   "cases": [
     {"id": "plain", "path": ["{root}/bin"], "pathext": ".COM;.EXE;.BAT;.CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
     {"id": "trailing-space-path-entry", "path": ["{root}/bin "], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
@@ -28,6 +41,13 @@
     {"id": "dot-slash-path-entry-never-searches-cwd", "path": ["./"], "dirs": [], "files": ["cwd/copilot.cmd"], "resolved": null, "pathext": ".CMD", "name": "copilot", "refusal": false},
     {"id": "dot-backslash-dot-path-entry-never-searches-cwd", "path": [".\\."], "dirs": [], "files": ["cwd/copilot.cmd"], "resolved": null, "pathext": ".CMD", "name": "copilot", "refusal": false},
     {"id": "dot-backslash-entry-skipped-next-entry-used", "path": [".\\", "{root}/bin"], "dirs": [], "files": ["cwd/copilot.cmd", "bin/copilot.cmd"], "resolved": "bin/copilot.cmd", "pathext": ".CMD", "name": "copilot", "refusal": false},
-    {"id": "quoted-path-entry-with-trailing-space", "path": ["\"{root}/bin\" "], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false}
+    {"id": "quoted-path-entry-with-trailing-space", "path": ["\"{root}/bin\" "], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "relative-bin-path-entry-never-searches-cwd", "path": ["bin"], "pathext": ".CMD", "dirs": [], "files": ["cwd/bin/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "relative-node-modules-bin-path-entry-is-skipped", "path": ["node_modules/.bin"], "pathext": ".CMD", "dirs": [], "files": ["cwd/node_modules/.bin/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "dot-slash-subdirectory-path-entry-is-skipped", "path": ["./tools"], "pathext": ".CMD", "dirs": [], "files": ["cwd/tools/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "parent-backslash-path-entry-is-skipped", "path": ["..\\tools"], "pathext": ".CMD", "dirs": [], "files": ["tools/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "drive-relative-path-entry-is-skipped", "path": ["C:tools"], "pathext": ".CMD", "dirs": [], "files": ["cwd/tools/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "root-relative-path-entry-is-skipped", "path": ["\\tools"], "pathext": ".CMD", "dirs": [], "files": ["cwd/tools/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "relative-entry-skipped-absolute-entry-used", "path": ["bin", "{root}/abs"], "pathext": ".CMD", "dirs": [], "files": ["cwd/bin/copilot.cmd", "abs/copilot.cmd"], "name": "copilot", "resolved": "abs/copilot.cmd", "refusal": false}
   ]
 }

@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 from installer.adapters import detect_target
-from installer.adapters.base import host_path_refusal, resolve_host_command, unsafe_shim_path
+from installer.adapters.base import host_path_refusal, resolve_host_command, unsafe_shim_path, usable_path_directory
 from installer.adapters.claude import ClaudeAdapter
 from installer.adapters.codex import CodexAdapter
 from installer.adapters.copilot import CopilotAdapter
@@ -15,6 +15,7 @@ from installer.adapters.gemini import GeminiAdapter
 
 RESOLVE = 'installer.adapters.base.resolve_host_command'
 WIN = sys.platform == 'win32'
+HOST = 'win32' if WIN else 'posix'
 VECTORS = {'copilot': ['skill', 'list', '--json'], 'gemini': ['skills', 'list']}
 ADAPTERS = {'claude': ClaudeAdapter, 'codex': CodexAdapter, 'copilot': CopilotAdapter, 'gemini': GeminiAdapter}
 CASES = json.loads((Path(__file__).parents[1] / 'fixtures/discovery-output.json').read_text(encoding='utf-8'))
@@ -85,6 +86,13 @@ def test_resolution_ignores_current_directory(name, tmp_path, monkeypatch):
     monkeypatch.chdir(cwd)
     assert ADAPTERS[name]().detect() is False
     assert detect_target() == 'generic-agents'
+
+
+@pytest.mark.parametrize('row', RESOLUTION['path_entries'], ids=lambda row: row['entry'])
+def test_path_entry_usability_table(row):
+    if row.get('platform', HOST) != HOST:
+        pytest.skip('row is for another host separator')
+    assert (usable_path_directory(row['entry']) is not None) == row['usable']
 
 
 @pytest.mark.parametrize('case', RESOLUTION['cases'], ids=lambda case: case['id'])
