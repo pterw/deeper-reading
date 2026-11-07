@@ -1,0 +1,77 @@
+name: Bug report
+description: Report something that does not work as documented
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - "installer: npm"
+        - "installer: Python"
+        - document extraction
+        - verification / dod.json
+        - skill instructions
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: Windows 11, macOS 15, Ubuntu 24.04
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Python and Node versions
+      description: Output of `python --version` and `node --version`.
+    validations:
+      required: false
+  - type: input
+    id: target
+    attributes:
+      label: Install target and scope
+      description: For example `generic-agents`, scope `user`.
+    validations:
+      required: false
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Doctor output
+      description: Output of `npx deeper-reading doctor --target <target> --json` or `python installer/install.py doctor --target <target> --json`.
+      render: json
+    validations:
+      required: false
+  - type: input
+    id: format
+    attributes:
+      label: Document format and PDF backend
+      description: For traversal problems only. The document format and, for PDF, the backend (pypdf, PyMuPDF, pdfplumber or pdftotext).
+    validations:
+      required: false
+  - type: textarea
+    id: codes
+    attributes:
+      label: Finding codes
+      description: For traversal problems only. The `codes` array from `dod.json`.
+      render: json
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
