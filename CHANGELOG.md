@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+- HTML: text after an unclosed or mismatched heading is no longer lost. Words in
+  table cells, at `<br>` and in `<pre>` no longer merge, and table and `<pre>`
+  blocks end with one newline.
+- DOCX: text boxes are read once, field instructions no longer leak into the
+  text, and deleted, inserted and moved text is kept with `[deleted: ...]` /
+  `[inserted: ...]` markers.
+- Markdown: a fence closes only on a matching closer. One-column and one-dash
+  tables are tables, `## Using C#` keeps its `#`, and fence and table blocks no
+  longer glue to the next line.
+- Extraction exits 1 with a "no extractable text" message when a source yields
+  no text at all, instead of writing an empty manifest. PDFs without a text
+  layer point at OCR (the `oai-native` profile).
+
+### Compatibility
+
+- Run folders made with 0.2.3 for HTML, DOCX or Markdown sources whose extraction
+  changed fail reproduction until the source is re-extracted (chunk text, ids and
+  hashes change).
+
 ## 0.2.3 - 2026-11-07
 
 Combines the v0.2.2 structured-verification work with installer and script

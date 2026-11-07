@@ -101,3 +101,44 @@ def test_existing_evidence_symlink_escape_cannot_pass_verification(tmp_path):
         pytest.skip('directory symlinks unavailable')
     findings = validate_findings(run)
     assert any(f.predicate == 'output_containment_valid' for f in findings)
+
+
+def _empty_docx(path):
+    import zipfile
+    body = ('<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+            '<w:body><w:p><w:r><w:drawing/></w:r></w:p></w:body></w:document>')
+    with zipfile.ZipFile(path, 'w') as z:
+        z.writestr('[Content_Types].xml', '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"/>')
+        z.writestr('word/document.xml', body)
+
+
+@pytest.mark.parametrize('script,name,content', [
+    ('extract_html.py', 'a.html', '<script>x</script><style>p{}</style>'),
+    ('extract_markdown.py', 'a.md', ''),
+    ('extract_markdown.py', 'b.md', ' \n\t\n'),
+    ('extract_docx.py', 'a.docx', None),
+], ids=['html-scripts-only', 'md-empty', 'md-whitespace', 'docx-drawing-only'])
+def test_extractor_fails_closed_when_no_text(tmp_path, script, name, content):
+    source = tmp_path / name
+    if content is None:
+        _empty_docx(source)
+    else:
+        source.write_text(content, encoding='utf-8')
+    out = tmp_path / 'manifest.json'
+    result = run_script(script, source, '--out', out)
+    assert result.returncode == 1
+    assert 'no extractable text' in result.stderr
+    assert script.removeprefix('extract_').removesuffix('.py') in result.stderr
+    assert not out.exists()
+
+
+def test_pdf_without_text_layer_points_at_ocr(tmp_path):
+    sys.path.insert(0, str(ROOT / 'scripts'))
+    from chunk_common import build_manifest
+    source = tmp_path / 'a.pdf'
+    source.write_bytes(b'%PDF-1.4')
+    kwargs = dict(strategy='page', max_bytes=1000)
+    with pytest.raises(ValueError, match='no extractable text') as err:
+        build_manifest(source, 'pdf', [{'content': ''}, {'content': ' \n'}], **kwargs)
+    assert 'OCR' in str(err.value) and 'oai-native' in str(err.value)
+    assert build_manifest(source, 'pdf', [{'content': ''}, {'content': 'text'}], **kwargs)['chunks']

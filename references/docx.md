@@ -20,6 +20,8 @@ Use `scripts/extract_docx.py` to traverse the OOXML story parts and emit the aut
 
 Within parsed story parts, paragraph styles named `Heading1` through `Heading6` (including the equivalent `Heading 1` through `Heading 6` spelling accepted by the parser) update the six-level `heading_path`. This does not claim support for arbitrary custom Word styles that merely look like headings.
 
+Tracked changes stay visible in chunk text: the text of each deletion is written as `[deleted: ...]` and each insertion as `[inserted: ...]`; moved text follows the same rule (the moved-from text is `[deleted: ...]`, the moved-to text `[inserted: ...]`). Text boxes are read once (the `mc:Fallback` copy is skipped) and field instructions such as `HYPERLINK` are not read, only the field's result text.
+
 Text extraction does **not** prove layout, field rendering, tracked-change display, comments UI, or other Word-native presentation. Those remain separate visual/structural QA predicates when required.
 
 ## Reading and verification
