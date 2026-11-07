@@ -35,15 +35,6 @@ REQUIRED_PREFLIGHT = (
     "traversal_plan_ready",
 )
 
-LEGACY_PREFLIGHT = (
-    "using_superpowers_read",
-    "superpowers_list_consumed",
-    "applicable_skills_read",
-    "live_dependencies_read",
-)
-
-LEGACY_PROCESS_EVENTS = {"systematic_debugging", "brainstorming"}
-
 MAX_VERIFIED_CHUNK_BYTES = 12000
 EXTRACTION_TIMEOUT_SECONDS = 60
 
@@ -1041,21 +1032,6 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
             findings.append(Finding(
                 "events.execution.order", "plan_resolved",
                 "execution_started cannot precede plan_written",
-            ))
-
-    for key in LEGACY_PREFLIGHT:
-        if key in preflight:
-            findings.append(Finding(
-                "preflight.legacy", "skill_preflight_complete",
-                f"legacy preflight key is not allowed: {key}", detail=key,
-            ))
-
-    for event in events:
-        event_type = event.get("type")
-        if event_type in LEGACY_PROCESS_EVENTS:
-            findings.append(Finding(
-                "events.legacy", "machine_checks_passed",
-                f"legacy process event is not allowed: {event_type}", detail=event_type,
             ))
 
     diagnosis_barriers = {

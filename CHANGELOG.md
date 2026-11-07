@@ -27,6 +27,10 @@
 - Run folders made with 0.2.3 for HTML, DOCX or Markdown sources whose extraction
   changed fail reproduction until the source is re-extracted (chunk text, ids and
   hashes change).
+- The verifier finding codes `preflight.legacy` and `events.legacy` are removed.
+  Ledgers carrying the four old preflight keys (such as `using_superpowers_read`)
+  or `systematic_debugging` / `brainstorming` events now verify instead of
+  failing.
 
 ## 0.2.3 - 2026-11-07
 

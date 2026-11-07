@@ -17,12 +17,6 @@ NEW_PREFLIGHT = {
     "runtime_profile_resolved": True,
     "traversal_plan_ready": True,
 }
-LEGACY_PREFLIGHT = {
-    "using_superpowers_read": True,
-    "superpowers_list_consumed": True,
-    "applicable_skills_read": True,
-    "live_dependencies_read": True,
-}
 
 def errors_for(run):
     return validate_run(copy.deepcopy(run))
@@ -32,20 +26,6 @@ def test_native_preflight_is_accepted(tmp_path):
     run["preflight"] = dict(NEW_PREFLIGHT)
     errors = errors_for(run)
     assert not [e for e in errors if e.startswith("preflight.")], errors
-
-def test_legacy_preflight_keys_are_rejected(tmp_path):
-    run = valid_run(tmp_path)
-    run["preflight"] = dict(LEGACY_PREFLIGHT)
-    errors = errors_for(run)
-    assert any("legacy preflight" in e for e in errors), errors
-
-def test_legacy_process_events_are_rejected(tmp_path):
-    run = valid_run(tmp_path)
-    run["preflight"] = dict(NEW_PREFLIGHT)
-    run["events"].insert(2, {"type": "systematic_debugging", "node": "acquire"})
-    run["events"].insert(3, {"type": "brainstorming"})
-    errors = errors_for(run)
-    assert any("legacy process event" in e for e in errors), errors
 
 def test_sibling_traversal_after_failure_requires_diagnosis(tmp_path):
     run = valid_run(tmp_path)
