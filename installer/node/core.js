@@ -238,6 +238,7 @@ function installLocked(options) {
   const stage = path.join(parent, `.${name}.stage-${token}`);
   const backup = path.join(parent, `.${name}.backup-${token}`);
   let replaced = false;
+  let cleanupFailed = false;
   const inject = (point) => options.failureInjector?.(point);
   try {
     if (hadTarget) {
@@ -295,8 +296,17 @@ function installLocked(options) {
       "utf8"
     );
     inject("after-receipt");
-    rmSync(backup, { recursive: true, force: true });
-    return { state: "installed", target: targetRoot, receipt };
+    // Commit point: the new install is complete. Backup removal is best
+    // effort and must never roll the finished install back.
+    const result = { state: "installed", target: targetRoot, receipt };
+    try {
+      inject("cleanup-backup");
+      rmSync(backup, { recursive: true, force: true });
+    } catch (cleanupError) {
+      cleanupFailed = true;
+      result.warnings = [`backup cleanup failed: ${cleanupError.message}; remove ${backup} by hand`];
+    }
+    return result;
   } catch (error) {
     try {
       rmSync(stage, { recursive: true, force: true });
@@ -308,9 +318,13 @@ function installLocked(options) {
     if (error instanceof InstallerError) throw error;
     throw new InstallerError(error.message);
   } finally {
-    rmSync(stage, { recursive: true, force: true });
-    if (existsSync(backup) && existsSync(targetRoot)) {
-      rmSync(backup, { recursive: true, force: true });
+    try {
+      rmSync(stage, { recursive: true, force: true });
+      if (!cleanupFailed && existsSync(backup) && existsSync(targetRoot)) {
+        rmSync(backup, { recursive: true, force: true });
+      }
+    } catch {
+      // best effort; verify reports leftovers
     }
   }
 }

@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -211,6 +213,96 @@ test("failure after replacement restores the prior installation", (t) => {
       if (point === "after-replace") throw new Error("injected after-replace failure");
     }
   }), /injected after-replace failure/);
+  assert.deepEqual(readFileSync(path.join(targetRoot, "SKILL.md")), original);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function isAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Makes the real backup removal fail: a child process holding a directory inside
+// the backup on Windows, a read-only directory elsewhere. Returns an undo function.
+function makeBackupUndeletable(targetRoot) {
+  const parent = path.dirname(targetRoot);
+  const name = readdirSync(parent).find((entry) => entry.includes(".backup-"));
+  const locked = path.join(parent, name, "references");
+  if (process.platform === "win32") {
+    // The child takes its working directory only once it has started, so wait for it.
+    const ready = path.join(path.dirname(parent), "child-ready");
+    const script = `require("fs").writeFileSync(${JSON.stringify(ready)}, "1"); setInterval(() => {}, 1000)`;
+    const child = spawn(process.execPath, ["-e", script], { cwd: locked, stdio: "ignore" });
+    const deadline = Date.now() + 10000;
+    while (!existsSync(ready) && Date.now() < deadline) {
+      sleepSync(50);
+    }
+    return () => {
+      child.kill();
+      const gone = Date.now() + 10000;
+      while (Date.now() < gone && isAlive(child.pid)) {
+        sleepSync(50);
+      }
+      sleepSync(300); // Windows releases the directory handle a moment after exit
+    };
+  }
+  chmodSync(locked, 0o500);
+  return () => chmodSync(locked, 0o700);
+}
+
+for (const mode of ["injector", "real-removal"]) {
+  test(`backup cleanup failure after the commit point keeps the new install and warns (${mode})`, (t) => {
+    if (mode === "real-removal" && process.platform !== "win32" && process.getuid?.() === 0) {
+      t.skip("root ignores directory permissions");
+      return;
+    }
+    const { targetRoot, options } = fixture(t);
+    assert.equal("warnings" in installSkill(options), false);
+    let undo = () => {};
+    let result;
+    try {
+      result = installSkill({
+        ...options,
+        failureInjector(point) {
+          if (mode === "injector" && point === "cleanup-backup") {
+            throw new Error("injected cleanup failure");
+          }
+          if (mode === "real-removal" && point === "after-receipt") {
+            undo = makeBackupUndeletable(targetRoot);
+          }
+        }
+      });
+      assert.equal(result.state, "installed");
+      assert.equal(result.warnings.length, 1);
+      assert.match(result.warnings[0], /backup cleanup failed/);
+      assert.equal(existsSync(path.join(targetRoot, "SKILL.md")), true);
+      const verdict = verifyInstallation(targetRoot);
+      const failed = Object.keys(verdict.predicates).filter((name) => !verdict.predicates[name]);
+      assert.deepEqual(failed, ["no_backup_leftovers"]);
+    } finally {
+      undo();
+    }
+  });
+}
+
+test("failure after the receipt still restores the prior installation", (t) => {
+  const { targetRoot, options } = fixture(t);
+  installSkill(options);
+  const original = readFileSync(path.join(targetRoot, "SKILL.md"));
+  assert.throws(() => installSkill({
+    ...options,
+    failureInjector(point) {
+      if (point === "after-receipt") throw new Error("injected after-receipt failure");
+    }
+  }), /injected after-receipt failure/);
   assert.deepEqual(readFileSync(path.join(targetRoot, "SKILL.md")), original);
   assert.equal(verifyInstallation(targetRoot).passed, true);
 });

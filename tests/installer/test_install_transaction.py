@@ -3,8 +3,9 @@ from pathlib import Path
 
 import pytest
 
+from installer import core as installer_core
 from installer.manifest import load_manifest
-from installer.core import InstallError, install_skill
+from installer.core import InstallError, install_skill, verify_installation
 from installer.prerequisites import PrerequisiteStatus
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -57,6 +58,51 @@ def test_failure_after_replace_rolls_back_previous_install(tmp_path):
 
     assert (target / 'SKILL.md').read_bytes() == original_skill
     assert marker.read_text(encoding='utf-8') == 'keep me'
+
+
+@pytest.mark.parametrize('mode', ['injector', 'real-removal'])
+def test_backup_cleanup_failure_after_commit_keeps_the_new_install_and_warns(tmp_path, monkeypatch, mode):
+    target, first = install(tmp_path)
+    assert 'warnings' not in first
+    fail = None
+    if mode == 'injector':
+        def fail(point):
+            if point == 'cleanup-backup':
+                raise OSError('injected cleanup failure')
+    else:
+        real_rmtree = installer_core.shutil.rmtree
+
+        def rmtree_failing_for_backup(path, *args, **kwargs):
+            if '.backup-' in Path(path).name:
+                raise PermissionError('backup is undeletable')
+            return real_rmtree(path, *args, **kwargs)
+
+        monkeypatch.setattr(installer_core.shutil, 'rmtree', rmtree_failing_for_backup)
+
+    _, result = install(tmp_path, failure_injector=fail)
+
+    assert result['state'] == 'installed'
+    assert len(result['warnings']) == 1
+    assert 'backup cleanup failed' in result['warnings'][0]
+    assert (target / 'SKILL.md').is_file()
+    verdict = verify_installation(target)
+    failed = [name for name, ok in verdict['predicates'].items() if not ok]
+    assert failed == ['no_backup_leftovers']
+
+
+def test_receipt_failure_still_rolls_back_to_the_previous_install(tmp_path):
+    target, _ = install(tmp_path)
+    original = (target / 'SKILL.md').read_bytes()
+
+    def fail(point):
+        if point == 'after-receipt':
+            raise RuntimeError('injected failure')
+
+    with pytest.raises(InstallError):
+        install(tmp_path, failure_injector=fail)
+
+    assert (target / 'SKILL.md').read_bytes() == original
+    assert verify_installation(target)['passed'] is True
 
 
 def test_upgrade_preserves_unowned_files(tmp_path):

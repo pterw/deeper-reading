@@ -208,6 +208,7 @@ def install_skill(
         stage = parent / f'.{target_root.name}.stage-{token}'
         backup = parent / f'.{target_root.name}.backup-{token}'
         replaced = False
+        cleanup_failed = False
 
         def inject(point: str) -> None:
             if failure_injector is not None:
@@ -262,8 +263,16 @@ def install_skill(
             receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8')
             inject('after-receipt')
 
-            _remove_tree(backup)
-            return {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
+            # Commit point: the new install is complete. Backup removal is best
+            # effort and must never roll the finished install back.
+            result = {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
+            try:
+                inject('cleanup-backup')
+                _remove_tree(backup)
+            except Exception as cleanup_exc:
+                cleanup_failed = True
+                result['warnings'] = [f'backup cleanup failed: {cleanup_exc}; remove {backup} by hand']
+            return result
         except Exception as exc:
             try:
                 _remove_tree(stage)
@@ -277,9 +286,12 @@ def install_skill(
                 raise
             raise InstallError(str(exc)) from exc
         finally:
-            _remove_tree(stage)
-            if backup.exists() and target_root.exists():
-                _remove_tree(backup)
+            try:
+                _remove_tree(stage)
+                if not cleanup_failed and backup.exists() and target_root.exists():
+                    _remove_tree(backup)
+            except OSError:
+                pass  # best effort; verify reports leftovers
 
 
 def verify_installation(target_root: Path) -> dict:
