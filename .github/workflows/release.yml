@@ -1,0 +1,105 @@
+name: Release
+
+# The owner pushes an annotated vX.Y.Z tag. The CI gates run on it, the owner
+# approves the npm-release environment, npm publishes by trusted publishing
+# (OIDC with provenance, no token), then the GitHub Release is made with the
+# CHANGELOG section as notes and the distribution ZIP attached.
+#
+# A manual run (workflow_dispatch) is a rehearsal: the same gates, label
+# check, `npm publish --dry-run` and ZIP build, with no publish and no release.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# No top-level concurrency: the called gate's group is github.workflow-github.ref,
+# which evaluates to this caller's values, so the same group here would deadlock.
+
+jobs:
+  gates:
+    uses: ./.github/workflows/ci.yml
+
+  rehearse:
+    if: github.event_name == 'workflow_dispatch'
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+
+      - name: Check the release labels agree
+        run: python tools/release_check.py
+
+      - name: Rehearse the npm publish
+        run: npm publish --dry-run
+
+      - name: Build the release archive
+        run: python installer/distribution.py --out dist/deeper-reading.zip
+
+  publish:
+    if: github.event_name == 'push'
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: npm-release
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing needs npm 11.5.1 or newer.
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
+      # Fails before the publish, which cannot be undone, when the tag, VERSION,
+      # package.json or the dated CHANGELOG section disagree. Values go through
+      # env, never interpolated into the script text.
+      - name: Check the tag, versions and CHANGELOG agree
+        env:
+          TAG: ${{ github.ref_name }}
+        run: python3 tools/release_check.py --tag "$TAG"
+
+      - name: Publish to npm
+        run: npm publish
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
+        with:
+          python-version: '3.13'
+
+      - name: Make the GitHub Release
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python tools/release_check.py --tag "$TAG" --notes notes.md
+          archive="dist/deeper-reading-${TAG#v}.zip"
+          python installer/distribution.py --out "$archive"
+          (cd dist && sha256sum "$(basename "$archive")" > "$(basename "$archive").sha256")
+          gh release create "$TAG" --verify-tag --title "$TAG" --notes-file notes.md \
+            "$archive" "$archive.sha256"
