@@ -1,5 +1,6 @@
 import json
 import hashlib
+import os
 from pathlib import Path
 
 import pytest
@@ -134,19 +135,22 @@ def test_mutation_deletes_install_receipt(tmp_path):
     assert result['predicates']['receipt_written'] is False
 
 
-@pytest.mark.parametrize(
-    'malicious',
-    [
-        '/tmp/outside.txt',
-        '../outside.txt',
-        'C:/outside.txt',
-        'C:foo',
-        r'C:\outside.txt',
-        r'\\server\share\outside.txt',
-    ],
-)
-def test_mutation_receipt_escape_spellings_are_rejected_for_containment(tmp_path, malicious):
+# Spellings are built from a tmp victim so they never name a real location.
+ESCAPE_SPELLINGS = [
+    pytest.param(lambda victim: str(victim), id='absolute'),
+    pytest.param(lambda victim: '\\\\?\\' + str(victim), id='verbatim-prefix'),
+    pytest.param(lambda victim: '../outside.txt', id='parent-relative'),
+    pytest.param(lambda victim: 'C:foo', id='drive-relative'),
+]
+if os.sep != '/':
+    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: victim.as_posix(), id='posix-absolute'))
+    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: '/' + victim.as_posix().split(':/', 1)[1], id='single-slash'))
+
+
+@pytest.mark.parametrize('spell', ESCAPE_SPELLINGS)
+def test_mutation_receipt_escape_spellings_are_rejected_for_containment(tmp_path, spell):
     target = valid_install(tmp_path)
+    malicious = spell(tmp_path / 'outside.txt')
     data = receipt(target)
     data['payload_hashes'] = {
         malicious: hashlib.sha256(b'do not touch').hexdigest(),
