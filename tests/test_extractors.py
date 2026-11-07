@@ -198,14 +198,9 @@ def test_html_extractor_keeps_visible_text_once_and_excludes_skipped_content(tmp
         assert excluded not in text
 
 
-def assert_phrases_in_order(manifest: dict, expected: list[str]) -> None:
+def assert_chunk_words_are_exactly(manifest: dict, expected: list[str]) -> None:
     words = "".join(c["content"] for c in manifest["chunks"]).split()
-    pos = 0
-    for phrase in expected:
-        want = phrase.split()
-        hits = [i for i in range(pos, len(words)) if words[i : i + len(want)] == want]
-        assert hits, (phrase, words)
-        pos = hits[0] + len(want)
+    assert words == [w for phrase in expected for w in phrase.split()]
 
 
 @pytest.mark.parametrize(
@@ -259,7 +254,7 @@ def test_html_extractor_keeps_every_word_separate_and_unlost(tmp_path, html, exp
     source = tmp_path / "case.html"
     source.write_text(html, encoding="utf-8")
     manifest = run_extractor("extract_html.py", source, tmp_path / "case.json")
-    assert_phrases_in_order(manifest, expected)
+    assert_chunk_words_are_exactly(manifest, expected)
     if heading_path is not None:
         last = expected[-1].split()[-1]
         chunk = next(c for c in manifest["chunks"] if last in c["content"])
@@ -269,9 +264,9 @@ def test_html_extractor_keeps_every_word_separate_and_unlost(tmp_path, html, exp
 @pytest.mark.parametrize(
     ("text", "expected"),
     [
-        pytest.param("a | b\n-|-\n1 | 2\nNext\n", ["a", "b", "1", "2", "Next"], id="table-no-trailing-pipe-then-text"),
-        pytest.param("| a | b |\n|---|---|\n| 1 | 2 |\n\nAfter para\n", ["a", "b", "1", "2", "After", "para"], id="piped-table-then-paragraph"),
-        pytest.param("```\ncode\n```\n# Head\ntext\n", ["code", "Head", "text"], id="fence-then-heading-then-text"),
+        pytest.param("a | b\n-|-\n1 | 2\nNext\n", ["a | b", "-|-", "1 | 2", "Next"], id="table-no-trailing-pipe-then-text"),
+        pytest.param("| a | b |\n|---|---|\n| 1 | 2 |\n\nAfter para\n", ["| a | b |", "|---|---|", "| 1 | 2 |", "After para"], id="piped-table-then-paragraph"),
+        pytest.param("```\ncode\n```\n# Head\ntext\n", ["```", "code", "```", "# Head", "text"], id="fence-then-heading-then-text"),
         pytest.param("中文 字 🙂 word\n", ["中文", "字", "🙂", "word"], id="cjk-and-emoji"),
     ],
 )
@@ -279,7 +274,7 @@ def test_markdown_extractor_keeps_every_word_separate_and_unlost(tmp_path, text,
     source = tmp_path / "case.md"
     source.write_text(text, encoding="utf-8")
     manifest = run_extractor("extract_markdown.py", source, tmp_path / "case.json")
-    assert_phrases_in_order(manifest, expected)
+    assert_chunk_words_are_exactly(manifest, expected)
 
 
 def test_html_table_keeps_row_layout(tmp_path):
