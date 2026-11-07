@@ -54,7 +54,7 @@ python installer/install.py install --target generic-agents --scope user --docum
 
 Use `--dry-run` to calculate the transaction without writing files. Use `--scope project --project-dir PATH` for project-local installation.
 
-Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`. `auto` picks the first of `copilot`, `gemini`, `codex`, `claude` whose command is on `PATH`, else `generic-agents`.
+Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`. `auto` picks the first of `copilot`, `gemini`, `codex`, `claude` whose command is found on `PATH`, else `generic-agents`. Only absolute `PATH` entries are searched: the current directory and relative entries (such as `bin` or `node_modules/.bin`) are skipped, so a host reachable only through one of them needs `--target`.
 
 Document profiles:
 
