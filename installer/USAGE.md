@@ -12,16 +12,29 @@ Node.js 20 or newer can install, inspect, verify, and uninstall the skill withou
 npm install -g deeper-reading
 ```
 
-Use an explicit command for every Agent Skills mutation:
+Use an explicit command for every Agent Skills mutation. After a global install the command is `deeper-reading`:
 
 ```text
-npx deeper-reading doctor --target auto --scope user --json
+deeper-reading doctor --target auto --scope user --json
 deeper-reading install --target auto --scope user --json
 deeper-reading verify --target auto --scope user --json
 deeper-reading uninstall --target auto --scope user --json
 ```
 
-`doctor` is read-only. `install --dry-run` computes the transaction without writing it. `uninstall --force` permits removal of modified receipt-owned files; unowned files remain preserved. For project scope, pass `--scope project --project-dir PATH`; omitted `--project-dir` defaults to the current directory. `--document-profile` accepts `standalone` or `oai-native`. `--json` emits structured output. Blocked or failed operations exit with status 2.
+Without a global install, run the same commands through `npx`:
+
+```text
+npx deeper-reading doctor --target auto --scope user --json
+```
+
+`install --dry-run` computes the transaction without writing it. `uninstall --force` permits removal of modified receipt-owned files; unowned files remain preserved. For project scope, pass `--scope project --project-dir PATH`; omitted `--project-dir` defaults to the current directory. `--document-profile` accepts `standalone` or `oai-native`. `--json` emits structured output.
+
+### Exit codes
+
+Both installers (Node and Python) behave the same way:
+
+- `doctor` is read-only and exits 0 whenever it can report. It does not exit non-zero for an unready target: read readiness from `can_install` in the output (`false` when the document profile is not ready, for example `--document-profile oai-native` outside an OAI-native harness).
+- `install`, `verify` and `uninstall` exit 2 when the operation is blocked or failed (including `passed: false` from `verify`) and 0 otherwise.
 
 The Node installer does not require Python. The installed extraction and verification scripts require Python 3.10 through 3.13, and `doctor` reports installer readiness separately from Python runtime readiness. No npm lifecycle hook writes into an Agent Skills directory. The Python commands below remain supported.
 
@@ -31,7 +44,7 @@ The Node installer does not require Python. The installed extraction and verific
 python installer/install.py doctor --target generic-agents --json
 ```
 
-`doctor` is read-only. It reports the resolved target root, runtime detection, document-profile status, bundled extractor evidence, and whether installation can proceed.
+`doctor` is read-only and exits 0. It reports the resolved target root, runtime detection, document-profile status, and whether installation can proceed in `can_install`.
 
 ## Install
 
@@ -41,7 +54,7 @@ python installer/install.py install --target generic-agents --scope user --docum
 
 Use `--dry-run` to calculate the transaction without writing files. Use `--scope project --project-dir PATH` for project-local installation.
 
-Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`.
+Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`. `auto` picks the first of `copilot`, `gemini`, `codex`, `claude` whose command is on `PATH`, else `generic-agents`.
 
 Document profiles:
 
@@ -53,6 +66,20 @@ Document profiles:
 - `oai-native` — optional enhancement only when native OpenAI PDF/DOCX rendering, OCR, or richer layout tooling actually exists. It may add QA capability but cannot weaken or replace the standalone anti-skimming evidence contract.
 
 The installed runtime payload also includes the package-owned planning, execution, debugging, recovery, and verification skills under `skills/`.
+
+## Skill roots
+
+The skill is installed at `<base>/skills/deeper-reading`, where `<base>` depends on the target and scope. User scope is under the home directory (`~` below; on Windows it is `%USERPROFILE%`); project scope is under `--project-dir`. Both installers use the same table.
+
+| Target | User scope | Project scope |
+| --- | --- | --- |
+| `generic-agents` | `~/.agents/skills/deeper-reading` | `<project>/.agents/skills/deeper-reading` |
+| `codex` | `~/.agents/skills/deeper-reading` | `<project>/.agents/skills/deeper-reading` |
+| `copilot` | `~/.copilot/skills/deeper-reading` | `<project>/.github/skills/deeper-reading` |
+| `gemini` | `~/.gemini/skills/deeper-reading` | `<project>/.gemini/skills/deeper-reading` |
+| `claude` | `~/.claude/skills/deeper-reading` | `<project>/.claude/skills/deeper-reading` |
+
+`generic-agents` and `codex` share one root. `auto` resolves to one of the targets above before the root is chosen.
 
 ## Verify
 
