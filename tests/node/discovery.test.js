@@ -88,8 +88,10 @@ test('unsafeShimPath returns the first offending character of the refusal set', 
   assert.equal(unsafeShimPath('C:\\a%b&c\\copilot.cmd'), '%');
 });
 
-for (const row of resolution.path_entries) test(`path entry usability: ${row.entry}`, t => {
-  if ((row.platform ?? (WIN ? 'win32' : 'posix')) !== (WIN ? 'win32' : 'posix')) return t.skip('row is for another host separator');
+const HOST = WIN ? 'win32' : 'posix';
+const hostRows = resolution.path_entries.filter(row => (row.platform ?? HOST) === HOST);
+test('path entry table has rows for this host', () => assert.ok(hostRows.length > 0));
+for (const row of hostRows) test(`path entry usability: ${row.entry}`, () => {
   assert.equal(usablePathDirectory(row.entry, WIN) !== null, row.usable);
 });
 

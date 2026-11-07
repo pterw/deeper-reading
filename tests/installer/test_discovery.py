@@ -88,10 +88,15 @@ def test_resolution_ignores_current_directory(name, tmp_path, monkeypatch):
     assert detect_target() == 'generic-agents'
 
 
-@pytest.mark.parametrize('row', RESOLUTION['path_entries'], ids=lambda row: row['entry'])
+HOST_ROWS = [row for row in RESOLUTION['path_entries'] if row.get('platform', HOST) == HOST]
+
+
+def test_path_entry_table_has_rows_for_this_host():
+    assert HOST_ROWS
+
+
+@pytest.mark.parametrize('row', HOST_ROWS, ids=lambda row: row['entry'])
 def test_path_entry_usability_table(row):
-    if row.get('platform', HOST) != HOST:
-        pytest.skip('row is for another host separator')
     assert (usable_path_directory(row['entry']) is not None) == row['usable']
 
 
