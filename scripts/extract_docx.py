@@ -70,9 +70,12 @@ def _collect_text(element: ET.Element, pieces: list[str]) -> None:
         elif node.tag in BREAK_TAGS:
             pieces.append('\n')
         elif node.tag in MARKERS:
-            inner = _text_from_element(node).strip()
+            raw = _text_from_element(node)
+            inner = raw.strip()
             if inner:
                 pieces.append(f'[{MARKERS[node.tag]}: {inner}]')
+            elif raw:
+                pieces.append(' ')
         elif node.tag == P_TAG:
             pieces.append('\n')
             _collect_text(node, pieces)
