@@ -1,33 +1,9 @@
 ---
 name: shipping-a-change
-description: What to update when you change something in deeper-reading, how a release ships, and what done requires. Use before opening a pull request or cutting a release.
+description: How a deeper-reading release ships, from a dated CHANGELOG section to npm and the GitHub Release. Use before cutting a release.
 ---
 
 # Shipping a change
-
-## Add a document format
-
-1. Write `scripts/extract_<format>.py` on the `Block`, `pack_blocks` and
-   `build_manifest` schema in `scripts/chunk_common.py`. It supports both
-   `--out <path>` and `--run-root <path>`.
-2. Register it in `EXTRACTOR_SCRIPTS` in `scripts/verify_run.py`.
-3. Document the format's structural invariants in `references/<format>.md`.
-4. Add the format's routes to `skills/exhaustive-document-traversal/SKILL.md`.
-5. Add deterministic coverage in `tests/test_extractors.py` and
-   `tests/test_phase_gated_loading.py`.
-6. Verify: `python -m pytest -q tests/test_extractors.py tests/test_phase_gated_loading.py`
-
-## When you change this, also change that
-
-| When you change | Also update |
-|---|---|
-| `scripts/extract_*.py` | `tests/test_extractors.py`; re-extraction in `scripts/verify_run.py` accepts only what the extractor reproduces |
-| A new document format | `scripts/extract_<format>.py`, `EXTRACTOR_SCRIPTS` in `scripts/verify_run.py`, `references/<format>.md`, the format routes in `skills/exhaustive-document-traversal/SKILL.md`, `tests/test_extractors.py`, `tests/test_phase_gated_loading.py` |
-| `installer/*.py` or `installer/adapters/*.py` | the matching `installer/node/*.js`; `tests/node/parity.test.js` must still pass |
-| What ships | `MANIFEST.json` `payload`, `package.json` `files`, `RELEASE_FILES` / `RELEASE_DIRECTORIES` in `installer/distribution.py` |
-| Definition of Done predicates | `references/definition-of-done.md` and `PREDICATES` in `scripts/verification_findings.py` |
-| The version | `VERSION`, `package.json`, `CHANGELOG.md`; grep `README.md` and `references/runtime-profiles.md` for the old version |
-| Skill or reference prose | grep `tests/` for the file name and the phrase first |
 
 ## Cut a release
 
@@ -67,14 +43,3 @@ by re-running the workflow, never by a new tag for the same version. A full
 re-run is safe: `publish` skips a version already on npm. Re-running only the
 `release` job after a partial failure publishes the existing release and
 replaces its assets.
-
-## Done
-
-- `python -m pytest -q -rs` exits 0, and every skip reason is one that
-  `tests/check_skip_budget.py` budgets.
-- `npm test` exits 0 when `installer/`, `package.json` or `tests/node/` changed.
-- `python tools/release_check.py` exits 0.
-- A behaviour change ships with a test that fails without the change.
-- A change to a published contract (CLI flags, `dod.json` fields, finding codes,
-  chunk-manifest or evidence schema, install receipt) keeps old inputs working,
-  or its CHANGELOG line names the break.

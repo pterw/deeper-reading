@@ -216,8 +216,7 @@ draft -> `build_evidence.py` (schema v2; binds quotes to byte spans through
 
 Shared skills live in `.github/skills/<name>/SKILL.md`:
 
-- `.github/skills/shipping-a-change/SKILL.md`: what to update for a change,
-  and the release procedure.
+- `.github/skills/shipping-a-change/SKILL.md`: the release procedure.
 - `.github/skills/security-review/SKILL.md`: the trust boundaries.
 
 ## Work Model
