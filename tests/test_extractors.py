@@ -70,6 +70,57 @@ def test_markdown_extractor_is_deterministic_and_keeps_fences_tables_atomic(tmp_
     assert any("Tail" in c.get("locator", {}).get("heading_path", []) for c in a["chunks"])
 
 
+@pytest.mark.parametrize(
+    ("text", "kinds", "last_heading_path"),
+    [
+        pytest.param(
+            "```\ncode\n```js\nmore code\n```\nafter\n",
+            ["fenced_code", "text"],
+            None,
+            id="fence-ignores-info-string-closer",
+        ),
+        pytest.param(
+            "````\na\n```\nmore code\n````\nafter\n",
+            ["fenced_code", "text"],
+            None,
+            id="fence-ignores-shorter-closer",
+        ),
+        pytest.param(
+            "```\na\n~~~\nmore code\n```\nafter\n",
+            ["fenced_code", "text"],
+            None,
+            id="fence-ignores-other-marker-closer",
+        ),
+        pytest.param("| a |\n|-|\n| 1 |\n", ["table"], None, id="one-column-short-dash-table"),
+        pytest.param("| a | b |\n|-|-|\n| 1 | 2 |\n", ["table"], None, id="later-column-short-dash-table"),
+        pytest.param("| a | b |\n|--|--|\n| 1 | 2 |\n", ["table"], None, id="two-dash-table"),
+        pytest.param("a|b\n---\n", ["text"], None, id="pipe-line-over-thematic-break"),
+        pytest.param("## Using C#\n", ["text"], ["Using C#"], id="heading-keeps-title-hash"),
+        pytest.param("## Title ##\n", ["text"], ["Title"], id="heading-drops-closing-run"),
+    ],
+)
+def test_markdown_blocks_follow_commonmark_boundaries(tmp_path, text, kinds, last_heading_path):
+    source = tmp_path / "case.md"
+    source.write_text(text, encoding="utf-8")
+    manifest = run_extractor("extract_markdown.py", source, tmp_path / "case.json", "--max-bytes", "12")
+    locators = [c["locator"] for c in manifest["chunks"]]
+    assert [loc.get("kind", "text") for loc in locators] == kinds
+    if kinds == ["fenced_code", "text"]:
+        assert "more code" in manifest["chunks"][0]["content"]
+        assert manifest["chunks"][1]["content"].strip() == "after"
+    if last_heading_path is not None:
+        assert locators[-1]["heading_path"] == last_heading_path
+
+
+def test_markdown_atomic_blocks_end_with_newline_so_stream_never_glues(tmp_path):
+    source = tmp_path / "glue.md"
+    source.write_text("```\ncode\n```\n| a |\n|---|\n| 1 |\n# Head\n", encoding="utf-8")
+    manifest = run_extractor("extract_markdown.py", source, tmp_path / "glue.json")
+    assert_manifest_integrity(manifest, source, "markdown")
+    stream = "".join(c["content"] for c in manifest["chunks"])
+    assert stream.splitlines() == ["```", "code", "```", "| a |", "|---|", "| 1 |", "# Head"]
+
+
 def test_markdown_extractor_tracks_h1_through_h6(tmp_path):
     source = tmp_path / "deep.md"
     source.write_text(

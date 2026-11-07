@@ -11,8 +11,19 @@ import re
 from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
 HEADING_RE = re.compile(r'^(#{1,6})\s+(.+?)\s*$')
-TABLE_SEP_RE = re.compile(r'^\s*\|?\s*:?-{3,}:?\s*(\|\s*:?-{3,}:?\s*)+\|?\s*$')
+TABLE_SEP_RE = re.compile(r'^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$')
 FENCE_RE = re.compile(r'^\s*(```+|~~~+)')
+CLOSING_HASHES_RE = re.compile(r'\s+#+$')
+
+
+def _is_table_separator(line: str) -> bool:
+    line = line.rstrip('\r\n')
+    return '|' in line and TABLE_SEP_RE.match(line) is not None
+
+
+def _closes_fence(line: str, marker: str) -> bool:
+    body = line.strip()
+    return len(body) >= len(marker) and body == body[0] * len(body) and body[0] == marker[0]
 
 
 def _heading_path(stack: list[str | None]) -> list[str]:
@@ -35,12 +46,12 @@ def parse_markdown_blocks(text: str) -> list[Block]:
             i += 1
             while i < len(lines):
                 fence_lines.append(lines[i])
-                candidate = lines[i].lstrip()
+                closes = _closes_fence(lines[i], marker)
                 i += 1
-                if candidate.startswith(marker[0] * len(marker)):
+                if closes:
                     break
             blocks.append(Block(
-                ''.join(fence_lines).rstrip('\r\n'),
+                ''.join(fence_lines).rstrip('\r\n') + '\n',
                 {'kind': 'fenced_code', 'heading_path': _heading_path(headings)},
                 atomic_kind='fenced_code',
             ))
@@ -49,7 +60,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
         heading = HEADING_RE.match(stripped)
         if heading:
             level = len(heading.group(1))
-            title = heading.group(2).strip().strip('#').strip()
+            title = CLOSING_HASHES_RE.sub('', heading.group(2).strip())
             headings[level - 1] = title
             for idx in range(level, len(headings)):
                 headings[idx] = None
@@ -63,7 +74,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
         if (
             '|' in stripped
             and i + 1 < len(lines)
-            and TABLE_SEP_RE.match(lines[i + 1].rstrip('\r\n'))
+            and _is_table_separator(lines[i + 1])
         ):
             table_lines = [line, lines[i + 1]]
             i += 2
@@ -74,7 +85,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
                 table_lines.append(lines[i])
                 i += 1
             blocks.append(Block(
-                ''.join(table_lines).rstrip('\r\n'),
+                ''.join(table_lines).rstrip('\r\n') + '\n',
                 {'kind': 'table', 'heading_path': _heading_path(headings)},
                 atomic_kind='table',
             ))
@@ -97,7 +108,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
             if (
                 '|' in candidate_stripped
                 and i + 1 < len(lines)
-                and TABLE_SEP_RE.match(lines[i + 1].rstrip('\r\n'))
+                and _is_table_separator(lines[i + 1])
             ):
                 break
             para_lines.append(candidate)
