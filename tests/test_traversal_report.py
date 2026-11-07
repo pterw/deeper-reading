@@ -113,7 +113,7 @@ def test_traversal_report_is_required_and_must_be_reproducible(tmp_path):
 
 
 def test_traversal_report_has_one_chunk_mapping_with_locator_outcome_and_atomic_text(tmp_path):
-    run = make_run(tmp_path)
+    make_run(tmp_path)
     write_report(tmp_path)
     text = (tmp_path / "deliverables" / "TRAVERSAL_REPORT.md").read_text(encoding="utf-8")
     manifest = json.loads((tmp_path / "evidence" / "chunk-manifest.json").read_text(encoding="utf-8"))

@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from tests.run_fixture import REQUIRED_EVIDENCE_FILES, valid_run
+from tests.run_fixture import valid_run
 
 ROOT = Path(__file__).resolve().parents[1]
 MODULE_PATH = ROOT / "scripts" / "verify_run.py"
