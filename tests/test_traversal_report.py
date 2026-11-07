@@ -78,6 +78,10 @@ def write_report(tmp_path: Path) -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def finding_codes(module, run: dict) -> list[str]:
+    return module.codes_of(module.validate_findings(run))
+
+
 def test_abstractive_string_assertions_are_rejected(tmp_path):
     module = load_verify()
     run = make_run(tmp_path)
@@ -85,8 +89,7 @@ def test_abstractive_string_assertions_are_rejected(tmp_path):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     ledger["entries"][0]["assertions"] = ["This is a prose summary, not extractive evidence."]
     ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
-    errors = module.validate_run(run)
-    assert any("atomic extractive assertion" in e for e in errors)
+    assert "atoms.entry.type" in finding_codes(module, run)
 
 
 def test_atomic_assertion_span_must_match_exact_chunk_bytes(tmp_path):
@@ -96,20 +99,19 @@ def test_atomic_assertion_span_must_match_exact_chunk_bytes(tmp_path):
     ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
     ledger["entries"][0]["assertions"][0]["text"] = "fabricated"
     ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
-    errors = module.validate_run(run)
-    assert any("extractive span does not match chunk bytes" in e for e in errors)
+    assert "atoms.span.mismatch" in finding_codes(module, run)
 
 
 def test_traversal_report_is_required_and_must_be_reproducible(tmp_path):
     module = load_verify()
     run = make_run(tmp_path)
-    errors = module.validate_run(run)
-    assert any("traversal report" in e.lower() for e in errors)
+    missing = finding_codes(module, run)
+    assert "coverage.report_path.missing" in missing
+    assert "evidence.traversal_report.missing" in missing
     write_report(tmp_path)
-    assert module.validate_run(run) == []
+    assert finding_codes(module, run) == []
     (tmp_path / "deliverables" / "TRAVERSAL_REPORT.md").write_text("# forged report\n", encoding="utf-8")
-    errors = module.validate_run(run)
-    assert any("traversal report does not match" in e.lower() for e in errors)
+    assert "coverage.report.mismatch" in finding_codes(module, run)
 
 
 def test_traversal_report_has_one_chunk_mapping_with_locator_outcome_and_atomic_text(tmp_path):

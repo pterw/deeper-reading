@@ -22,6 +22,58 @@ def test_non_object_ledger_fails_with_machine_readable_dod(tmp_path, value):
     assert dod['codes'] == ['json.ledger.type']
     assert not dod['passed']
 
+def _run_with_prior_passing_dod(root):
+    from tests.run_fixture import valid_run
+    run = valid_run(root)
+    ledger = root / 'run.json'
+    ledger.write_text(json.dumps(run), encoding='utf-8')
+    (root / 'dod.json').write_text(json.dumps({'passed': True}), encoding='utf-8')
+    return run, ledger
+
+
+@pytest.mark.parametrize('locator', ['oops', None, []])
+def test_non_object_locator_reports_missing_atomic_kind_and_rewrites_dod(tmp_path, locator):
+    run, ledger = _run_with_prior_passing_dod(tmp_path)
+    manifest_path = tmp_path / 'evidence' / 'chunk-manifest.json'
+    manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+    manifest['chunks'][0].update(oversize_atomic=True, locator=locator)
+    manifest_path.write_text(json.dumps(manifest), encoding='utf-8')
+    result = run_script('verify_run.py', ledger)
+    assert result.returncode == 1
+    assert 'Traceback' not in result.stderr
+    dod = json.loads((tmp_path / 'dod.json').read_text())
+    assert dod['passed'] is False
+    assert 'coverage.chunk.atomic_kind.missing' in dod['codes']
+
+
+def _raise_key_error(run):
+    raise KeyError('boom')
+
+
+def _return_unknown_predicate(run):
+    from scripts.verification_findings import Finding
+    return [Finding('x', 'not_a_predicate', 'm')]
+
+
+@pytest.mark.parametrize('broken', [_raise_key_error, _return_unknown_predicate],
+                         ids=['any-exception', 'unknown-predicate'])
+def test_validation_failure_becomes_ledger_validation_error(tmp_path, monkeypatch, broken):
+    import scripts.verify_run as verify_run
+    monkeypatch.setattr(verify_run, '_validate_findings', broken)
+    assert 'ledger.validation.error' in [f.code for f in verify_run.validate_findings({})]
+
+
+def test_validation_crash_through_main_rewrites_stale_passing_dod(tmp_path, monkeypatch):
+    import scripts.verify_run as verify_run
+    _run, ledger = _run_with_prior_passing_dod(tmp_path)
+    monkeypatch.setattr(verify_run, '_validate_findings', _raise_key_error)
+    monkeypatch.setattr(sys, 'argv', ['verify_run.py', str(ledger)])
+    assert verify_run.main() == 1
+    dod = json.loads((tmp_path / 'dod.json').read_text())
+    assert dod['passed'] is False
+    assert 'ledger.validation.error' in dod['codes']
+
+
 def test_extractor_cannot_overwrite_source(tmp_path):
     source = tmp_path / 'source.md'
     source.write_text('# Important source\nDo not destroy.\n', encoding='utf-8')

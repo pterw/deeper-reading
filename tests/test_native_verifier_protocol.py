@@ -4,6 +4,8 @@ import copy
 from pathlib import Path
 import sys
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -17,12 +19,6 @@ NEW_PREFLIGHT = {
     "runtime_profile_resolved": True,
     "traversal_plan_ready": True,
 }
-LEGACY_PREFLIGHT = {
-    "using_superpowers_read": True,
-    "superpowers_list_consumed": True,
-    "applicable_skills_read": True,
-    "live_dependencies_read": True,
-}
 
 def errors_for(run):
     return validate_run(copy.deepcopy(run))
@@ -32,20 +28,6 @@ def test_native_preflight_is_accepted(tmp_path):
     run["preflight"] = dict(NEW_PREFLIGHT)
     errors = errors_for(run)
     assert not [e for e in errors if e.startswith("preflight.")], errors
-
-def test_legacy_preflight_keys_are_rejected(tmp_path):
-    run = valid_run(tmp_path)
-    run["preflight"] = dict(LEGACY_PREFLIGHT)
-    errors = errors_for(run)
-    assert any("legacy preflight" in e for e in errors), errors
-
-def test_legacy_process_events_are_rejected(tmp_path):
-    run = valid_run(tmp_path)
-    run["preflight"] = dict(NEW_PREFLIGHT)
-    run["events"].insert(2, {"type": "systematic_debugging", "node": "acquire"})
-    run["events"].insert(3, {"type": "brainstorming"})
-    errors = errors_for(run)
-    assert any("legacy process event" in e for e in errors), errors
 
 def test_sibling_traversal_after_failure_requires_diagnosis(tmp_path):
     run = valid_run(tmp_path)
@@ -101,3 +83,33 @@ def test_native_event_entries_must_be_objects(tmp_path):
     run["events"] = ["oops"]
     errors = errors_for(run)
     assert any("events[1] must be an object" in e for e in errors), errors
+
+
+def test_valid_run_baseline_passes_with_native_preflight(tmp_path):
+    run = valid_run(tmp_path)
+    run["preflight"] = dict(NEW_PREFLIGHT)
+    assert errors_for(run) == []
+
+
+@pytest.mark.parametrize(
+    "key",
+    [
+        "using_superpowers_read",
+        "superpowers_list_consumed",
+        "applicable_skills_read",
+        "live_dependencies_read",
+    ],
+)
+def test_legacy_preflight_key_is_accepted(tmp_path, key):
+    run = valid_run(tmp_path)
+    run["preflight"] = {**NEW_PREFLIGHT, key: True}
+    assert errors_for(run) == []
+
+
+@pytest.mark.parametrize("event_type", ["systematic_debugging", "brainstorming"])
+def test_legacy_process_event_is_accepted(tmp_path, event_type):
+    run = valid_run(tmp_path)
+    run["preflight"] = dict(NEW_PREFLIGHT)
+    insert_at = run["events"].index({"type": "verification_started"})
+    run["events"].insert(insert_at, {"type": event_type})
+    assert errors_for(run) == []

@@ -14,12 +14,27 @@
 - Extraction exits 1 with a "no extractable text" message when a source yields
   no text at all, instead of writing an empty manifest. PDFs without a text
   layer point at OCR (the `oai-native` profile).
+- Verifier: a ledger with unresolved nodes or unresolved failures now fails
+  before `done` is appended (`done.node.unresolved`,
+  `done.failure.unresolved`); such ledgers used to pass until `done` existed.
+- Verifier: any exception raised while validating a ledger now yields
+  `ledger.validation.error` and rewrites `dod.json` with `passed: false` (a
+  stale passing `dod.json` no longer survives); a non-object chunk `locator`
+  reports `coverage.chunk.atomic_kind.missing` instead of crashing.
+- Verifier: a run folder copied to another location now verifies, as long as
+  `source.local_path` in `run.json` still resolves there (a path relative to the
+  run folder moves with it). The extraction reproduction no longer compares the
+  absolute `source.path`; the bytes stay bound by `sha256` and `size`.
 
 ### Compatibility
 
 - Run folders made with 0.2.3 for HTML, DOCX or Markdown sources whose extraction
   changed fail reproduction until the source is re-extracted (chunk text, ids and
   hashes change).
+- The verifier finding codes `preflight.legacy` and `events.legacy` are removed.
+  Ledgers carrying the four old preflight keys (such as `using_superpowers_read`)
+  or `systematic_debugging` / `brainstorming` events now verify instead of
+  failing.
 
 ## 0.2.3 - 2026-11-07
 

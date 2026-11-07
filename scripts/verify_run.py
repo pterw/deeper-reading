@@ -22,9 +22,9 @@ if str(SCRIPT_DIR) not in sys.path:
 from chunk_common import canonical_run_paths, render_traversal_report
 from evidence_atoms import atom_id as evidence_atom_id
 if __package__:
-    from .verification_findings import Finding, codes_of, group_by_predicate
+    from .verification_findings import PREDICATES, Finding, codes_of, group_by_predicate
 else:
-    from verification_findings import Finding, codes_of, group_by_predicate
+    from verification_findings import PREDICATES, Finding, codes_of, group_by_predicate
 from script_io import run_cli, validate_output, write_text_atomic
 
 REQUIRED_PREFLIGHT = (
@@ -34,15 +34,6 @@ REQUIRED_PREFLIGHT = (
     "runtime_profile_resolved",
     "traversal_plan_ready",
 )
-
-LEGACY_PREFLIGHT = (
-    "using_superpowers_read",
-    "superpowers_list_consumed",
-    "applicable_skills_read",
-    "live_dependencies_read",
-)
-
-LEGACY_PROCESS_EVENTS = {"systematic_debugging", "brainstorming"}
 
 MAX_VERIFIED_CHUNK_BYTES = 12000
 EXTRACTION_TIMEOUT_SECONDS = 60
@@ -126,6 +117,15 @@ def _mapping(value: Any, label: str, errors: list[Finding]) -> dict[str, Any]:
     return {}
 
 
+def _without_source_path(manifest: Any) -> Any:
+    """Copy of a manifest minus the absolute `source.path`; `sha256` and `size`
+    still bind the bytes, and the run folder may have moved."""
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("source"), dict):
+        return manifest
+    source = {k: v for k, v in manifest["source"].items() if k != "path"}
+    return {**manifest, "source": source}
+
+
 def _reproduce_extraction_manifest(
     source_path: Path, manifest: dict[str, Any], findings: list[Finding]
 ) -> None:
@@ -206,7 +206,7 @@ def _reproduce_extraction_manifest(
                 f"reproduced extraction manifest is unreadable: {exc}",
             ))
             return
-        if reproduced != manifest:
+        if _without_source_path(reproduced) != _without_source_path(manifest):
             findings.append(Finding(
                 "reproduction.mismatch", "source_coverage_complete",
                 "reproduced extraction manifest does not match supplied manifest",
@@ -476,7 +476,9 @@ def _validate_chunk_evidence(
                     "coverage.chunk.oversize", "source_coverage_complete",
                     f"non-atomic chunk exceeds max_bytes: {chunk_id}", detail=chunk_id,
                 ))
-            if raw_chunk.get("oversize_atomic") is True and not raw_chunk.get("locator", {}).get("atomic_kind"):
+            locator = raw_chunk.get("locator")
+            atomic_kind = locator.get("atomic_kind") if isinstance(locator, dict) else None
+            if raw_chunk.get("oversize_atomic") is True and not atomic_kind:
                 findings.append(Finding(
                     "coverage.chunk.atomic_kind.missing", "source_coverage_complete",
                     f"oversize_atomic chunk lacks atomic_kind: {chunk_id}", detail=chunk_id,
@@ -791,7 +793,7 @@ def validate_findings(run: dict[str, Any]) -> list[Finding]:
         return [Finding('json.ledger.type', 'machine_checks_passed', 'run ledger must contain a JSON object')]
     try:
         return _validate_findings(run)
-    except (TypeError, ValueError, OSError, RecursionError) as exc:
+    except Exception as exc:
         return [Finding('ledger.validation.error', 'machine_checks_passed',
                         f'run validation failed: {type(exc).__name__}: {exc}')]
 
@@ -1041,21 +1043,6 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
                 "execution_started cannot precede plan_written",
             ))
 
-    for key in LEGACY_PREFLIGHT:
-        if key in preflight:
-            findings.append(Finding(
-                "preflight.legacy", "skill_preflight_complete",
-                f"legacy preflight key is not allowed: {key}", detail=key,
-            ))
-
-    for event in events:
-        event_type = event.get("type")
-        if event_type in LEGACY_PROCESS_EVENTS:
-            findings.append(Finding(
-                "events.legacy", "machine_checks_passed",
-                f"legacy process event is not allowed: {event_type}", detail=event_type,
-            ))
-
     diagnosis_barriers = {
         "node_started", "node_passed", "node_failed", "node_rechunked",
         "node_recovered", "node_superseded", "architecture_stop",
@@ -1129,8 +1116,8 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
             ))
 
     done_positions = [i for i, e in enumerate(events) if e.get("type") == "done"]
+    done_i = done_positions[-1] if done_positions else len(events)
     if done_positions:
-        done_i = done_positions[-1]
         prior_types = [e.get("type") for e in events[:done_i]]
         if "verification_started" not in prior_types:
             findings.append(Finding(
@@ -1160,24 +1147,25 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
                     "done.verification.stale", "fresh_final_verification",
                     "verification_passed must follow the last material event",
                 ))
-        for node in nodes:
-            if not _node_is_resolved(events[:done_i], str(node)):
-                findings.append(Finding(
-                    "done.node.unresolved", "plan_resolved",
-                    f"done requires resolved plan node: {node}", detail=str(node),
-                ))
 
-        unresolved_failures: set[str] = set()
-        for e in events[:done_i]:
-            if e.get("type") == "node_failed" and e.get("node"):
-                unresolved_failures.add(str(e["node"]))
-            if e.get("type") in {"node_recovered", "node_passed", "node_superseded"} and e.get("node"):
-                unresolved_failures.discard(str(e["node"]))
-        for node in sorted(unresolved_failures):
+    for node in nodes:
+        if not _node_is_resolved(events[:done_i], str(node)):
             findings.append(Finding(
-                "done.failure.unresolved", "no_unresolved_required_failures",
-                f"done with unresolved failed node: {node}", detail=node,
+                "done.node.unresolved", "plan_resolved",
+                f"plan node must be resolved before done: {node}", detail=str(node),
             ))
+
+    unresolved_failures: set[str] = set()
+    for e in events[:done_i]:
+        if e.get("type") == "node_failed" and e.get("node"):
+            unresolved_failures.add(str(e["node"]))
+        if e.get("type") in {"node_recovered", "node_passed", "node_superseded"} and e.get("node"):
+            unresolved_failures.discard(str(e["node"]))
+    for node in sorted(unresolved_failures):
+        findings.append(Finding(
+            "done.failure.unresolved", "no_unresolved_required_failures",
+            f"done with unresolved failed node: {node}", detail=node,
+        ))
 
     return findings
 
@@ -1278,27 +1266,18 @@ def _build_dod_from_findings(run: dict[str, Any], findings: list[Finding]) -> di
     def failed(predicate: str) -> bool:
         return bool(by_predicate.get(predicate))
 
-    predicates = {
-        "source_identity_verified": source.get("identity_verified") is True and not failed("source_identity_verified"),
-        "skill_preflight_complete": all(
-            preflight.get(k) is True for k in REQUIRED_PREFLIGHT
-        ) and not failed("skill_preflight_complete"),
-        "plan_present": bool(plan.get("path")) and bool(plan.get("nodes")) and not failed("plan_present"),
-        "plan_resolved": not failed("plan_resolved"),
-        "output_containment_valid": not failed("output_containment_valid"),
-        "source_coverage_complete": not failed("source_coverage_complete"),
-        "failure_protocol_respected": not failed("failure_protocol_respected"),
-        "source_fidelity_preserved": fidelity.get("preserved") is True and not failed("source_fidelity_preserved"),
-        "format_qa_complete": not failed("format_qa_complete"),
-        "requested_deliverable_produced": deliverable.get("provided") is True and not failed("requested_deliverable_produced"),
-        "deliverable_provided": deliverable.get("provided") is True and not failed("requested_deliverable_produced"),
-        "evidence_complete": not failed("evidence_complete"),
-        "no_unresolved_required_failures": not failed("no_unresolved_required_failures"),
-        "fresh_final_verification": any(
-            e.get("type") == "verification_passed" for e in events
-        ) and not failed("fresh_final_verification"),
-        "machine_checks_passed": not findings,
+    # Left conjuncts that must also hold before a predicate can pass.
+    required = {
+        "source_identity_verified": source.get("identity_verified") is True,
+        "skill_preflight_complete": all(preflight.get(k) is True for k in REQUIRED_PREFLIGHT),
+        "plan_present": bool(plan.get("path")) and bool(plan.get("nodes")),
+        "source_fidelity_preserved": fidelity.get("preserved") is True,
+        "requested_deliverable_produced": deliverable.get("provided") is True,
+        "fresh_final_verification": any(e.get("type") == "verification_passed" for e in events),
     }
+    predicates = {name: required.get(name, True) and not failed(name) for name in PREDICATES}
+    predicates["machine_checks_passed"] = not findings
+    predicates["deliverable_provided"] = predicates["requested_deliverable_produced"]
     result = {
         "passed": not findings,
         "violations": [f.message for f in findings],

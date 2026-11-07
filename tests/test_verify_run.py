@@ -1,6 +1,8 @@
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -190,27 +192,6 @@ def test_unpreserved_fidelity_is_rejected(tmp_path):
     assert any("source fidelity must be preserved" in e for e in errors)
 
 
-def test_dod_output_exposes_terminal_predicates(tmp_path):
-    module = load_module()
-    run = valid_run(tmp_path)
-    errors = module.validate_run(run)
-    dod = module.build_dod(run, errors)
-    required = {
-        "source_identity_verified",
-        "skill_preflight_complete",
-        "plan_resolved",
-        "source_coverage_complete",
-        "failure_protocol_respected",
-        "source_fidelity_preserved",
-        "format_qa_complete",
-        "requested_deliverable_produced",
-        "no_unresolved_required_failures",
-        "fresh_final_verification",
-        "machine_checks_passed",
-    }
-    assert required <= set(dod["predicates"])
-
-
 @pytest.mark.parametrize(
     "field",
     ["source", "preflight", "plan", "deliverable", "evidence", "qa", "fidelity", "chunking"],
@@ -319,3 +300,183 @@ def test_schema_v2_duplicate_atom_id_is_rejected(tmp_path):
     ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
     errors = module.validate_run(run)
     assert any("duplicate atom_id" in e for e in errors)
+
+
+def _drop_done(events):
+    return [e for e in events if e["type"] != "done"]
+
+
+def _without_chunk_pass(events):
+    return [
+        e for e in _drop_done(events)
+        if not (e["type"] == "node_passed" and e["node"].startswith("html-"))
+    ]
+
+
+def _failed_acquire_unrecovered(events):
+    out = []
+    for e in _drop_done(events):
+        if e["type"] == "node_passed" and e["node"] == "acquire":
+            out.append({"type": "node_failed", "node": "acquire", "evidence": "timeout"})
+            out.append({"type": "failure_diagnosed", "node": "acquire", "evidence": "timeout"})
+        else:
+            out.append(e)
+    return out
+
+
+@pytest.mark.parametrize(
+    ("rewrite", "expected_codes"),
+    [
+        (_without_chunk_pass, ["done.node.unresolved"]),
+        (_failed_acquire_unrecovered, ["done.failure.unresolved", "done.node.unresolved"]),
+        (_drop_done, []),
+    ],
+    ids=["unresolved-node", "unresolved-failure", "no-done-valid-passes"],
+)
+def test_end_of_run_checks_run_before_done_is_appended(tmp_path, rewrite, expected_codes):
+    module = load_module()
+    run = valid_run(tmp_path)
+    run["events"] = rewrite(run["events"])
+    codes = sorted({f.code for f in module.validate_findings(run)})
+    assert codes == expected_codes
+
+
+BAD_SHA = "0" * 64
+
+
+def _evidence_files(run):
+    root = Path(run["_ledger_path"]).parent
+    return root, root / run["chunking"]["manifest"], root / run["chunking"]["evidence_ledger"]
+
+
+def _edit_ledger(change):
+    def mutate(run):
+        _, _, ledger_path = _evidence_files(run)
+        ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+        change(ledger)
+        ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
+    return mutate
+
+
+def _edit_manifest(change):
+    """Rewrite the manifest and re-hash it into the run and the ledger, so only
+    the field the row targets disagrees."""
+    def mutate(run):
+        _, manifest_path, ledger_path = _evidence_files(run)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        change(manifest)
+        manifest_path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+        new_sha = hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+        run["chunking"]["manifest_sha256"] = new_sha
+        _edit_ledger(lambda ledger: ledger.update(manifest_sha256=new_sha))(run)
+    return mutate
+
+
+def _edit_events(change):
+    def mutate(run):
+        run["events"] = change(run["events"])
+    return mutate
+
+
+def _change_source_bytes(run):
+    Path(run["source"]["local_path"]).write_text("<p>beta</p>", encoding="utf-8")
+
+
+def _verified(events):
+    return [e for e in events if e["type"] == "chunk_verified"]
+
+
+SOURCE_COVERAGE = "source_coverage_complete"
+
+
+@pytest.mark.parametrize(
+    ("mutation", "expected_code"),
+    [
+        (_edit_ledger(lambda l: l.update(manifest_sha256=BAD_SHA)),
+         "coverage.ledger.manifest_sha.mismatch"),
+        (_edit_ledger(lambda l: l.update(source_sha256=BAD_SHA)),
+         "coverage.ledger.source_sha.mismatch"),
+        (_edit_ledger(lambda l: l.update(schema_version=3)),
+         "coverage.ledger.schema_version"),
+        (_edit_ledger(lambda l: l["entries"][0].update(ordinal=2)),
+         "coverage.entry.ordinal.mismatch"),
+        (_edit_ledger(lambda l: l["entries"][0].update(outcome="skipped")),
+         "coverage.entry.outcome.invalid"),
+        (_edit_ledger(lambda l: l["entries"][0].update(chunk_sha256=BAD_SHA)),
+         "coverage.entry.hash.mismatch"),
+        (_edit_manifest(lambda m: m["chunks"][0].update(content_sha256=BAD_SHA)),
+         "coverage.chunk.content_sha.mismatch"),
+        (_edit_manifest(lambda m: m["source"].update(sha256=BAD_SHA)),
+         "coverage.manifest_source.sha.mismatch"),
+        (_change_source_bytes, "coverage.source_sha.mismatch"),
+        (lambda run: run["source"].pop("sha256"), "coverage.source_sha.missing"),
+        (lambda run: run["source"].pop("local_path"), "coverage.source_local_path.missing"),
+        (lambda run: Path(run["source"]["local_path"]).unlink(), "coverage.source_local_path.missing"),
+        (_edit_events(lambda ev: ev + [dict(_verified(ev)[0])]),
+         "events.chunk_verified.duplicate"),
+        (_edit_events(lambda ev: ev + [{"type": "chunk_verified", "chunk_id": "ghost"}]),
+         "events.chunk_verified.unknown"),
+        (_edit_events(lambda ev: [e for e in ev if e["type"] != "chunk_verified"]),
+         "events.chunk_verified.mirror"),
+        (lambda run: run["coverage"].update(completed=[]), "coverage.mirror.completed.mismatch"),
+    ],
+    ids=lambda value: value if isinstance(value, str) else "",
+)
+def test_ledger_and_manifest_binding_failures_carry_their_code(tmp_path, mutation, expected_code):
+    module = load_module()
+    run = valid_run(tmp_path)
+    assert module.validate_findings(run) == []
+    mutation(run)
+    hits = [f for f in module.validate_findings(run) if f.code == expected_code]
+    assert hits, f"{expected_code} not emitted"
+    assert {f.predicate for f in hits} == {SOURCE_COVERAGE}
+
+
+def _codes(module, run):
+    return [f.code for f in module.validate_findings(run)]
+
+
+def test_relocated_run_folder_verifies_with_no_findings(tmp_path):
+    module = load_module()
+    old = tmp_path / "old"
+    run = valid_run(old)
+    run["source"]["local_path"] = "source/source.html"
+    new = tmp_path / "new"
+    shutil.copytree(old, new)
+    shutil.rmtree(old)
+    run["_ledger_path"] = str(new / "run.json")
+    assert module.validate_findings(run) == []
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        _change_source_bytes,
+        _edit_manifest(lambda m: m["source"].update(size_bytes=999)),
+    ],
+    ids=["source_bytes", "source_size_bytes"],
+)
+def test_reproduction_still_mismatches_on_bound_source_fields(tmp_path, mutation):
+    module = load_module()
+    run = valid_run(tmp_path)
+    mutation(run)
+    assert "reproduction.mismatch" in _codes(module, run)
+
+
+def test_reproduction_compares_source_uri(tmp_path, monkeypatch):
+    """The extractor echoes the manifest's own uri, so a stub extractor that
+    reports a different one is the only way to reach the uri comparison."""
+    module = load_module()
+    run = valid_run(tmp_path)
+    manifest = json.loads((tmp_path / run["chunking"]["manifest"]).read_text(encoding="utf-8"))
+
+    def fake_extractor(args, **kwargs):
+        reproduced = json.loads(json.dumps(manifest))
+        reproduced["source"]["uri"] = "https://example.org/other"
+        Path(args[args.index("--out") + 1]).write_text(json.dumps(reproduced), encoding="utf-8")
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(module.subprocess, "run", fake_extractor)
+    findings = []
+    module._reproduce_extraction_manifest(Path(run["source"]["local_path"]), manifest, findings)
+    assert [f.code for f in findings] == ["reproduction.mismatch"]

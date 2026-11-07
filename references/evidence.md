@@ -164,3 +164,5 @@ python scripts/verify_run.py <run-root>/run.json
 ```
 
 The verifier writes `<run-root>/dod.json`. Exit 0 means the machine-checkable traversal predicates passed. It does not waive required visual/structural QA for PDF/DOCX figures, equations, tables, native fields, comments, or layout.
+
+In `dod.json`, `predicates.deliverable_provided` is a derived alias that always equals `predicates.requested_deliverable_produced`.
