@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -47,21 +48,37 @@ def test_force_uninstall_removes_modified_owned_file_but_not_unowned(tmp_path):
     assert note.exists()
 
 
-@pytest.mark.parametrize(
-    'malicious',
-    [
-        '/tmp/outside.txt',
-        '../outside.txt',
-        'C:/outside.txt',
-        'C:foo',
-        r'C:\outside.txt',
-        r'\\server\share\outside.txt',
-    ],
-)
-def test_uninstall_rejects_receipt_paths_outside_install_root(tmp_path, malicious):
+# Every spelling resolves to the victim inside tmp_path (or stays relative and
+# harmless), so a containment regression deletes a tmp file, never a real one.
+ESCAPE_SPELLINGS = [
+    pytest.param(lambda victim: str(victim), id='absolute'),
+    pytest.param(lambda victim: '\\\\?\\' + str(victim), id='verbatim-prefix'),
+    pytest.param(lambda victim: '../outside.txt', id='parent-relative'),
+    pytest.param(lambda victim: 'C:foo', id='drive-relative'),
+]
+if os.sep != '/':
+    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: victim.as_posix(), id='posix-absolute'))
+    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: '/' + victim.as_posix().split(':/', 1)[1], id='single-slash'))
+
+
+@pytest.mark.parametrize('malicious', ['Z:/dr-no-such/x', '//dr-no-such-host/share/x'])
+def test_uninstall_rejects_drive_and_unc_receipt_paths_on_every_os(tmp_path, malicious):
+    target = make_install(tmp_path)
+    receipt_path = target / '.install-receipt.json'
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    receipt['payload_hashes'] = {malicious: hashlib.sha256(b'x').hexdigest()}
+    receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+
+    with pytest.raises(InstallError, match='managed payload path'):
+        uninstall_skill(target, force=True)
+
+
+@pytest.mark.parametrize('spell', ESCAPE_SPELLINGS)
+def test_uninstall_rejects_receipt_paths_outside_install_root(tmp_path, spell):
     target = make_install(tmp_path)
     victim = tmp_path / 'outside.txt'
     victim.write_text('do not touch', encoding='utf-8')
+    malicious = spell(victim)
     receipt_path = target / '.install-receipt.json'
     receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
     receipt['payload_hashes'] = {

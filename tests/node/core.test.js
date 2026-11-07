@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { spawn } from "node:child_process";
 import {
+  chmodSync,
   cpSync,
   existsSync,
   mkdirSync,
@@ -7,6 +9,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync
 } from "node:fs";
@@ -21,6 +24,7 @@ import {
   uninstallSkill,
   verifyInstallation
 } from "../../installer/node/core.js";
+import { runNodeCli } from "./helpers.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const READY = { state: "ready", evidence: ["test-ready"], action: [] };
@@ -109,19 +113,38 @@ test("install refuses an existing root without a receipt", (t) => {
   assert.equal(readFileSync(path.join(targetRoot, "SKILL.md"), "utf8"), "unmanaged");
 });
 
-test("receipt path spellings outside the target are rejected before uninstall", (t) => {
-  const malicious = [
-    "/tmp/outside.txt", "../outside.txt", "C:/outside.txt", "C:foo",
-    "C:\\outside.txt", "\\\\server\\share\\outside.txt"
-  ];
-  for (const raw of malicious) {
+test("drive and UNC receipt spellings are rejected on every OS", (t) => {
+  for (const raw of ["Z:/dr-no-such/x", "//dr-no-such-host/share/x"]) {
     const { targetRoot, options } = fixture(t);
     installSkill(options);
     const receipt = readReceipt(targetRoot);
     receipt.payload_hashes = { [raw]: "0".repeat(64) };
     writeReceipt(targetRoot, receipt);
-    assert.throws(() => uninstallSkill(targetRoot), /managed payload path/);
-    rmSync(targetRoot, { recursive: true, force: true });
+    assert.throws(() => uninstallSkill(targetRoot, { force: true }), /managed payload path/);
+  }
+});
+
+test("receipt path spellings outside the target are rejected without touching the victim", (t) => {
+  // Every spelling resolves to the victim inside the sandbox (or stays relative
+  // and harmless), so a containment regression deletes a tmp file, never a real one.
+  const spellings = [
+    (victim) => victim,
+    (victim) => `\\\\?\\${victim}`,
+    () => "../outside.txt",
+    () => "C:foo",
+    ...(path.sep === "/" ? [] : [(victim) => victim.replaceAll("\\", "/")])
+  ];
+  for (const spell of spellings) {
+    const { sandbox, targetRoot, options } = fixture(t);
+    installSkill(options);
+    const victim = path.join(sandbox, "outside.txt");
+    writeFileSync(victim, "do not touch", "utf8");
+    const raw = spell(victim);
+    const receipt = readReceipt(targetRoot);
+    receipt.payload_hashes = { [raw]: sha256File(victim) };
+    writeReceipt(targetRoot, receipt);
+    assert.throws(() => uninstallSkill(targetRoot, { force: true }), /managed payload path/, raw);
+    assert.equal(readFileSync(victim, "utf8"), "do not touch", raw);
   }
 });
 
@@ -196,6 +219,96 @@ test("failure after replacement restores the prior installation", (t) => {
   assert.equal(verifyInstallation(targetRoot).passed, true);
 });
 
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+function isAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Makes the real backup removal fail: a child process holding a directory inside
+// the backup on Windows, a read-only directory elsewhere. Returns an undo function.
+function makeBackupUndeletable(targetRoot) {
+  const parent = path.dirname(targetRoot);
+  const name = readdirSync(parent).find((entry) => entry.includes(".backup-"));
+  const locked = path.join(parent, name, "references");
+  if (process.platform === "win32") {
+    // The child takes its working directory only once it has started, so wait for it.
+    const ready = path.join(path.dirname(parent), "child-ready");
+    const script = `require("fs").writeFileSync(${JSON.stringify(ready)}, "1"); setInterval(() => {}, 1000)`;
+    const child = spawn(process.execPath, ["-e", script], { cwd: locked, stdio: "ignore" });
+    const deadline = Date.now() + 10000;
+    while (!existsSync(ready) && Date.now() < deadline) {
+      sleepSync(50);
+    }
+    return () => {
+      child.kill();
+      const gone = Date.now() + 10000;
+      while (Date.now() < gone && isAlive(child.pid)) {
+        sleepSync(50);
+      }
+      sleepSync(300); // Windows releases the directory handle a moment after exit
+    };
+  }
+  chmodSync(locked, 0o500);
+  return () => chmodSync(locked, 0o700);
+}
+
+for (const mode of ["injector", "real-removal"]) {
+  test(`backup cleanup failure after the commit point keeps the new install and warns (${mode})`, (t) => {
+    if (mode === "real-removal" && process.platform !== "win32" && process.getuid?.() === 0) {
+      t.skip("root ignores directory permissions");
+      return;
+    }
+    const { targetRoot, options } = fixture(t);
+    assert.equal("warnings" in installSkill(options), false);
+    let undo = () => {};
+    let result;
+    try {
+      result = installSkill({
+        ...options,
+        failureInjector(point) {
+          if (mode === "injector" && point === "cleanup-backup") {
+            throw new Error("injected cleanup failure");
+          }
+          if (mode === "real-removal" && point === "after-receipt") {
+            undo = makeBackupUndeletable(targetRoot);
+          }
+        }
+      });
+      assert.equal(result.state, "installed");
+      assert.equal(result.warnings.length, 1);
+      assert.match(result.warnings[0], /backup cleanup failed/);
+      assert.equal(existsSync(path.join(targetRoot, "SKILL.md")), true);
+      const verdict = verifyInstallation(targetRoot);
+      const failed = Object.keys(verdict.predicates).filter((name) => !verdict.predicates[name]);
+      assert.deepEqual(failed, ["no_backup_leftovers"]);
+    } finally {
+      undo();
+    }
+  });
+}
+
+test("failure after the receipt still restores the prior installation", (t) => {
+  const { targetRoot, options } = fixture(t);
+  installSkill(options);
+  const original = readFileSync(path.join(targetRoot, "SKILL.md"));
+  assert.throws(() => installSkill({
+    ...options,
+    failureInjector(point) {
+      if (point === "after-receipt") throw new Error("injected after-receipt failure");
+    }
+  }), /injected after-receipt failure/);
+  assert.deepEqual(readFileSync(path.join(targetRoot, "SKILL.md")), original);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
 test("verify reports payload hash mismatch", (t) => {
   const { targetRoot, options } = fixture(t);
   installSkill(options);
@@ -214,4 +327,62 @@ test("verify rejects a receipt for a different installed root", (t) => {
   const result = verifyInstallation(targetRoot);
   assert.equal(result.passed, false);
   assert.equal(result.predicates.receipt_matches_installed_root, false);
+});
+
+const CORRUPT_RECEIPTS = [
+  ["truncated json", "{"],
+  ["array", "[]"],
+  ["null", "null"],
+  ["string", "\"x\""],
+  ["document_status int", "{\"document_status\": 3}"],
+  ["payload_hashes array", "{\"payload_hashes\": [\"a\"]}"],
+  ["host_discovery string", "{\"host_discovery\": \"verified\"}"],
+  ["document_status null", "{\"document_status\": null}"],
+  ["host_discovery null", "{\"host_discovery\": null}"],
+  ["unreadable, receipt is a directory", null]
+];
+
+for (const [name, text] of CORRUPT_RECEIPTS) {
+  test(`corrupt receipt (${name}) fails closed in install, verify and uninstall`, (t) => {
+    const { targetRoot, options } = fixture(t);
+    installSkill(options);
+    const receiptPath = path.join(targetRoot, ".install-receipt.json");
+    if (text === null) {
+      rmSync(receiptPath);
+      mkdirSync(receiptPath);
+    } else {
+      writeFileSync(receiptPath, text, "utf8");
+    }
+    assert.throws(() => installSkill(options), /invalid installation receipt/);
+    const result = verifyInstallation(targetRoot);
+    assert.equal(result.passed, false);
+    assert.ok(result.violations.some((v) => v.includes("invalid installation receipt")));
+    assert.throws(() => uninstallSkill(targetRoot, { force: true }), /invalid installation receipt/);
+    assert.ok(existsSync(path.join(targetRoot, "SKILL.md")));
+    if (text === null) {
+      assert.ok(statSync(receiptPath).isDirectory());
+    } else {
+      assert.equal(readFileSync(receiptPath, "utf8"), text);
+    }
+  });
+}
+
+test("corrupt receipt through the CLI exits 2 with empty stderr and a structured error", (t) => {
+  const { sandbox, options } = fixture(t);
+  const home = path.join(sandbox, "home");
+  const project = path.join(sandbox, "project");
+  mkdirSync(home);
+  mkdirSync(project);
+  const targetRoot = path.join(project, ".agents", "skills", "deeper-reading");
+  installSkill({ ...options, targetRoot, scope: "project" });
+  writeFileSync(path.join(targetRoot, ".install-receipt.json"), "null", "utf8");
+  for (const command of ["install", "verify", "uninstall"]) {
+    const result = runNodeCli(
+      [command, "--target", "generic-agents", "--scope", "project", "--project-dir", project, "--json"],
+      { cwd: project, home }
+    );
+    assert.equal(result.status, 2, command);
+    assert.equal(result.stderr, "", command);
+    assert.match(result.stdout, /invalid installation receipt/);
+  }
 });

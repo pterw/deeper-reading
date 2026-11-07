@@ -130,14 +130,28 @@ def _remove_tree(path: Path) -> None:
 
 
 
+RECEIPT_OBJECT_FIELDS = ('payload_hashes', 'document_status', 'host_discovery')
+
+
+def _read_receipt(receipt_path: Path) -> dict:
+    """Return the receipt as a dict, or raise InstallError('invalid installation receipt: ...')."""
+    try:
+        receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    except Exception as exc:
+        raise InstallError(f'invalid installation receipt: {exc}') from exc
+    if not isinstance(receipt, dict):
+        raise InstallError('invalid installation receipt: not a JSON object')
+    for field in RECEIPT_OBJECT_FIELDS:
+        if field in receipt and not isinstance(receipt[field], dict):
+            raise InstallError(f'invalid installation receipt: {field} must be an object')
+    return receipt
+
+
 def _upgrade_ownership(target_root: Path, expected_hashes: dict[str, str]) -> tuple[dict, set[str]]:
     receipt_path = target_root / '.install-receipt.json'
     if not receipt_path.is_file():
         raise InstallError('existing target is unmanaged; installation receipt missing')
-    try:
-        receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
-    except Exception as exc:
-        raise InstallError(f'existing target has invalid installation receipt: {exc}') from exc
+    receipt = _read_receipt(receipt_path)
     old_owned = receipt.get('payload_hashes') or {}
     if not isinstance(old_owned, dict) or not old_owned:
         raise InstallError('existing target has no managed payload ownership record')
@@ -208,6 +222,7 @@ def install_skill(
         stage = parent / f'.{target_root.name}.stage-{token}'
         backup = parent / f'.{target_root.name}.backup-{token}'
         replaced = False
+        cleanup_failed = False
 
         def inject(point: str) -> None:
             if failure_injector is not None:
@@ -262,8 +277,16 @@ def install_skill(
             receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n', encoding='utf-8')
             inject('after-receipt')
 
-            _remove_tree(backup)
-            return {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
+            # Commit point: the new install is complete. Backup removal is best
+            # effort and must never roll the finished install back.
+            result = {'state': 'installed', 'target': str(target_root), 'receipt': receipt}
+            try:
+                inject('cleanup-backup')
+                _remove_tree(backup)
+            except Exception as cleanup_exc:
+                cleanup_failed = True
+                result['warnings'] = [f'backup cleanup failed: {cleanup_exc}; remove {backup} by hand']
+            return result
         except Exception as exc:
             try:
                 _remove_tree(stage)
@@ -277,9 +300,12 @@ def install_skill(
                 raise
             raise InstallError(str(exc)) from exc
         finally:
-            _remove_tree(stage)
-            if backup.exists() and target_root.exists():
-                _remove_tree(backup)
+            try:
+                _remove_tree(stage)
+                if not cleanup_failed and backup.exists() and target_root.exists():
+                    _remove_tree(backup)
+            except OSError:
+                pass  # best effort; verify reports leftovers
 
 
 def verify_installation(target_root: Path) -> dict:
@@ -308,9 +334,9 @@ def verify_installation(target_root: Path) -> dict:
 
     predicates['receipt_written'] = True
     try:
-        receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
-    except Exception as exc:
-        violations.append(f'invalid receipt: {exc}')
+        receipt = _read_receipt(receipt_path)
+    except InstallError as exc:
+        violations.append(str(exc))
         return {'passed': False, 'predicates': predicates, 'violations': violations}
 
     hash_ok = True
@@ -371,9 +397,9 @@ def uninstall_skill(target_root: Path, *, force: bool = False) -> dict:
         receipt_path = target / '.install-receipt.json'
         if not receipt_path.is_file():
             raise InstallError('installation receipt missing; refusing unmanaged uninstall')
-        receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+        receipt = _read_receipt(receipt_path)
         owned = receipt.get('payload_hashes') or {}
-        if not isinstance(owned, dict) or not owned:
+        if not owned:
             raise InstallError('installation receipt has no managed payload ownership record')
 
         modified: list[str] = []

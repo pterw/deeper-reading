@@ -172,6 +172,20 @@ function runDoctor(context, env) {
 }
 
 function runInstall(context, options, env) {
+  if (context.documentStatus.state !== "ready") {
+    return {
+      code: 2,
+      payload: {
+        state: "blocked",
+        command: "install",
+        target: context.targetName,
+        target_root: context.targetRoot,
+        document_profile: context.documentProfile,
+        document_status: context.documentStatus,
+        mutation_performed: false
+      }
+    };
+  }
   const python = pythonRuntimeStatus({ env });
   const plan = installSkill(coreOptions(context, options));
   return {

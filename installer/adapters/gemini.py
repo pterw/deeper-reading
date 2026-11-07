@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-import shutil
 import subprocess
 
-from .base import SKILL_NAME, VerificationResult, require_project
+from .base import SKILL_NAME, UnsafeHostPath, VerificationResult, require_project, resolve_host_command, run_host_command
 from .discovery import discovery_state
 
 
@@ -12,7 +11,7 @@ class GeminiAdapter:
     name = 'gemini'
 
     def detect(self) -> bool:
-        return shutil.which('gemini') is not None
+        return resolve_host_command('gemini') is not None
 
     def resolve_skill_root(self, scope: str, project_dir: Path | None) -> Path:
         if scope == 'user':
@@ -24,7 +23,9 @@ class GeminiAdapter:
         if not self.detect():
             return VerificationResult('not-available', ('gemini CLI not found',))
         try:
-            proc = subprocess.run(['gemini', 'skills', 'list'], capture_output=True, text=True, check=False, timeout=30)
+            proc = run_host_command('gemini', ['skills', 'list'])
+        except UnsafeHostPath as exc:
+            return VerificationResult('failed', (str(exc),))
         except (OSError, subprocess.TimeoutExpired) as exc:
             return VerificationResult('failed', (f'{type(exc).__name__}: {exc}',))
         evidence = (f'exit={proc.returncode}', (proc.stdout or '').strip(), (proc.stderr or '').strip())
