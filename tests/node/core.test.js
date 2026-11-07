@@ -9,6 +9,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync
 } from "node:fs";
@@ -23,6 +24,7 @@ import {
   uninstallSkill,
   verifyInstallation
 } from "../../installer/node/core.js";
+import { runNodeCli } from "./helpers.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const READY = { state: "ready", evidence: ["test-ready"], action: [] };
@@ -325,4 +327,62 @@ test("verify rejects a receipt for a different installed root", (t) => {
   const result = verifyInstallation(targetRoot);
   assert.equal(result.passed, false);
   assert.equal(result.predicates.receipt_matches_installed_root, false);
+});
+
+const CORRUPT_RECEIPTS = [
+  ["truncated json", "{"],
+  ["array", "[]"],
+  ["null", "null"],
+  ["string", "\"x\""],
+  ["document_status int", "{\"document_status\": 3}"],
+  ["payload_hashes array", "{\"payload_hashes\": [\"a\"]}"],
+  ["host_discovery string", "{\"host_discovery\": \"verified\"}"],
+  ["document_status null", "{\"document_status\": null}"],
+  ["host_discovery null", "{\"host_discovery\": null}"],
+  ["unreadable, receipt is a directory", null]
+];
+
+for (const [name, text] of CORRUPT_RECEIPTS) {
+  test(`corrupt receipt (${name}) fails closed in install, verify and uninstall`, (t) => {
+    const { targetRoot, options } = fixture(t);
+    installSkill(options);
+    const receiptPath = path.join(targetRoot, ".install-receipt.json");
+    if (text === null) {
+      rmSync(receiptPath);
+      mkdirSync(receiptPath);
+    } else {
+      writeFileSync(receiptPath, text, "utf8");
+    }
+    assert.throws(() => installSkill(options), /invalid installation receipt/);
+    const result = verifyInstallation(targetRoot);
+    assert.equal(result.passed, false);
+    assert.ok(result.violations.some((v) => v.includes("invalid installation receipt")));
+    assert.throws(() => uninstallSkill(targetRoot, { force: true }), /invalid installation receipt/);
+    assert.ok(existsSync(path.join(targetRoot, "SKILL.md")));
+    if (text === null) {
+      assert.ok(statSync(receiptPath).isDirectory());
+    } else {
+      assert.equal(readFileSync(receiptPath, "utf8"), text);
+    }
+  });
+}
+
+test("corrupt receipt through the CLI exits 2 with empty stderr and a structured error", (t) => {
+  const { sandbox, options } = fixture(t);
+  const home = path.join(sandbox, "home");
+  const project = path.join(sandbox, "project");
+  mkdirSync(home);
+  mkdirSync(project);
+  const targetRoot = path.join(project, ".agents", "skills", "deeper-reading");
+  installSkill({ ...options, targetRoot, scope: "project" });
+  writeFileSync(path.join(targetRoot, ".install-receipt.json"), "null", "utf8");
+  for (const command of ["install", "verify", "uninstall"]) {
+    const result = runNodeCli(
+      [command, "--target", "generic-agents", "--scope", "project", "--project-dir", project, "--json"],
+      { cwd: project, home }
+    );
+    assert.equal(result.status, 2, command);
+    assert.equal(result.stderr, "", command);
+    assert.match(result.stdout, /invalid installation receipt/);
+  }
 });

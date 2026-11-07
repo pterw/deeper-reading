@@ -35,6 +35,24 @@ function sortedObject(value) {
   return value;
 }
 
+const RECEIPT_OBJECT_FIELDS = ["payload_hashes", "document_status", "host_discovery"];
+
+function isPlainObject(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+// Returns the receipt as an object or throws with the reason it is unusable.
+function readReceipt(receiptPath) {
+  const receipt = JSON.parse(readFileSync(receiptPath, "utf8"));
+  if (!isPlainObject(receipt)) throw new Error("not a JSON object");
+  for (const field of RECEIPT_OBJECT_FIELDS) {
+    if (field in receipt && !isPlainObject(receipt[field])) {
+      throw new Error(`${field} must be an object`);
+    }
+  }
+  return receipt;
+}
+
 // Single deep owner of receipt-parsed installation state. Every mutation or
 // verification flow consumes this instead of re-parsing the receipt,
 // re-validating the payload map, or re-walking owned paths. Containment is
@@ -61,8 +79,9 @@ function loadOwnedInstallation(targetRoot, options = {}) {
     return loaded;
   }
   try {
-    loaded.receipt = JSON.parse(readFileSync(loaded.receiptPath, "utf8"));
+    loaded.receipt = readReceipt(loaded.receiptPath);
   } catch (error) {
+    loaded.receipt = null;
     loaded.problems.receiptInvalid = error.message;
     return loaded;
   }
@@ -356,7 +375,7 @@ export function verifyInstallation(targetRoot) {
   predicates.receipt_written = true;
   const loaded = loadOwnedInstallation(target);
   if (loaded.problems.receiptInvalid !== null) {
-    violations.push(`invalid receipt: ${loaded.problems.receiptInvalid}`);
+    violations.push(`invalid installation receipt: ${loaded.problems.receiptInvalid}`);
     return { passed: false, predicates, violations };
   }
   const receipt = loaded.receipt;
