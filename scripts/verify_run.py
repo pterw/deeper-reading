@@ -117,6 +117,15 @@ def _mapping(value: Any, label: str, errors: list[Finding]) -> dict[str, Any]:
     return {}
 
 
+def _without_source_path(manifest: Any) -> Any:
+    """Copy of a manifest minus the absolute `source.path`; `sha256` and `size`
+    still bind the bytes, and the run folder may have moved."""
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("source"), dict):
+        return manifest
+    source = {k: v for k, v in manifest["source"].items() if k != "path"}
+    return {**manifest, "source": source}
+
+
 def _reproduce_extraction_manifest(
     source_path: Path, manifest: dict[str, Any], findings: list[Finding]
 ) -> None:
@@ -197,7 +206,7 @@ def _reproduce_extraction_manifest(
                 f"reproduced extraction manifest is unreadable: {exc}",
             ))
             return
-        if reproduced != manifest:
+        if _without_source_path(reproduced) != _without_source_path(manifest):
             findings.append(Finding(
                 "reproduction.mismatch", "source_coverage_complete",
                 "reproduced extraction manifest does not match supplied manifest",

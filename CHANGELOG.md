@@ -21,6 +21,10 @@
   `ledger.validation.error` and rewrites `dod.json` with `passed: false` (a
   stale passing `dod.json` no longer survives); a non-object chunk `locator`
   reports `coverage.chunk.atomic_kind.missing` instead of crashing.
+- Verifier: a run folder copied to another location now verifies, as long as
+  `source.local_path` in `run.json` still resolves there (a path relative to the
+  run folder moves with it). The extraction reproduction no longer compares the
+  absolute `source.path`; the bytes stay bound by `sha256` and `size`.
 
 ### Compatibility
 

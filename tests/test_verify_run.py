@@ -2,6 +2,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 
@@ -429,3 +430,53 @@ def test_ledger_and_manifest_binding_failures_carry_their_code(tmp_path, mutatio
     hits = [f for f in module.validate_findings(run) if f.code == expected_code]
     assert hits, f"{expected_code} not emitted"
     assert {f.predicate for f in hits} == {SOURCE_COVERAGE}
+
+
+def _codes(module, run):
+    return [f.code for f in module.validate_findings(run)]
+
+
+def test_relocated_run_folder_verifies_with_no_findings(tmp_path):
+    module = load_module()
+    old = tmp_path / "old"
+    run = valid_run(old)
+    run["source"]["local_path"] = "source/source.html"
+    new = tmp_path / "new"
+    shutil.copytree(old, new)
+    shutil.rmtree(old)
+    run["_ledger_path"] = str(new / "run.json")
+    assert module.validate_findings(run) == []
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        _change_source_bytes,
+        _edit_manifest(lambda m: m["source"].update(size_bytes=999)),
+    ],
+    ids=["source_bytes", "source_size_bytes"],
+)
+def test_reproduction_still_mismatches_on_bound_source_fields(tmp_path, mutation):
+    module = load_module()
+    run = valid_run(tmp_path)
+    mutation(run)
+    assert "reproduction.mismatch" in _codes(module, run)
+
+
+def test_reproduction_compares_source_uri(tmp_path, monkeypatch):
+    """The extractor echoes the manifest's own uri, so a stub extractor that
+    reports a different one is the only way to reach the uri comparison."""
+    module = load_module()
+    run = valid_run(tmp_path)
+    manifest = json.loads((tmp_path / run["chunking"]["manifest"]).read_text(encoding="utf-8"))
+
+    def fake_extractor(args, **kwargs):
+        reproduced = json.loads(json.dumps(manifest))
+        reproduced["source"]["uri"] = "https://example.org/other"
+        Path(args[args.index("--out") + 1]).write_text(json.dumps(reproduced), encoding="utf-8")
+        return subprocess.CompletedProcess(args, 0, "", "")
+
+    monkeypatch.setattr(module.subprocess, "run", fake_extractor)
+    findings = []
+    module._reproduce_extraction_manifest(Path(run["source"]["local_path"]), manifest, findings)
+    assert [f.code for f in findings] == ["reproduction.mismatch"]
