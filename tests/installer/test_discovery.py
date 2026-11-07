@@ -67,7 +67,8 @@ def test_discovery_launches_real_host_shim(host, tmp_path, monkeypatch):
     (shim_dir / 'out.txt').write_bytes(verified.encode('ascii'))
     write_shim(shim_dir, host,
                'echo %* > "%~dp0argv.txt"\r\ntype "%~dp0out.txt"',
-               'echo "$@" > "$(dirname "$0")/argv.txt"\ncat "$(dirname "$0")/out.txt"')
+               'd="${0%/*}"\necho "$@" > "$d/argv.txt"\n'
+               'while IFS= read -r line || [ -n "$line" ]; do printf \'%s\\n\' "$line"; done < "$d/out.txt"')
     use_clean_env(monkeypatch, tmp_path, [shim_dir])
     result = ADAPTERS[host]().discovery_verify('deeper-reading')
     assert result.state == 'verified', result.evidence
