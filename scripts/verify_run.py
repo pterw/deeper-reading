@@ -1129,8 +1129,8 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
             ))
 
     done_positions = [i for i, e in enumerate(events) if e.get("type") == "done"]
+    done_i = done_positions[-1] if done_positions else len(events)
     if done_positions:
-        done_i = done_positions[-1]
         prior_types = [e.get("type") for e in events[:done_i]]
         if "verification_started" not in prior_types:
             findings.append(Finding(
@@ -1160,24 +1160,25 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
                     "done.verification.stale", "fresh_final_verification",
                     "verification_passed must follow the last material event",
                 ))
-        for node in nodes:
-            if not _node_is_resolved(events[:done_i], str(node)):
-                findings.append(Finding(
-                    "done.node.unresolved", "plan_resolved",
-                    f"done requires resolved plan node: {node}", detail=str(node),
-                ))
 
-        unresolved_failures: set[str] = set()
-        for e in events[:done_i]:
-            if e.get("type") == "node_failed" and e.get("node"):
-                unresolved_failures.add(str(e["node"]))
-            if e.get("type") in {"node_recovered", "node_passed", "node_superseded"} and e.get("node"):
-                unresolved_failures.discard(str(e["node"]))
-        for node in sorted(unresolved_failures):
+    for node in nodes:
+        if not _node_is_resolved(events[:done_i], str(node)):
             findings.append(Finding(
-                "done.failure.unresolved", "no_unresolved_required_failures",
-                f"done with unresolved failed node: {node}", detail=node,
+                "done.node.unresolved", "plan_resolved",
+                f"plan node must be resolved before done: {node}", detail=str(node),
             ))
+
+    unresolved_failures: set[str] = set()
+    for e in events[:done_i]:
+        if e.get("type") == "node_failed" and e.get("node"):
+            unresolved_failures.add(str(e["node"]))
+        if e.get("type") in {"node_recovered", "node_passed", "node_superseded"} and e.get("node"):
+            unresolved_failures.discard(str(e["node"]))
+    for node in sorted(unresolved_failures):
+        findings.append(Finding(
+            "done.failure.unresolved", "no_unresolved_required_failures",
+            f"done with unresolved failed node: {node}", detail=node,
+        ))
 
     return findings
 

@@ -21,7 +21,7 @@ A run is DONE only when every required predicate below has fresh evidence.
 | Requested deliverable exists | The exact requested result is produced **and** deterministic `deliverables/TRAVERSAL_REPORT.md` exists as the user-visible traversal proof. |
 | No unresolved required failure remains | Failure ledger has zero unresolved required nodes; disclosed optional limitations are marked non-blocking only when they do not violate the request. |
 | Final verification is fresh | `verification-before-completion` is invoked after the last material change; `evidence/verification-log.txt` records the fresh proving commands/actions and their results. |
-| Machine verifier passes | `scripts/verify_run.py <run-root>/run.json` exits 0 and writes canonical `<run-root>/dod.json` on the current evidence. |
+| Machine verifier passes | `scripts/verify_run.py <run-root>/run.json` exits 0 and writes canonical `<run-root>/dod.json` on the current evidence. The verifier may run before `done` is appended; it enforces node resolution and unresolved failures then, and is re-run after `done` is appended. |
 
 ## Anti-skimming completion gate
 

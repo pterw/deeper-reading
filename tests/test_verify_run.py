@@ -319,3 +319,42 @@ def test_schema_v2_duplicate_atom_id_is_rejected(tmp_path):
     ledger_path.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
     errors = module.validate_run(run)
     assert any("duplicate atom_id" in e for e in errors)
+
+
+def _drop_done(events):
+    return [e for e in events if e["type"] != "done"]
+
+
+def _without_chunk_pass(events):
+    return [
+        e for e in _drop_done(events)
+        if not (e["type"] == "node_passed" and e["node"].startswith("html-"))
+    ]
+
+
+def _failed_acquire_unrecovered(events):
+    out = []
+    for e in _drop_done(events):
+        if e["type"] == "node_passed" and e["node"] == "acquire":
+            out.append({"type": "node_failed", "node": "acquire", "evidence": "timeout"})
+            out.append({"type": "failure_diagnosed", "node": "acquire", "evidence": "timeout"})
+        else:
+            out.append(e)
+    return out
+
+
+@pytest.mark.parametrize(
+    ("rewrite", "expected_codes"),
+    [
+        (_without_chunk_pass, ["done.node.unresolved"]),
+        (_failed_acquire_unrecovered, ["done.failure.unresolved", "done.node.unresolved"]),
+        (_drop_done, []),
+    ],
+    ids=["unresolved-node", "unresolved-failure", "no-done-valid-passes"],
+)
+def test_end_of_run_checks_run_before_done_is_appended(tmp_path, rewrite, expected_codes):
+    module = load_module()
+    run = valid_run(tmp_path)
+    run["events"] = rewrite(run["events"])
+    codes = sorted({f.code for f in module.validate_findings(run)})
+    assert codes == expected_codes

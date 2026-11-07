@@ -14,6 +14,9 @@
 - Extraction exits 1 with a "no extractable text" message when a source yields
   no text at all, instead of writing an empty manifest. PDFs without a text
   layer point at OCR (the `oai-native` profile).
+- Verifier: a ledger with unresolved nodes or unresolved failures now fails
+  before `done` is appended (`done.node.unresolved`,
+  `done.failure.unresolved`); such ledgers used to pass until `done` existed.
 
 ### Compatibility
 
