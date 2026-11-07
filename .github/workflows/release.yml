@@ -1,12 +1,17 @@
 name: Release
 
 # The owner pushes an annotated vX.Y.Z tag. The CI gates run on it, the owner
-# approves the npm-release environment, npm publishes by trusted publishing
-# (OIDC with provenance, no token), then the GitHub Release is made with the
-# CHANGELOG section as notes and the distribution ZIP attached.
+# approves the npm-release environment, and the version is staged on npm by
+# trusted publishing (OIDC with provenance, no token). The trusted publisher
+# is stage-only: a staged version is not public until the owner approves it on
+# npmjs.com (Staged Packages tab, or `npm stage approve <stage-id>`, with 2FA;
+# approval waits for npm's malware scan). The release job waits for the version
+# to be public on npm, then makes the GitHub Release with the CHANGELOG section
+# as notes and the distribution ZIP attached. If the wait times out, approve
+# the staged version and re-run the release job.
 #
 # A manual run (workflow_dispatch) is a rehearsal: the same gates, label
-# check, `npm publish --dry-run` and ZIP build, with no publish and no release.
+# check, `npm publish --dry-run` and ZIP build, with no staging and no release.
 on:
   push:
     tags: ['v*']
@@ -89,9 +94,9 @@ jobs:
           node-version: '24'
           registry-url: https://registry.npmjs.org
 
-      # Trusted publishing needs npm 11.5.1 or newer.
+      # Staging needs npm 11.15.0 or newer (and Node 22.14 or newer).
       - name: Update npm
-        run: npm install -g npm@^11.5.1
+        run: npm install -g npm@^11.15.0
 
       # Fails before the publish, which cannot be undone, when the tag, VERSION,
       # package.json or the dated CHANGELOG section disagree. Values go through
@@ -101,10 +106,11 @@ jobs:
           TAG: ${{ github.ref_name }}
         run: python3 tools/release_check.py --tag "$TAG"
 
-      # Safe to re-run, and the first release may be hand-published by the owner
-      # before the trusted publisher exists: a version already on npm is skipped,
-      # a missing package or version (E404) is published, any other error fails.
-      - name: Publish to npm
+      # A version already public on npm is skipped, so a full re-run after a
+      # release is safe. A missing version (E404) is staged; npm refuses to stage
+      # a version that is already staged, so a re-run before that stage is
+      # approved or rejected fails with a hint. Any other error fails.
+      - name: Stage the npm publish
         run: |
           VERSION="$(cat VERSION)"
           # The answer is read from stdout only: a notice npm prints on stderr
@@ -118,7 +124,10 @@ jobs:
           if [ "$status" -eq 0 ] && [ "$out" = "$VERSION" ]; then
             echo "::notice::deeper-reading@$VERSION is already on npm; skipping the publish."
           elif [ "$status" -ne 0 ] && grep -q 'E404' npm-view.err; then
-            npm publish
+            if ! npm stage publish --provenance; then
+              echo "::error::npm stage publish failed. A version already staged is refused: approve or reject it on npmjs.com (Staged Packages) before re-running."
+              exit 1
+            fi
           else
             echo "::error::npm view deeper-reading@$VERSION failed (status $status): $out $(cat npm-view.err)"
             exit 1
@@ -127,15 +136,46 @@ jobs:
   release:
     needs: publish
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 75
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '24'
+
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with:
           python-version: '3.13'
+
+      # The version is only staged until the owner approves it on npmjs.com.
+      # Poll the same stdout-only `npm view` every 30 s for up to 60 min: E404
+      # keeps waiting, a match proceeds, any other error fails at once.
+      - name: Wait for the version to be public on npm
+        run: |
+          VERSION="$(cat VERSION)"
+          deadline=$((SECONDS + 3600))
+          while true; do
+            if out="$(npm view "deeper-reading@$VERSION" version 2> npm-view.err)"; then
+              status=0
+            else
+              status=$?
+            fi
+            if [ "$status" -eq 0 ] && [ "$out" = "$VERSION" ]; then
+              echo "::notice::deeper-reading@$VERSION is public on npm."
+              break
+            elif [ "$status" -eq 0 ] || ! grep -q 'E404' npm-view.err; then
+              echo "::error::npm view deeper-reading@$VERSION failed (status $status): $out $(cat npm-view.err)"
+              exit 1
+            fi
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "::error::deeper-reading@$VERSION is not public on npm after 60 minutes. Approve the staged version on npmjs.com (Staged Packages), then re-run the release job."
+              exit 1
+            fi
+            sleep 30
+          done
 
       - name: Make the GitHub Release
         env:
