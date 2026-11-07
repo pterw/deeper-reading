@@ -13,6 +13,7 @@ never part of the skill payload, the npm package or the release ZIP.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import re
 import sys
@@ -21,7 +22,21 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 # "## 0.2.3 - 2026-11-07"; the separator may be a hyphen, en dash or em dash.
 HEADING = re.compile(r"^## +(\S+)(?: +[-–—] +(.*?))? *$")
-ISO_DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
+
+
+def is_date(text: str) -> bool:
+    """True when text is a real calendar date written YYYY-MM-DD.
+
+    The shape check keeps the verdict identical on every Python: from 3.11
+    fromisoformat also accepts 20261107 and 2026-W45-6.
+    """
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        return False
+    try:
+        datetime.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
 
 
 def changelog_section(text: str, version: str) -> tuple[str, str] | None:
@@ -53,8 +68,10 @@ def check(root: Path, tag: str | None) -> tuple[list[str], str | None]:
         failures.append(f"CHANGELOG.md has no '## {version}' section")
         return failures, None
     suffix, body = section
-    if tag is not None and not ISO_DATE.fullmatch(suffix):
+    if tag is not None and not is_date(suffix):
         failures.append(f"CHANGELOG.md section {version} is not dated: '## {version} - YYYY-MM-DD'")
+    if tag is not None and not body.strip():
+        failures.append(f"CHANGELOG.md section {version} has no entries")
     return failures, body
 
 
