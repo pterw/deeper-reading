@@ -18,6 +18,7 @@ const LAUNCHABLE = [".com", ".exe", ".bat", ".cmd"];
 const TRAILING_DOTS = /(?<=[^./\\:])\.+(?=[/\\]|$)/g;
 const CURRENT_DIRECTORY = /^(?:\.(?:\/+\.?)*)?$/;
 const CURRENT_DIRECTORY_WIN32 = /^(?:\.(?:[/\\]+\.?)*)?$/;
+const ROOT_RELATIVE = /^[/\\](?![/\\])/;
 const UNSAFE_SHIM_CHARACTERS = new Set(['"', "%", "&", "|", "<", ">", "^", "!", "(", ")", ",", ";", "=", "\r", "\n"]);
 
 function isFile(candidate) {
@@ -37,14 +38,29 @@ function isExecutableFile(candidate) {
   return isFile(candidate);
 }
 
-// Rule R29, identical in installer/adapters/base.py (shared table:
-// tests/fixtures/host-resolution-cases.json): only PATH entries are searched, never the current
-// directory; entries and PATHEXT members are trimmed and unquoted; empty and current-directory
+// Rules R29/R32/R40, identical in installer/adapters/base.py (shared table:
+// tests/fixtures/host-resolution-cases.json): only absolute PATH entries are searched, never the current
+// directory or a relative entry; entries and PATHEXT members are trimmed and unquoted; empty and current-directory
 // entries (".", "./", ".\.") are skipped; Win32 drops the trailing dots of every path segment. On win32 the extensions are
 // the PATHEXT members cmd.exe can launch, in PATHEXT order.
 function normalise(value) {
   const trimmed = value.trim();
   return trimmed.length > 1 && trimmed.startsWith('"') && trimmed.endsWith('"') ? trimmed.slice(1, -1) : trimmed;
+}
+
+// Rule R40: a drive-relative ("C:tools") or root-relative ("\tools") entry is not absolute; a UNC
+// entry is. path.isAbsolute accepts the root-relative form on Windows, so it is rejected explicitly.
+function isAbsoluteEntry(directory) {
+  return !(path.sep === "\\" && ROOT_RELATIVE.test(directory)) && path.isAbsolute(directory);
+}
+
+// The one decision on a PATH entry: its directory to search, or null when it is skipped
+// (empty, current-directory or not absolute).
+export function usablePathDirectory(entry, win32 = process.platform === "win32") {
+  const normalised = normalise(entry);
+  const directory = win32 ? normalised.replace(TRAILING_DOTS, "") : normalised;
+  if ((win32 ? CURRENT_DIRECTORY_WIN32 : CURRENT_DIRECTORY).test(directory)) return null;
+  return isAbsoluteEntry(directory) ? directory : null;
 }
 
 export function resolveCommand(command, { env = process.env, platform = process.platform } = {}) {
@@ -55,9 +71,8 @@ export function resolveCommand(command, { env = process.env, platform = process.
       .filter((extension) => LAUNCHABLE.includes(extension))
     : [""];
   for (const entry of (env.PATH ?? env.Path ?? "").split(win32 ? ";" : path.delimiter)) {
-    const normalised = normalise(entry);
-    const directory = win32 ? normalised.replace(TRAILING_DOTS, "") : normalised;
-    if ((win32 ? CURRENT_DIRECTORY_WIN32 : CURRENT_DIRECTORY).test(directory)) continue;
+    const directory = usablePathDirectory(entry, win32);
+    if (directory === null) continue;
     for (const extension of extensions) {
       const candidate = path.join(path.resolve(directory), command + extension);
       if (win32 ? isFile(candidate) : isExecutableFile(candidate)) return candidate;

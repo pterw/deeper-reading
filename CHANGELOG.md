@@ -27,10 +27,12 @@
   absolute `source.path`; the bytes stay bound by `sha256` and `size`.
 - Installers (Windows): `--target copilot`, `--target gemini` and `--target auto`
   now work when the host CLI is a `.cmd` shim, in both the Python and Node
-  installers. Only `PATH` entries are searched, never the current directory. A
-  `.cmd` or `.bat` host path containing any of `" % & | < > ^ ! ( ) , ; =` or a
+  installers. A `.cmd` or `.bat` host path containing any of `" % & | < > ^ ! ( ) , ; =` or a
   line break is refused: host discovery is reported as `failed` and the shim is
   not run.
+- Installers (all platforms): host lookup searches only absolute `PATH` entries,
+  in both the Python and Node installers: never the current directory, and no
+  relative entry such as `bin` or `node_modules/.bin`.
 - Installers: if removing the old backup fails after an upgrade has put the new
   version in place, the install stays committed instead of rolling back. The
   install result gains an additive `warnings` key naming the leftover backup to
@@ -59,6 +61,9 @@
   Ledgers carrying the four old preflight keys (such as `using_superpowers_read`)
   or `systematic_debugging` / `brainstorming` events now verify instead of
   failing.
+- A host CLI reachable only through a relative `PATH` entry is no longer
+  auto-detected by the installers. Use `--target`, or put an absolute directory
+  on `PATH`.
 
 ## 0.2.3 - 2026-11-07
 

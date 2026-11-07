@@ -13,6 +13,7 @@ LAUNCHABLE_EXTENSIONS = ('.com', '.exe', '.bat', '.cmd')
 TRAILING_DOTS = re.compile(r'(?<=[^./\\:])\.+(?=[/\\]|$)')
 CURRENT_DIRECTORY = re.compile(r'(?:\.(?:/+\.?)*)?')
 CURRENT_DIRECTORY_WIN32 = re.compile(r'(?:\.(?:[/\\]+\.?)*)?')
+ROOT_RELATIVE = re.compile(r'[/\\](?![/\\])')
 UNSAFE_SHIM_CHARACTERS = frozenset('"%&|<>^!(),;=\r\n')
 
 
@@ -69,18 +70,36 @@ def _candidate_names(name: str) -> list[str]:
     return [name + ext for ext in extensions if ext in LAUNCHABLE_EXTENSIONS]
 
 
+def _is_absolute(directory: str) -> bool:
+    # Rule R40: a drive-relative ("C:tools") or root-relative ("\tools") entry is not absolute;
+    # a UNC entry ("\\server\share") is. os.path.isabs differs across Python versions on the
+    # root-relative form, so it is rejected explicitly when the host separator is a backslash.
+    if os.sep == '\\' and ROOT_RELATIVE.match(directory):
+        return False
+    return os.path.isabs(directory)
+
+
+def usable_path_directory(entry: str) -> str | None:
+    # The one decision on a PATH entry: its directory to search, or None when it is skipped
+    # (empty, current-directory or not absolute).
+    directory = _normalise(entry)
+    if sys.platform == 'win32':
+        directory = TRAILING_DOTS.sub('', directory)
+    if (CURRENT_DIRECTORY_WIN32 if sys.platform == 'win32' else CURRENT_DIRECTORY).fullmatch(directory):
+        return None
+    return directory if _is_absolute(directory) else None
+
+
 def resolve_host_command(name: str) -> str | None:
-    # Rule R29, identical in installer/node/adapters.js (shared table:
-    # tests/fixtures/host-resolution-cases.json): only PATH entries are searched, never the
-    # current directory; entries and PATHEXT members are trimmed and unquoted; empty and
-    # current-directory entries (".", "./", ".\.") are skipped; Win32 drops the trailing dots
-    # of every path segment.
+    # Rules R29/R32/R40, identical in installer/node/adapters.js (shared table:
+    # tests/fixtures/host-resolution-cases.json): only absolute PATH entries are searched,
+    # never the current directory or any relative entry; entries and PATHEXT members are
+    # trimmed and unquoted; empty and current-directory entries (".", "./", ".\.") are
+    # skipped; Win32 drops the trailing dots of every path segment.
     candidates = _candidate_names(name)
     for entry in os.environ.get('PATH', '').split(os.pathsep):
-        directory = _normalise(entry)
-        if sys.platform == 'win32':
-            directory = TRAILING_DOTS.sub('', directory)
-        if (CURRENT_DIRECTORY_WIN32 if sys.platform == 'win32' else CURRENT_DIRECTORY).fullmatch(directory):
+        directory = usable_path_directory(entry)
+        if directory is None:
             continue
         for candidate in candidates:
             path = os.path.join(os.path.abspath(directory), candidate)
