@@ -15,8 +15,8 @@ on:
 permissions:
   contents: read
 
-# No top-level concurrency: the called gate's group is github.workflow-github.ref,
-# which evaluates to this caller's values, so the same group here would deadlock.
+# No top-level concurrency: the called gate's group evaluates with this caller's
+# values (Release-<run_id>), so a group here built the same way would deadlock.
 
 jobs:
   gates:

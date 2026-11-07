@@ -13,10 +13,13 @@ on:
 permissions:
   contents: read
 
-# A newer push to a pull request makes its older run pointless. Pushes to main
-# are never cancelled, so every merge commit keeps a complete run.
+# A newer push to a pull request makes its older run pointless, so pull requests
+# share one group per ref and cancel in progress. Every other run (a push to main,
+# a manual run, a release calling these gates) gets a group of its own: GitHub
+# replaces a pending run in a shared group even without cancel-in-progress, which
+# would let a quick second merge drop the first merge commit's run.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
