@@ -22,9 +22,9 @@ if str(SCRIPT_DIR) not in sys.path:
 from chunk_common import canonical_run_paths, render_traversal_report
 from evidence_atoms import atom_id as evidence_atom_id
 if __package__:
-    from .verification_findings import Finding, codes_of, group_by_predicate
+    from .verification_findings import PREDICATES, Finding, codes_of, group_by_predicate
 else:
-    from verification_findings import Finding, codes_of, group_by_predicate
+    from verification_findings import PREDICATES, Finding, codes_of, group_by_predicate
 from script_io import run_cli, validate_output, write_text_atomic
 
 REQUIRED_PREFLIGHT = (
@@ -1279,27 +1279,18 @@ def _build_dod_from_findings(run: dict[str, Any], findings: list[Finding]) -> di
     def failed(predicate: str) -> bool:
         return bool(by_predicate.get(predicate))
 
-    predicates = {
-        "source_identity_verified": source.get("identity_verified") is True and not failed("source_identity_verified"),
-        "skill_preflight_complete": all(
-            preflight.get(k) is True for k in REQUIRED_PREFLIGHT
-        ) and not failed("skill_preflight_complete"),
-        "plan_present": bool(plan.get("path")) and bool(plan.get("nodes")) and not failed("plan_present"),
-        "plan_resolved": not failed("plan_resolved"),
-        "output_containment_valid": not failed("output_containment_valid"),
-        "source_coverage_complete": not failed("source_coverage_complete"),
-        "failure_protocol_respected": not failed("failure_protocol_respected"),
-        "source_fidelity_preserved": fidelity.get("preserved") is True and not failed("source_fidelity_preserved"),
-        "format_qa_complete": not failed("format_qa_complete"),
-        "requested_deliverable_produced": deliverable.get("provided") is True and not failed("requested_deliverable_produced"),
-        "deliverable_provided": deliverable.get("provided") is True and not failed("requested_deliverable_produced"),
-        "evidence_complete": not failed("evidence_complete"),
-        "no_unresolved_required_failures": not failed("no_unresolved_required_failures"),
-        "fresh_final_verification": any(
-            e.get("type") == "verification_passed" for e in events
-        ) and not failed("fresh_final_verification"),
-        "machine_checks_passed": not findings,
+    # Left conjuncts that must also hold before a predicate can pass.
+    required = {
+        "source_identity_verified": source.get("identity_verified") is True,
+        "skill_preflight_complete": all(preflight.get(k) is True for k in REQUIRED_PREFLIGHT),
+        "plan_present": bool(plan.get("path")) and bool(plan.get("nodes")),
+        "source_fidelity_preserved": fidelity.get("preserved") is True,
+        "requested_deliverable_produced": deliverable.get("provided") is True,
+        "fresh_final_verification": any(e.get("type") == "verification_passed" for e in events),
     }
+    predicates = {name: required.get(name, True) and not failed(name) for name in PREDICATES}
+    predicates["machine_checks_passed"] = not findings
+    predicates["deliverable_provided"] = predicates["requested_deliverable_produced"]
     result = {
         "passed": not findings,
         "violations": [f.message for f in findings],
