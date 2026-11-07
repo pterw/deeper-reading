@@ -448,6 +448,16 @@ _DOCX_WORDS_CASES = [
         id="text-box-read-once",
     ),
     pytest.param(f"<w:p>{_REDLINE}</w:p>", "Pay is [deleted: $100][inserted: $200].", id="redlines-marked"),
+    pytest.param(
+        f"<w:p>{_run('foo')}<w:ins><w:r><w:t xml:space=\"preserve\"> </w:t></w:r></w:ins>{_run('bar')}</w:p>",
+        "foo bar",
+        id="blank-insertion-keeps-words-apart",
+    ),
+    pytest.param(
+        f"<w:p>{_run('foo')}<w:del><w:r><w:delText xml:space=\"preserve\"> </w:delText></w:r></w:del>{_run('bar')}</w:p>",
+        "foo bar",
+        id="blank-deletion-keeps-words-apart",
+    ),
     pytest.param(f"<w:p>{_run('中文 字 🙂 ')}{_run('word')}</w:p>", "中文 字 🙂 word", id="cjk-and-emoji"),
     pytest.param(f"<w:p>{_run('See ')}{_FIELD}</w:p>", "See link text", id="field-instruction-dropped"),
     pytest.param(f"<w:p>{_PARAGRAPH_MARK_REVISION}</w:p>", "Plain end.", id="paragraph-mark-revision-silent"),
