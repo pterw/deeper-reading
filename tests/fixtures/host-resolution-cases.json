@@ -1,0 +1,33 @@
+{
+  "refusal_characters": ["\"", "%", "&", "|", "<", ">", "^", "!", "(", ")", ",", ";", "=", "\r", "\n"],
+  "cases": [
+    {"id": "plain", "path": ["{root}/bin"], "pathext": ".COM;.EXE;.BAT;.CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "trailing-space-path-entry", "path": ["{root}/bin "], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "leading-space-path-entry", "path": ["  {root}/bin"], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "padded-pathext", "path": ["{root}/bin"], "pathext": " .cmd; .bat ", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "quoted-pathext", "path": ["{root}/bin"], "pathext": "\".cmd\"", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "upper-case-pathext-gives-lower-case-extension", "path": ["{root}/bin"], "pathext": ".CMD", "dirs": [], "files": ["bin/gemini.cmd"], "name": "gemini", "resolved": "bin/gemini.cmd", "refusal": false},
+    {"id": "pathext-order-wins", "path": ["{root}/bin"], "pathext": ".BAT;.CMD", "dirs": [], "files": ["bin/copilot.cmd", "bin/copilot.bat"], "name": "copilot", "resolved": "bin/copilot.bat", "refusal": false},
+    {"id": "empty-pathext-uses-default", "path": ["{root}/bin"], "pathext": "", "dirs": [], "files": ["bin/copilot.exe"], "name": "copilot", "resolved": "bin/copilot.exe", "refusal": false},
+    {"id": "unlaunchable-pathext-members", "path": ["{root}/bin"], "pathext": ".PS1;.JS", "dirs": [], "files": ["bin/copilot.ps1", "bin/copilot.js"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "empty-path-entry-skipped", "path": ["", "{root}/bin"], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "dot-path-entry-never-searches-cwd", "path": ["."], "pathext": ".CMD", "dirs": [], "files": ["cwd/copilot.cmd"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "dot-entry-skipped-next-entry-used", "path": [".", "{root}/bin"], "pathext": ".CMD", "dirs": [], "files": ["cwd/copilot.cmd", "bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "cwd-absent-from-path-not-searched", "path": ["{root}/other"], "pathext": ".CMD;.EXE", "dirs": ["other"], "files": ["cwd/copilot.cmd", "cwd/copilot.exe"], "name": "copilot", "resolved": null, "refusal": false},
+    {"id": "quoted-path-entry-with-space", "path": ["\"{root}/quoted dir\""], "pathext": ".CMD", "dirs": [], "files": ["quoted dir/copilot.cmd"], "name": "copilot", "resolved": "quoted dir/copilot.cmd", "refusal": false},
+    {"id": "directory-named-like-the-shim-is-skipped", "path": ["{root}/first", "{root}/second"], "pathext": ".CMD", "dirs": ["first/copilot.cmd"], "files": ["second/copilot.cmd"], "name": "copilot", "resolved": "second/copilot.cmd", "refusal": false},
+    {"id": "trailing-dot-directory", "path": ["{root}/dot."], "pathext": ".CMD", "dirs": [], "files": ["dot/copilot.cmd"], "name": "copilot", "resolved": "dot/copilot.cmd", "refusal": false},
+    {"id": "parent-segment-is-not-a-trailing-dot", "path": ["{root}/bin/sub/.."], "pathext": ".CMD", "dirs": ["bin/sub"], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false},
+    {"id": "first-path-entry-wins", "path": ["{root}/one", "{root}/two"], "pathext": ".CMD", "dirs": [], "files": ["one/copilot.cmd", "two/copilot.cmd"], "name": "copilot", "resolved": "one/copilot.cmd", "refusal": false},
+    {"id": "ampersand-directory-cmd-is-refused", "path": ["{root}/a&b"], "pathext": ".CMD", "dirs": [], "files": ["a&b/copilot.cmd"], "name": "copilot", "resolved": "a&b/copilot.cmd", "refusal": true},
+    {"id": "percent-directory-bat-is-refused", "path": ["{root}/p%q"], "pathext": ".BAT", "dirs": [], "files": ["p%q/gemini.bat"], "name": "gemini", "resolved": "p%q/gemini.bat", "refusal": true},
+    {"id": "ampersand-directory-exe-is-not-refused", "path": ["{root}/a&b"], "pathext": ".EXE", "dirs": [], "files": ["a&b/copilot.exe"], "name": "copilot", "resolved": "a&b/copilot.exe", "refusal": false},
+    {"id": "safe-punctuation-directory-is-not-refused", "path": ["{root}/safe dir -_.x'"], "pathext": ".CMD", "dirs": [], "files": ["safe dir -_.x'/copilot.cmd"], "name": "copilot", "resolved": "safe dir -_.x'/copilot.cmd", "refusal": false},
+    {"id": "interior-trailing-dot-segment", "path": ["{root}/x./sub"], "dirs": [], "files": ["x/sub/copilot.cmd"], "resolved": "x/sub/copilot.cmd", "pathext": ".CMD", "name": "copilot", "refusal": false},
+    {"id": "trailing-dot-before-separator", "path": ["{root}/y./"], "dirs": [], "files": ["y/copilot.cmd"], "resolved": "y/copilot.cmd", "pathext": ".CMD", "name": "copilot", "refusal": false},
+    {"id": "dot-slash-path-entry-never-searches-cwd", "path": ["./"], "dirs": [], "files": ["cwd/copilot.cmd"], "resolved": null, "pathext": ".CMD", "name": "copilot", "refusal": false},
+    {"id": "dot-backslash-dot-path-entry-never-searches-cwd", "path": [".\\."], "dirs": [], "files": ["cwd/copilot.cmd"], "resolved": null, "pathext": ".CMD", "name": "copilot", "refusal": false},
+    {"id": "dot-backslash-entry-skipped-next-entry-used", "path": [".\\", "{root}/bin"], "dirs": [], "files": ["cwd/copilot.cmd", "bin/copilot.cmd"], "resolved": "bin/copilot.cmd", "pathext": ".CMD", "name": "copilot", "refusal": false},
+    {"id": "quoted-path-entry-with-trailing-space", "path": ["\"{root}/bin\" "], "pathext": ".CMD", "dirs": [], "files": ["bin/copilot.cmd"], "name": "copilot", "resolved": "bin/copilot.cmd", "refusal": false}
+  ]
+}

@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-import shutil
 
-from .base import SKILL_NAME, VerificationResult, require_project
+from .base import SKILL_NAME, VerificationResult, require_project, resolve_host_command
 
 
 class ClaudeAdapter:
     name = 'claude'
 
     def detect(self) -> bool:
-        return shutil.which('claude') is not None
+        return resolve_host_command('claude') is not None
 
     def resolve_skill_root(self, scope: str, project_dir: Path | None) -> Path:
         if scope == 'user':
