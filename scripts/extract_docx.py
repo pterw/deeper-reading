@@ -14,7 +14,14 @@ from chunk_common import Block, build_manifest, manifest_output_path, pack_block
 
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': W}
-TEXT_TAGS = {f'{{{W}}}t', f'{{{W}}}delText', f'{{{W}}}instrText'}
+TEXT_TAGS = {f'{{{W}}}t', f'{{{W}}}delText'}
+MARKERS = {
+    f'{{{W}}}del': 'deleted',
+    f'{{{W}}}moveFrom': 'deleted',
+    f'{{{W}}}ins': 'inserted',
+    f'{{{W}}}moveTo': 'inserted',
+}
+FALLBACK_TAG = '{http://schemas.openxmlformats.org/markup-compatibility/2006}Fallback'
 TAB_TAG = f'{{{W}}}tab'
 BREAK_TAGS = {f'{{{W}}}br', f'{{{W}}}cr'}
 P_TAG = f'{{{W}}}p'
@@ -52,16 +59,40 @@ def _part_sort_key(name: str) -> tuple[int, str]:
     return (9, name)
 
 
-def _text_from_element(element: ET.Element) -> str:
-    pieces: list[str] = []
-    for node in element.iter():
-        if node.tag in TEXT_TAGS and node.text:
-            pieces.append(node.text)
+def _collect_text(element: ET.Element, pieces: list[str]) -> None:
+    for node in element:
+        if node.tag == FALLBACK_TAG:
+            continue
+        if node.tag in TEXT_TAGS:
+            pieces.append(node.text or '')
         elif node.tag == TAB_TAG:
             pieces.append('\t')
         elif node.tag in BREAK_TAGS:
             pieces.append('\n')
+        elif node.tag in MARKERS:
+            inner = _text_from_element(node).strip()
+            if inner:
+                pieces.append(f'[{MARKERS[node.tag]}: {inner}]')
+        elif node.tag == P_TAG:
+            pieces.append('\n')
+            _collect_text(node, pieces)
+            pieces.append('\n')
+        else:
+            _collect_text(node, pieces)
+
+
+def _text_from_element(element: ET.Element) -> str:
+    pieces: list[str] = []
+    _collect_text(element, pieces)
     return ''.join(pieces)
+
+
+def _paragraphs(element: ET.Element):
+    for node in element:
+        if node.tag == P_TAG:
+            yield node
+        elif node.tag != FALLBACK_TAG:
+            yield from _paragraphs(node)
 
 
 def _heading_level(paragraph: ET.Element) -> int | None:
@@ -82,7 +113,7 @@ def _table_text(table: ET.Element) -> str:
         for cell in row.findall('./w:tc', NS):
             paragraphs = [
                 _text_from_element(p).strip()
-                for p in cell.iter(P_TAG)
+                for p in _paragraphs(cell)
             ]
             cells.append(' '.join(x for x in paragraphs if x))
         rows.append('\t'.join(cells))
@@ -100,6 +131,8 @@ def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
     def walk(parent: ET.Element) -> None:
         nonlocal block_index
         for child in list(parent):
+            if child.tag == FALLBACK_TAG:
+                continue
             if child.tag == TBL_TAG:
                 text = _table_text(child).strip()
                 if text:

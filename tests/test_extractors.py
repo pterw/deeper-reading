@@ -300,6 +300,147 @@ def test_docx_extractor_tracks_heading1_through_heading6(tmp_path):
     )
 
 
+def _write_docx_body(path: Path, body: str) -> None:
+    w = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    mc = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+    document = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        f'<w:document xmlns:w="{w}" xmlns:mc="{mc}"><w:body>{body}</w:body></w:document>'
+    )
+    info = zipfile.ZipInfo("word/document.xml", date_time=(2020, 1, 1, 0, 0, 0))
+    with zipfile.ZipFile(path, "w") as zf:
+        zf.writestr(info, document)
+
+
+def _run(text: str) -> str:
+    return f"<w:r><w:t xml:space=\"preserve\">{text}</w:t></w:r>"
+
+
+_TEXT_BOX = '<w:txbxContent><w:p><w:r><w:t>Boxed text</w:t></w:r></w:p></w:txbxContent>'
+_ALTERNATE_CONTENT = (
+    '<w:r><mc:AlternateContent>'
+    f'<mc:Choice Requires="wps"><w:drawing>{_TEXT_BOX}</w:drawing></mc:Choice>'
+    f'<mc:Fallback><w:pict>{_TEXT_BOX}</w:pict></mc:Fallback>'
+    '</mc:AlternateContent></w:r>'
+)
+_FIELD = (
+    '<w:r><w:fldChar w:fldCharType="begin"/></w:r>'
+    '<w:r><w:instrText> HYPERLINK "http://example.com" </w:instrText></w:r>'
+    '<w:r><w:fldChar w:fldCharType="separate"/></w:r>'
+    '<w:r><w:t>link text</w:t></w:r>'
+    '<w:r><w:fldChar w:fldCharType="end"/></w:r>'
+)
+_REDLINE = (
+    _run("Pay is ")
+    + '<w:del w:id="1"><w:r><w:delText>$100</w:delText></w:r></w:del>'
+    + '<w:ins w:id="2"><w:r><w:t>$200</w:t></w:r></w:ins>'
+    + _run(".")
+)
+_PARAGRAPH_MARK_REVISION = (
+    '<w:pPr><w:rPr><w:ins w:id="3"/></w:rPr></w:pPr>' + _run("Plain end.")
+)
+_BLOCK_ALTERNATE_CONTENT = (
+    '<mc:AlternateContent>'
+    '<mc:Choice Requires="wps"><w:p><w:r><w:t>Chosen</w:t></w:r></w:p></mc:Choice>'
+    '<mc:Fallback><w:p><w:r><w:t>Chosen</w:t></w:r></w:p></mc:Fallback>'
+    '</mc:AlternateContent>'
+)
+_NESTED_BOX = (
+    '<w:r><w:drawing><w:txbxContent><w:p><w:r><w:t>box</w:t></w:r></w:p>'
+    '</w:txbxContent></w:drawing></w:r>'
+)
+_MOVED_OUT = '<w:moveFrom w:id="7"><w:r><w:delText>old spot</w:delText></w:r></w:moveFrom>'
+_MOVED_IN = '<w:moveTo w:id="8"><w:r><w:t>new spot</w:t></w:r></w:moveTo>'
+
+
+def _cell(inner: str) -> str:
+    return f"<w:tbl><w:tr><w:tc>{inner}</w:tc></w:tr></w:tbl>"
+
+
+_DOCX_WORDS_CASES = [
+    pytest.param(f"<w:p>{_run('Before')}{_NESTED_BOX}{_run('after')}</w:p>", "Before box after", id="text-box-no-spaces"),
+    pytest.param(
+        f"<w:p><w:pPr><w:pStyle w:val=\"Heading1\"/></w:pPr>{_run('Title')}{_NESTED_BOX}{_run('end')}</w:p>",
+        "Title box end",
+        id="text-box-no-spaces-in-heading",
+    ),
+    pytest.param(_BLOCK_ALTERNATE_CONTENT, "Chosen", id="block-alternate-content-read-once"),
+    pytest.param(_cell(_BLOCK_ALTERNATE_CONTENT), "Chosen", id="cell-alternate-content-read-once"),
+    pytest.param(_cell("<w:sdt><w:sdtContent><w:p>" + _run("in sdt") + "</w:p></w:sdtContent></w:sdt>"), "in sdt", id="cell-paragraph-in-sdt"),
+    pytest.param(_cell("<w:ins><w:p>" + _run("in ins") + "</w:p></w:ins>"), "in ins", id="cell-paragraph-in-ins"),
+    pytest.param(_cell("<w:p>" + _run("outer") + "</w:p>" + _cell("<w:p>" + _run("inner") + "</w:p>")), "outer inner", id="cell-nested-table"),
+    pytest.param(f"<w:p>{_run('A ')}{_MOVED_OUT}{_MOVED_IN}{_run(' B')}</w:p>", "A [deleted: old spot][inserted: new spot] B", id="inline-moves-marked"),
+    pytest.param(
+        f"<w:p>{_MOVED_OUT}</w:p><w:p>{_MOVED_IN}</w:p>",
+        "[deleted: old spot] [inserted: new spot]",
+        id="moved-paragraphs-marked",
+    ),
+    pytest.param(
+        f"<w:p>{_run('Before ')}{_ALTERNATE_CONTENT}{_run(' after')}</w:p>",
+        "Before Boxed text after",
+        id="text-box-read-once",
+    ),
+    pytest.param(f"<w:p>{_REDLINE}</w:p>", "Pay is [deleted: $100][inserted: $200].", id="redlines-marked"),
+    pytest.param(f"<w:p>{_run('See ')}{_FIELD}</w:p>", "See link text", id="field-instruction-dropped"),
+    pytest.param(f"<w:p>{_PARAGRAPH_MARK_REVISION}</w:p>", "Plain end.", id="paragraph-mark-revision-silent"),
+    pytest.param(
+        f"<w:tbl><w:tr><w:tc><w:p>{_ALTERNATE_CONTENT}</w:p></w:tc></w:tr></w:tbl>",
+        "Boxed text",
+        id="text-box-in-table-cell-read-once",
+    ),
+]
+
+
+@pytest.mark.parametrize(("body", "visible"), _DOCX_WORDS_CASES)
+def test_docx_chunk_text_is_the_visible_text_of_the_document(tmp_path, body, visible):
+    source = tmp_path / "source.docx"
+    _write_docx_body(source, body)
+    manifest = run_extractor("extract_docx.py", source, tmp_path / "docx.json")
+    assert_manifest_integrity(manifest, source, "docx")
+    text = "".join(c["content"] for c in manifest["chunks"])
+    assert text.split() == visible.split()
+
+
+@pytest.mark.parametrize(
+    ("body", "marker"),
+    [
+        pytest.param(
+            '<w:p><w:ins><w:r><w:t xml:space="preserve"> x </w:t></w:r></w:ins></w:p>',
+            "[inserted: x]",
+            id="inserted-text-is-stripped",
+        ),
+        pytest.param(
+            '<w:p><w:del><w:r><w:delText xml:space="preserve"> y </w:delText></w:r></w:del></w:p>',
+            "[deleted: y]",
+            id="deleted-text-is-stripped",
+        ),
+        pytest.param(
+            f"<w:p>{_MOVED_OUT.replace('old spot', ' old spot ')}</w:p>",
+            "[deleted: old spot]",
+            id="moved-from-text-is-stripped",
+        ),
+    ],
+)
+def test_docx_markers_are_stripped_and_exact(tmp_path, body, marker):
+    source = tmp_path / "source.docx"
+    _write_docx_body(source, body)
+    manifest = run_extractor("extract_docx.py", source, tmp_path / "docx.json")
+    text = "".join(c["content"] for c in manifest["chunks"])
+    assert text.strip() == marker
+
+
+def test_docx_tracked_change_in_heading_marks_the_heading_path(tmp_path):
+    source = tmp_path / "heading.docx"
+    heading = (
+        '<w:p><w:pPr><w:pStyle w:val="Heading1"/></w:pPr>' + _run("Terms ")
+        + '<w:del w:id="1"><w:r><w:delText>old</w:delText></w:r></w:del></w:p>'
+    )
+    _write_docx_body(source, heading + "<w:p>" + _run("Body.") + "</w:p>")
+    manifest = run_extractor("extract_docx.py", source, tmp_path / "heading.json")
+    body = [c for c in manifest["chunks"] if "Body." in c["content"]]
+    assert body[0]["locator"]["heading_path"] == ["Terms [deleted: old]"]
+
+
 def test_pdf_extractor_reads_every_page_with_portable_backend(tmp_path):
     sys.path.insert(0, str(SCRIPTS))
     from extract_pdf import choose_backend
