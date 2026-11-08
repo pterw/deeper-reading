@@ -10,7 +10,7 @@ import re
 import zipfile
 import xml.etree.ElementTree as ET
 
-from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
+from chunk_common import Block, MediaCollector, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 NS = {'w': W}
@@ -28,6 +28,18 @@ P_TAG = f'{{{W}}}p'
 TBL_TAG = f'{{{W}}}tbl'
 TR_TAG = f'{{{W}}}tr'
 TC_TAG = f'{{{W}}}tc'
+R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships'
+A = 'http://schemas.openxmlformats.org/drawingml/2006/main'
+C = 'http://schemas.openxmlformats.org/drawingml/2006/chart'
+DGM = 'http://schemas.openxmlformats.org/drawingml/2006/diagram'
+WP = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing'
+V = 'urn:schemas-microsoft-com:vml'
+O = 'urn:schemas-microsoft-com:office:office'
+PKG_REL = '{http://schemas.openxmlformats.org/package/2006/relationships}Relationship'
+DRAWING_TAG = f'{{{W}}}drawing'
+CX = 'http://schemas.microsoft.com/office/drawing/2014/chartex'
+IMAGEDATA_TAG = f'{{{V}}}imagedata'
+OBJECT_TAG = f'{{{W}}}object'
 
 
 def _story_part(name: str) -> bool:
@@ -123,7 +135,70 @@ def _table_text(table: ET.Element) -> str:
     return '\n'.join(row for row in rows if row.strip())
 
 
-def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
+def _part_relationships(zf: zipfile.ZipFile, part: str) -> dict[str, str]:
+    name = part.replace('word/', 'word/_rels/', 1) + '.rels'
+    if name not in zf.namelist():
+        return {}
+    root = ET.fromstring(zf.read(name))
+    return {rel.get('Id'): rel.get('Target') for rel in root.iter(PKG_REL)}
+
+
+def _iter_live(element: ET.Element):
+    """Descendants in document order; an mc:Fallback subtree is never read."""
+    for node in element:
+        if node.tag == FALLBACK_TAG:
+            continue
+        yield node
+        yield from _iter_live(node)
+
+
+def _drawing_references(drawing: ET.Element) -> list[tuple[str, str | None]]:
+    """(kind, relationship id) for every picture, chart or diagram, in document order."""
+    found: list[tuple[str, str | None]] = []
+    for node in _iter_live(drawing):
+        if node.tag == f'{{{A}}}blip':
+            found.append(('image', node.get(f'{{{R}}}embed') or node.get(f'{{{R}}}link')))
+        elif node.tag in (f'{{{C}}}chart', f'{{{CX}}}chart'):
+            found.append(('diagram', node.get(f'{{{R}}}id')))
+        elif node.tag == f'{{{DGM}}}relIds':
+            found.append(('diagram', node.get(f'{{{R}}}dm')))
+    return found
+
+
+def _drawing_alt(drawing: ET.Element) -> str | None:
+    for node in _iter_live(drawing):
+        if node.tag == f'{{{WP}}}docPr':
+            return node.get('descr') or node.get('title') or None
+    return None
+
+
+def _record_media(element: ET.Element, rels: dict[str, str], media: MediaCollector, position: int) -> None:
+    """Record drawings, VML images and OLE objects under element, in document order.
+
+    A w:object is one reference: its preview picture inside is not recorded again."""
+    for node in element:
+        if node.tag == FALLBACK_TAG:
+            continue
+        if node.tag == OBJECT_TAG:
+            ole = next((n for n in _iter_live(node) if n.tag == f'{{{O}}}OLEObject'), None)
+            rid = ole.get(f'{{{R}}}id') if ole is not None else None
+            media.add(position, 'embedded', 'ole_object', rels.get(rid))
+            continue
+        if node.tag == IMAGEDATA_TAG:
+            media.add(position, 'image', 'vml_image', rels.get(node.get(f'{{{R}}}id')))
+            continue
+        found = _drawing_references(node) if node.tag == DRAWING_TAG else []
+        if found:
+            alt = _drawing_alt(node)
+            for kind, rid in found:
+                media.add(position, kind, 'drawing', rels.get(rid), alt)
+        else:
+            _record_media(node, rels, media, position)
+
+
+def _walk_blocks(
+    root: ET.Element, part: str, rels: dict[str, str], media: MediaCollector, base: int
+) -> list[Block]:
     blocks: list[Block] = []
     headings: list[str | None] = [None] * 6
     block_index = 0
@@ -136,6 +211,8 @@ def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
         for child in list(parent):
             if child.tag == FALLBACK_TAG:
                 continue
+            if child.tag in (TBL_TAG, P_TAG):
+                _record_media(child, rels, media, base + len(blocks))
             if child.tag == TBL_TAG:
                 text = _table_text(child).strip()
                 if text:
@@ -178,13 +255,15 @@ def _walk_blocks(root: ET.Element, part: str) -> list[Block]:
 
 def extract(source: Path, *, max_bytes: int, source_uri: str | None = None) -> dict:
     blocks: list[Block] = []
+    media = MediaCollector()
     with zipfile.ZipFile(source) as zf:
         parts = sorted((name for name in zf.namelist() if _story_part(name)), key=_part_sort_key)
         if 'word/document.xml' not in parts:
             raise ValueError('DOCX is missing word/document.xml')
         for part in parts:
             root = ET.fromstring(zf.read(part))
-            blocks.extend(_walk_blocks(root, part))
+            blocks.extend(_walk_blocks(root, part, _part_relationships(zf, part), media, len(blocks)))
+    media.apply(blocks)
     packed = pack_blocks(blocks, max_bytes)
     return build_manifest(
         source,

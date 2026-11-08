@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+import zipfile
 
 import pytest
 
@@ -11,10 +12,76 @@ from media_helpers import (
     normalise,
     read_golden,
     write_golden_source,
+    write_zip_member,
 )
 
+_NS = (
+    'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" '
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" '
+    'xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" '
+    'xmlns:dgm="http://schemas.openxmlformats.org/drawingml/2006/diagram" '
+    'xmlns:wps="http://schemas.microsoft.com/office/word/2010/wordprocessingShape" '
+    'xmlns:cx="http://schemas.microsoft.com/office/drawing/2014/chartex" '
+    'xmlns:wpg="http://schemas.microsoft.com/office/word/2010/wordprocessingGroup" '
+    'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture" '
+    'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '
+    'xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office"'
+)
+_PART_ROOTS = {"footnotes": "footnotes", "endnotes": "endnotes", "comments": "comments", "header1": "hdr", "footer1": "ftr"}
+
+
+def dx_p(text="", *extra):
+    run = f'<w:r><w:t xml:space="preserve">{text}</w:t></w:r>' if text else ""
+    return f"<w:p>{run}{''.join(extra)}</w:p>"
+
+
+def dx_pic(rid, descr=None, title=None, attr="embed", wrapper="inline"):
+    names = "".join(f' {k}="{v}"' for k, v in (("descr", descr), ("title", title)) if v)
+    return (
+        f'<w:r><w:drawing><wp:{wrapper}><wp:docPr id="1" name="x"{names}/>'
+        f'<a:graphic><a:graphicData><a:blip r:{attr}="{rid}"/></a:graphicData></a:graphic></wp:{wrapper}></w:drawing></w:r>'
+    )
+
+
+def _rels_xml(mapping):
+    items = "".join(
+        f'<Relationship Id="{k}" Type="t" Target="{v}"/>' for k, v in mapping.items()
+    )
+    return f'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">{items}</Relationships>'
+
+
+def dx_parts(body, rels=None, **others):
+    """In-memory DOCX members. body is document.xml's content, rels its relationship id ->
+    target map; every other story part is name=(content, rels)."""
+    def xml(content, tag):
+        return f'<?xml version="1.0"?><w:{tag} {_NS}>{content}</w:{tag}>'
+
+    parts = {"word/document.xml": xml(f"<w:body>{body}</w:body>", "document")}
+    if rels:
+        parts["word/_rels/document.xml.rels"] = _rels_xml(rels)
+    for name, (content, part_rels) in others.items():
+        parts[f"word/{name}.xml"] = xml(content, _PART_ROOTS[name])
+        if part_rels:
+            parts[f"word/_rels/{name}.xml.rels"] = _rels_xml(part_rels)
+    return parts
+
+
+_ALTERNATE = (
+    '<mc:AlternateContent><mc:Choice Requires="wps">' + dx_pic("rId1") + "</mc:Choice>"
+    '<mc:Fallback><w:r><w:pict><v:imagedata r:id="rId1"/></w:pict></w:r></mc:Fallback></mc:AlternateContent>'
+)
+_TEXT_BOX = (
+    "<w:r><w:drawing><wp:anchor><wps:wsp><wps:txbx><w:txbxContent>"
+    + dx_p("boxed words")
+    + "</w:txbxContent></wps:txbx></wps:wsp></wp:anchor></w:drawing></w:r>"
+)
+_CHART = '<w:r><w:drawing><a:graphic><a:graphicData><c:chart r:id="rId6"/></a:graphicData></a:graphic></w:drawing></w:r>'
+_DIAGRAM = '<w:r><w:drawing><a:graphic><a:graphicData><dgm:relIds r:dm="rId7"/></a:graphicData></a:graphic></w:drawing></w:r>'
+
 # One row per media syntax: (format, source text, expected media as (kind, syntax, ref, alt)).
-# T9 (DOCX) add rows here.
+# A docx "source text" is a dict of zip members (see dx_parts).
 MEDIA_ROWS = [
     pytest.param("md", "# T\n\nSee ![a pic](img/p.png) now.\n", [("image", "md_image", "img/p.png", "a pic")], id="md-image"),
     pytest.param("md", "# T\n\n![a pic][fig]\n\n[fig]: p.png\n", [("image", "md_image", "fig", "a pic")], id="md-image-reference-form"),
@@ -79,12 +146,124 @@ MEDIA_ROWS = [
         [("svg", "svg", None, None), ("image", "img", "after.png", None)],
         id="html-unclosed-svg-does-not-hide-later-media",
     ),
+    pytest.param("docx", dx_parts(dx_p("See ", dx_pic("rId1", descr="a  pic")), {"rId1": "media/a.png"}), [("image", "drawing", "media/a.png", "a pic")], id="docx-inline-picture"),
+    pytest.param(
+        "docx",
+        dx_parts(f"<w:tbl><w:tr><w:tc>{dx_p('cell', dx_pic('rId2', title='floaty', wrapper='anchor'))}</w:tc></w:tr></w:tbl>", {"rId2": "media/f.jpg"}),
+        [("image", "drawing", "media/f.jpg", "floaty")],
+        id="docx-floating-picture-in-table-cell",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(dx_p("body", dx_pic("rId1")), {"rId1": "media/body.png"}, header1=(dx_p("head", dx_pic("rId1")), {"rId1": "media/head.png"})),
+        [("image", "drawing", "media/body.png", None), ("image", "drawing", "media/head.png", None)],
+        id="docx-header-picture-uses-its-own-relationships",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("t", dx_pic("rId1", attr="link")),
+            {"rId1": "https://example.test/x.png"},
+            footer1=(dx_p("foot", dx_pic("rId1")), {"rId1": "media/foot.png"}),
+            footnotes=(dx_p("note", dx_pic("rId1")), {"rId1": "media/note.png"}),
+            endnotes=(dx_p("end", dx_pic("rId1")), {"rId1": "media/end.png"}),
+            comments=(dx_p("com", dx_pic("rId1")), {"rId1": "media/com.png"}),
+        ),
+        [
+            ("image", "drawing", "https://example.test/x.png", None),
+            ("image", "drawing", "media/foot.png", None),
+            ("image", "drawing", "media/note.png", None),
+            ("image", "drawing", "media/end.png", None),
+            ("image", "drawing", "media/com.png", None),
+        ],
+        id="docx-linked-picture-and-footer-footnote-endnote-comment-pictures",
+    ),
+    pytest.param("docx", dx_parts(dx_p("x", _ALTERNATE), {"rId1": "media/c.png"}), [("image", "drawing", "media/c.png", None)], id="docx-alternate-content-choice-only-recorded-once"),
+    pytest.param("docx", dx_parts(dx_p("x", dx_pic("rId1", descr="d"))), [("image", "drawing", None, "d")], id="docx-unresolved-relationship-keeps-null-ref"),
+    pytest.param("docx", dx_parts(dx_p("x", _TEXT_BOX)), [], id="docx-picture-less-text-box-not-recorded"),
+    pytest.param(
+        "docx",
+        dx_parts('<w:p><w:r><w:t>x</w:t><w:pict><v:shape><v:imagedata r:id="rId3"/></v:shape></w:pict></w:r></w:p>', {"rId3": "media/v.emz"}),
+        [("image", "vml_image", "media/v.emz", None)],
+        id="docx-vml-image",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            '<w:p><w:r><w:t>x</w:t><w:object><v:shape><v:imagedata r:id="rId4"/></v:shape>'
+            '<o:OLEObject r:id="rId5"/></w:object></w:r></w:p>',
+            {"rId4": "media/preview.emf", "rId5": "embeddings/sheet.xlsx"},
+        ),
+        [("embedded", "ole_object", "embeddings/sheet.xlsx", None)],
+        id="docx-ole-object-with-preview-recorded-once",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(dx_p("x", _CHART, _DIAGRAM), {"rId6": "charts/chart1.xml", "rId7": "diagrams/data1.xml"}),
+        [("diagram", "drawing", "charts/chart1.xml", None), ("diagram", "drawing", "diagrams/data1.xml", None)],
+        id="docx-chart-and-diagram-data",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", dx_pic("rId1"), '<w:r><w:pict><v:imagedata r:id="rId2"/></w:pict></w:r>', dx_pic("rId3")),
+            {"rId1": "1.png", "rId2": "2.png", "rId3": "3.png"},
+        ),
+        [("image", "drawing", "1.png", None), ("image", "vml_image", "2.png", None), ("image", "drawing", "3.png", None)],
+        id="docx-two-references-in-one-block-keep-source-order",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><wp:anchor><wp:docPr id="1" name="g" descr="pair"/><a:graphic><a:graphicData><wpg:wgp>'
+                 '<pic:pic><a:blip r:embed="rId1"/></pic:pic><pic:pic><a:blip r:embed="rId2"/></pic:pic>'
+                 "</wpg:wgp></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>"),
+            {"rId1": "a.png", "rId2": "b.png"},
+        ),
+        [("image", "drawing", "a.png", "pair"), ("image", "drawing", "b.png", "pair")],
+        id="docx-group-of-two-pictures-records-both-in-order",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><wp:anchor><wp:docPr id="1" name="t" descr="box"/><wps:wsp><wps:txbx><w:txbxContent>'
+                 + dx_p("", dx_pic("rId1")) + dx_p("", dx_pic("rId2"))
+                 + "</w:txbxContent></wps:txbx></wps:wsp></wp:anchor></w:drawing></w:r>"),
+            {"rId1": "a.png", "rId2": "b.png"},
+        ),
+        [("image", "drawing", "a.png", "box"), ("image", "drawing", "b.png", "box")],
+        id="docx-text-box-with-two-images-records-both",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><a:graphic><a:graphicData><cx:chart r:id="rId8"/></a:graphicData></a:graphic></w:drawing></w:r>'),
+            {"rId8": "charts/chartEx1.xml"},
+        ),
+        [("diagram", "drawing", "charts/chartEx1.xml", None)],
+        id="docx-chartex-chart-is-a-diagram",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", "<w:r><w:pict><v:shape><v:textbox><w:txbxContent>" + dx_p("", dx_pic("rId1", descr="in vml box"))
+                 + "</w:txbxContent></v:textbox></v:shape></w:pict></w:r>"),
+            {"rId1": "a.png"},
+        ),
+        [("image", "drawing", "a.png", "in vml box")],
+        id="docx-drawing-inside-a-vml-text-box",
+    ),
 ]
 
 
 def write_source(fmt, text, directory):
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / f"source.{fmt}"
+    if fmt == "docx":
+        with zipfile.ZipFile(path, "w") as zf:
+            for name, data in text.items():
+                write_zip_member(zf, name, data)
+        return path
     path.write_bytes(text.encode("utf-8"))
     return path
 
@@ -127,18 +306,35 @@ _AFTER = "<p>after paragraph text</p>"
 
 
 @pytest.mark.parametrize(
-    ("text", "owner_has", "owner_lacks"),
+    ("fmt", "text", "owner_has", "owner_lacks"),
     [
-        pytest.param(f'<h1>T</h1>{_FIRST}<p><img src="a.png"></p>{_AFTER}', "after paragraph", "first paragraph", id="img-alone-in-paragraph-takes-the-next-block"),
-        pytest.param(f'<h1>T</h1>{_FIRST}<p>last paragraph text</p><p><img src="a.png"></p>', "last paragraph", "first paragraph", id="img-last-in-document-takes-the-last-block"),
-        pytest.param(f'<h1>T</h1>{_FIRST}<table><tr><td>cell text <img src="a.png"></td></tr></table>{_AFTER}', "cell text", "first paragraph", id="img-in-table-takes-the-table"),
-        pytest.param(f'<h1>T</h1>{_FIRST}<pre>code text <img src="a.png"></pre>{_AFTER}', "code text", "first paragraph", id="img-in-pre-takes-the-pre"),
-        pytest.param(f'<h1>T</h1><div>intro loose text<pre class="mermaid">graph TD</pre></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-pre-after-loose-text-takes-its-own-block"),
-        pytest.param(f'<h1>T</h1><div>intro loose text<div class="mermaid">graph TD</div></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-div-after-loose-text-takes-its-own-block"),
+        pytest.param("html", f'<h1>T</h1>{_FIRST}<p><img src="a.png"></p>{_AFTER}', "after paragraph", "first paragraph", id="img-alone-in-paragraph-takes-the-next-block"),
+        pytest.param("html", f'<h1>T</h1>{_FIRST}<p>last paragraph text</p><p><img src="a.png"></p>', "last paragraph", "first paragraph", id="img-last-in-document-takes-the-last-block"),
+        pytest.param("html", f'<h1>T</h1>{_FIRST}<table><tr><td>cell text <img src="a.png"></td></tr></table>{_AFTER}', "cell text", "first paragraph", id="img-in-table-takes-the-table"),
+        pytest.param("html", f'<h1>T</h1>{_FIRST}<pre>code text <img src="a.png"></pre>{_AFTER}', "code text", "first paragraph", id="img-in-pre-takes-the-pre"),
+        pytest.param("html", f'<h1>T</h1><div>intro loose text<pre class="mermaid">graph TD</pre></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-pre-after-loose-text-takes-its-own-block"),
+        pytest.param("html", f'<h1>T</h1><div>intro loose text<div class="mermaid">graph TD</div></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-div-after-loose-text-takes-its-own-block"),
+        pytest.param("docx", dx_parts(dx_p("first paragraph text") + dx_p("", dx_pic("rId1")) + dx_p("after paragraph text"), {"rId1": "a.png"}), "after paragraph", "first paragraph", id="docx-image-only-paragraph-takes-the-next-block"),
+        pytest.param("docx", dx_parts(dx_p("first paragraph text") + dx_p("last paragraph text") + dx_p("", dx_pic("rId1")), {"rId1": "a.png"}), "last paragraph", "first paragraph", id="docx-image-last-in-document-takes-the-last-block"),
+        pytest.param(
+            "docx",
+            dx_parts(dx_p("first paragraph text") + f"<w:tbl><w:tr><w:tc>{dx_p('cell text', dx_pic('rId1'))}</w:tc></w:tr></w:tbl>" + dx_p("after paragraph text"), {"rId1": "a.png"}),
+            "cell text", "first paragraph", id="docx-picture-in-table-cell-takes-the-table",
+        ),
+        pytest.param(
+            "docx",
+            dx_parts(dx_p("first paragraph text") + dx_p("", dx_pic("rId1")), {"rId1": "a.png"}, header1=(dx_p("header words here"), None)),
+            "header words", "first paragraph", id="docx-image-only-paragraph-at-end-of-body-takes-the-header-block",
+        ),
+        pytest.param(
+            "docx",
+            dx_parts(dx_p("first paragraph text") + dx_p("body closing text"), None, header1=(dx_p("header words here", dx_pic("rId1")), {"rId1": "h.png"})),
+            "header words", "body closing", id="docx-header-picture-takes-the-header-block",
+        ),
     ],
 )
-def test_html_reference_attaches_to_the_chunk_of_its_own_block(tmp_path, text, owner_has, owner_lacks):
-    manifest, _ = manifest_media("html", text, tmp_path, max_bytes=20)
+def test_reference_attaches_to_the_chunk_of_its_own_block(tmp_path, fmt, text, owner_has, owner_lacks):
+    manifest, _ = manifest_media(fmt, text, tmp_path, max_bytes=20)
     assert len(manifest["chunks"]) > 2
     owner = next(c for c in manifest["chunks"] if c["id"] == manifest["media"][0]["chunk_id"])
     assert owner_has in owner["content"]
@@ -176,6 +372,16 @@ _SPLIT_WORDS = " ".join(f"word{n}" for n in range(30))
             f'<h1>T</h1><div>loose <pre class="mermaid">graph TD</pre></div><table><tr><td>c <img src="t.png"></td></tr></table>'
             f'<p>{_SPLIT_WORDS} <svg></svg></p><p><img src="z.png"></p>', 4, id="html",
         ),
+        pytest.param(
+            "docx", "extract_docx", "module.MediaCollector.apply = lambda self, blocks: None",
+            dx_parts(
+                dx_p("Price ", dx_pic("rId1"))
+                + dx_p(_SPLIT_WORDS, '<w:del w:id="1"><w:r><w:delText>$100</w:delText></w:r></w:del><w:ins w:id="2"><w:r><w:t>$200</w:t></w:r></w:ins>', _CHART)
+                + dx_p("", dx_pic("rId1")),
+                {"rId1": "a.png", "rId6": "c.xml"},
+            ),
+            3, id="docx",
+        ),
     ],
 )
 def test_media_changes_nothing_but_the_media_key(tmp_path, fmt, module, stub, text, count):
@@ -188,6 +394,10 @@ def test_media_changes_nothing_but_the_media_key(tmp_path, fmt, module, stub, te
     baseline = json.loads(result.stdout)
     assert len(with_media.pop("media")) == count
     assert with_media == baseline
+    if fmt == "docx":
+        content = " ".join(chunk["content"] for chunk in with_media["chunks"])
+        assert "[deleted: $100]" in content
+        assert "[inserted: $200]" in content
 
 
 def test_no_media_html_manifest_equals_golden_byte_for_byte(tmp_path):
@@ -195,3 +405,10 @@ def test_no_media_html_manifest_equals_golden_byte_for_byte(tmp_path):
     manifest = json.loads(extract_manifest_text("html", source, tmp_path / "m.json"))
     assert "media" not in manifest
     assert manifest_text(normalise(manifest)) == read_golden("manifest_html.json")
+
+
+def test_no_media_docx_manifest_equals_golden_byte_for_byte(tmp_path):
+    source = write_golden_source("docx", tmp_path / "src")
+    manifest = json.loads(extract_manifest_text("docx", source, tmp_path / "m.json"))
+    assert "media" not in manifest
+    assert manifest_text(normalise(manifest)) == read_golden("manifest_docx.json")
