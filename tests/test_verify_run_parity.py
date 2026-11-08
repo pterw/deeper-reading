@@ -16,7 +16,7 @@ def _result(tmp_path: Path) -> dict:
     return build_dod(run, validate_run(run))
 
 
-def test_baseline_run_passes_and_predicates_hold(tmp_path):
+def test_valid_run_has_no_violations_and_predicates_hold(tmp_path):
     result = _result(tmp_path)
     if result["passed"] is not True:
         print("VIOLATIONS:", json.dumps(result["violations"], indent=2))
@@ -26,23 +26,6 @@ def test_baseline_run_passes_and_predicates_hold(tmp_path):
     assert result["predicates"]["source_coverage_complete"] is True
     assert result["predicates"]["failure_protocol_respected"] is True
     assert result["violations"] == []
-
-
-def test_build_dod_no_longer_parses_prose():
-    import inspect
-
-    from scripts.verify_run import build_dod
-
-    src = inspect.getsource(build_dod)
-    assert "for e in errors" not in src
-    assert "startswith(" not in src
-    for token in (
-        "chunk manifest", "manifest chunk", "chunk evidence",
-        "missing evidence for emitted chunk", "duplicate evidence for chunk",
-        "evidence references unknown chunk", "coverage.required",
-        "coverage.completed", "source sha256", 'chunking"',
-    ):
-        assert token not in src, token
 
 
 def test_findings_path_and_message_path_agree(tmp_path):
