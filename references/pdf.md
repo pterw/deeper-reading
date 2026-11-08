@@ -6,9 +6,8 @@ Resolve the document profile first. `standalone` is canonical/default and uses t
 
 Before PDF execution:
 1. resolve the profile through `references/runtime-profiles.md`;
-2. run `python scripts/extract_pdf.py --help`;
-3. verify a declared text backend is available;
-4. read current helper help before first use.
+2. run `python scripts/extract_pdf.py --help` and read current helper help before first use;
+3. verify a declared text backend is available.
 
 The bundled extractor defines the canonical anti-skimming text chunk universe in every profile. Native helpers may add evidence or QA, but may never replace, shrink, reorder, or redefine that universe.
 
@@ -57,10 +56,6 @@ Multiple papers:
 - one paper is its own top-level batch;
 - finish exhaustive traversal evidence for one paper before cross-paper synthesis;
 - a failure in paper B does not invalidate verified evidence from paper A.
-
-## Source integrity
-
-The source bound into the manifest must be the actual PDF artifact or an explicitly approved faithful conversion. Never render or verify a PDF made from your own notes and treat it as proof that the source was read.
 
 ## Failure
 

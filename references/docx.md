@@ -8,8 +8,8 @@ Before DOCX execution:
 1. resolve the document profile through `references/runtime-profiles.md`;
 2. follow `references/dependencies.md`;
 3. under `standalone`, run `python scripts/extract_docx.py --help` before first use;
-4. resolve/read an external DOCX provider only when the task requires rendering, conversion, tracked-change/comment manipulation, or another advanced capability;
-5. read the current help for every helper before first use.
+4. read the current help for every helper before first use;
+5. resolve/read an external DOCX provider only when the task requires rendering, conversion, tracked-change/comment manipulation, or another advanced capability.
 
 The bundled extractor defines the anti-skimming text chunk universe. The resolved DOCX provider is authoritative only for additional mechanics within its declared capability profile.
 
@@ -21,52 +21,7 @@ Within parsed story parts, paragraph styles named `Heading1` through `Heading6` 
 
 Tracked changes stay visible in chunk text: the text of each deletion is written as `[deleted: ...]` and each insertion as `[inserted: ...]`; moved text follows the same rule (the moved-from text is `[deleted: ...]`, the moved-to text `[inserted: ...]`). Text boxes are read once (the `mc:Fallback` copy is skipped) and field instructions such as `HYPERLINK` are not read, only the field's result text.
 
-Text extraction does **not** prove layout, field rendering, tracked-change display, comments UI, or other Word-native presentation. Those remain separate visual/structural QA predicates when required.
-
-## Reading and verification
-
-A DOCX is not proven correct by text/XML extraction alone.
-
-For reading/review:
-```text
-render DOCX
-  -> inspect page PNGs
-  -> use structural checks for features rendering cannot prove
-```
-
-For authoring/editing:
-```text
-author/edit
-  -> render
-  -> inspect every page required by the live skill
-  -> fix
-  -> re-render
-```
-
-Comments, fields, tracked changes, content controls, and other Word-native structures may require structural checks in addition to visual inspection.
-
-## DOCX is not a reading workaround
-
-Do not create a DOCX from your own prose because the source PDF/HTML is difficult to ingest.
-
-A derivative DOCX is not the source.
-
-Use DOCX only when:
-- the user requested DOCX;
-- the deliverable is Word-like;
-- the live PDF skill routes text-heavy authoring through DOCX;
-- a faithful editable conversion is genuinely part of the task.
-
-## PDF deliverable via DOCX
-
-If the live skills route a text-heavy authored deliverable through DOCX:
-1. author/edit DOCX;
-2. render and inspect;
-3. correct defects;
-4. convert using the current PDF conversion guidance;
-5. run the live PDF verification workflow on the converted PDF.
-
-Do not use this authoring path for source-paper reading unless the user explicitly asks for a faithful conversion.
+Text extraction does **not** prove layout, field rendering, tracked-change display, comments UI, or other Word-native presentation. Those remain separate visual/structural QA predicates when required. Comments, fields, tracked changes, content controls, and other Word-native structures may require structural checks in addition to visual inspection.
 
 ## Media
 

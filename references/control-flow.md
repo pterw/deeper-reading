@@ -82,4 +82,6 @@ original file -> recreated substitute
 verify source -> verify derivative
 ```
 
+Rule: do not substitute a derivative for the source. A summary, review, paraphrased working copy or recreated file is not proof of reading. A conversion is the source only when it is faithful and the user requested or approved it, or when it is a faithful conversion disclosed as the bound source.
+
 If a workaround changes source authority, fidelity, format semantics, or requested task semantics, use the architecture-stop/disclosure/replan gate before execution.

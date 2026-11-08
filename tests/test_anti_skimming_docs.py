@@ -57,6 +57,7 @@ INSTRUCTIONS = [
     ("**every Markdown file in that selected tree in full before execution**", "references/oai-native.md", EXHAUSTIVE),
     ("**do not attempt a fourth fix**", "references/failure-recovery.md", DEBUGGING),
     ("Do not require an external document skill merely to perform basic exhaustive text extraction", DEPENDENCIES, EXHAUSTIVE),
+    ("do not substitute a derivative for the source", "references/control-flow.md", EXHAUSTIVE),
 ]
 
 
