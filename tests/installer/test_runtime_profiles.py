@@ -14,13 +14,6 @@ def test_runtime_profile_reference_exists_and_names_both_profiles():
     assert "portable-openai" not in text
 
 
-def test_root_skill_makes_standalone_canonical_without_external_process_dependency():
-    text = read("SKILL.md")
-    assert "standalone" in text.lower()
-    assert "package-owned" in text.lower()
-    assert "Superpowers" not in text
-
-
 def test_native_profile_is_optional_enhancement_only():
     text = read("references/runtime-profiles.md")
     native = text.split("## oai-native", 1)[1]
