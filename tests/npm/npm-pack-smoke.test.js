@@ -27,19 +27,38 @@ function regularFiles(root) {
   return files;
 }
 
+function quoteArgument(value) {
+  return `"${value}"`;
+}
+
+function launch(command, args) {
+  if (process.platform !== "win32" || !/\.(cmd|bat)$/i.test(command)) {
+    return { file: command, args, extra: {} };
+  }
+  const comspec = process.env.ComSpec
+    || path.join(process.env.SystemRoot || "C:\\Windows", "System32", "cmd.exe");
+  const line = `"${[command, ...args].map(quoteArgument).join(" ")}"`;
+  return {
+    file: comspec,
+    args: ["/d", "/v:off", "/s", "/c", line],
+    extra: { windowsVerbatimArguments: true }
+  };
+}
+
 function run(command, args, options) {
-  const result = spawnSync(command, args, {
+  const launched = launch(command, args);
+  const result = spawnSync(launched.file, launched.args, {
     ...options,
+    ...launched.extra,
     encoding: "utf8",
-    timeout: 30000,
-    shell: process.platform === "win32"
+    timeout: 30000
   });
   assert.equal(result.error, undefined, result.error?.message);
   return result;
 }
 
 test("packed CLI has exact inventory and an isolated lifecycle", (t) => {
-  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-pack-"));
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading pack-"));
   t.after(() => rmSync(sandbox, { recursive: true, force: true }));
   const artifacts = path.join(sandbox, "artifacts");
   const prefix = path.join(sandbox, "prefix");
