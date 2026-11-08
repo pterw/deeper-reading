@@ -3,7 +3,7 @@ import {spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {
   existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync,
-  rmSync, symlinkSync, writeFileSync
+  rmSync, rmdirSync, symlinkSync, writeFileSync
 } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -18,6 +18,7 @@ const TABLE = JSON.parse(readFileSync(new URL('../fixtures/installer-ownership-c
 const STEP_KEYS = {
   mkdir: ['do', 'path'],
   link: ['do', 'at', 'to'],
+  rmdir: ['do', 'path'],
   file: ['do', 'path'],
   receipt: ['do', 'path', 'delete', 'set'],
   run: ['do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives']
@@ -61,6 +62,7 @@ function replay(caseId, steps, work) {
     checkStep(step);
     if (step.do === 'mkdir') mkdirSync(where(step.path), {recursive: true});
     else if (step.do === 'link') link(where(step.at), where(step.to));
+    else if (step.do === 'rmdir') rmdirSync(where(step.path));
     else if (step.do === 'file') {
       mkdirSync(path.dirname(where(step.path)), {recursive: true});
       writeFileSync(where(step.path), 'unmanaged\n');

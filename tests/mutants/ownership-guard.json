@@ -63,6 +63,16 @@
       ]
     },
     {
+      "name": "py-install-containment-skipped",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "        if installing:",
+          "new": "        if False:"
+        }
+      ]
+    },
+    {
       "name": "py-doctor-guarded",
       "edits": [
         {
@@ -133,12 +143,52 @@
       ]
     },
     {
+      "name": "node-install-containment-skipped",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "    if (command === \"install\") guardContained(targetRoot, projectDir);",
+          "new": "    if (false) guardContained(targetRoot, projectDir);"
+        }
+      ]
+    },
+    {
+      "name": "node-ancestor-not-walked",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "      real = realpathSync.native(existing);",
+          "new": "      real = path.resolve(existing);"
+        }
+      ]
+    },
+    {
+      "name": "node-dangling-link-not-followed",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "      if (target !== null && hops < 40) {",
+          "new": "      if (false) {"
+        }
+      ]
+    },
+    {
+      "name": "node-missing-order",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "  real = path.join(real, ...missing.reverse()).replace(/^\\\\\\\\\\?\\\\/, \"\");",
+          "new": "  real = path.join(real, ...missing).replace(/^\\\\\\\\\\?\\\\/, \"\");"
+        }
+      ]
+    },
+    {
       "name": "node-doctor-guarded",
       "edits": [
         {
           "file": "installer/node/cli.js",
-          "old": "if (command !== \"doctor\") guardOwnership(targetRoot, projectDir, env);",
-          "new": "guardOwnership(targetRoot, projectDir, env);"
+          "old": "if (command !== \"doctor\") guardOwnership(targetRoot, projectDir, env, command);",
+          "new": "guardOwnership(targetRoot, projectDir, env, command);"
         }
       ]
     },

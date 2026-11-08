@@ -12,6 +12,7 @@ TABLES = ['installer-ownership-cases.json', 'installer-recovery-cases.json']
 STEP_KEYS = {
     'mkdir': {'do', 'path'},
     'link': {'do', 'at', 'to'},
+    'rmdir': {'do', 'path'},
     'file': {'do', 'path'},
     'receipt': {'do', 'path', 'delete', 'set'},
     'run': {'do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives'},
@@ -19,7 +20,13 @@ STEP_KEYS = {
 EXPECT_KEYS = {'exit', 'state', 'code', 'passed', 'message_has', 'message_lacks'}
 PLACEHOLDERS = {'{work}', '{home}', '{project}'}
 # Frozen: an unreadable receipt gets no guard, so the core's error stands and has no code.
-NO_CODE_REFUSALS = {'receipt_unreadable'}
+# Without a receipt, verify has nothing to guard either: its core failure has no code.
+NO_CODE_REFUSALS = {'receipt_unreadable': None, 'project_link_out_no_receipt': {'verify'}}
+
+
+def has_no_code(case_id, step):
+    commands = NO_CODE_REFUSALS.get(case_id, ())
+    return commands is None or step['args'][0] in commands
 REQUIRED_IDS = {
     'installer-ownership-cases.json': {
         'leaf', 'parent', 'grandparent', 'verify_through_link', 'install_through_link',
@@ -28,7 +35,9 @@ REQUIRED_IDS = {
         'receipt_target_unknown', 'shared_root', 'linked_home', 'plain', 'dotfiles_parent',
         'receipt_scope_unknown', 'receipt_target_not_string', 'receipt_target_auto',
         'project_sibling_prefix', 'doctor_not_guarded', 'receipt_unreadable',
-        'user_scope_ignores_project_dir',
+        'user_scope_ignores_project_dir', 'project_link_out_first_install',
+        'project_first_install_inside', 'project_dir_through_link', 'project_dir_not_created',
+        'project_dangling_link_out', 'project_dangling_link_skills', 'project_link_out_no_receipt',
     },
     'installer-recovery-cases.json': {
         'install_claude_user', 'install_claude_project', 'install_codex_user',
@@ -99,9 +108,9 @@ def test_every_refusal_has_a_code_and_leaves_disk_unchanged(name):
     for case_id, step in refusals:
         assert step['expect']['exit'] == 2, case_id
         # The core's own verify failure carries passed but no state.
-        state = None if case_id in NO_CODE_REFUSALS and step['args'][0] == 'verify' else 'failed'
+        state = None if has_no_code(case_id, step) and step['args'][0] == 'verify' else 'failed'
         assert step['expect']['state'] == state, case_id
-        assert bool(step['expect'].get('code')) != (case_id in NO_CODE_REFUSALS), case_id
+        assert bool(step['expect'].get('code')) != has_no_code(case_id, step), case_id
         assert step['unchanged'] is True, case_id
 
 

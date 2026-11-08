@@ -83,12 +83,12 @@ The skill is installed at `<base>/skills/deeper-reading`, where `<base>` depends
 
 ### Ownership checks
 
-`install` (including `--dry-run`), `verify` and `uninstall` read the receipt at the resolved folder, when there is one, and refuse in both installers (exit 2, nothing changed) in these cases. `doctor` is not checked. With `--json`, the payload carries `state: "failed"` and the `code`; `verify` also carries `passed: false`.
+`install` (including `--dry-run`), `verify` and `uninstall` check the resolved folder and its receipt, and refuse in both installers (exit 2, nothing changed) in these cases. `doctor` is not checked. With `--json`, the payload carries `state: "failed"` and the `code`; `verify` also carries `passed: false`.
 
 | Code | When |
 | --- | --- |
 | `installer.owner.mismatch` | The receipt belongs to another target or scope than the request. |
-| `installer.project.escape` | Project scope, and the resolved folder is outside the resolved project, for example a `.claude` that is a link out of the project. |
+| `installer.project.escape` | Project scope, and the resolved folder is outside the resolved project, for example a `.claude` that is a link out of the project. `install` checks this even with no receipt, before writing anything. Use `--scope user` or a real folder in the project; if `.claude` or `.claude/skills` is a link out, remove that link itself and not its contents. To remove an existing install there, delete it by hand first. |
 | `installer.receipt.owner_invalid` | The receipt's `target` is missing or unknown, or its `scope` is not `user` or `project`. Delete the skill folder `deeper-reading`; if it is a link, remove the link itself and not its contents; never delete only the shared `.agents` folder; then run `install`. |
 | `installer.receipt.missing` | `install` or `uninstall` found the folder without a receipt, for example after `npx skills add`. The message gives the recovery; see the README. `verify` fails there without this code. |
 

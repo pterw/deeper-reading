@@ -53,7 +53,7 @@
       {"do": "mkdir", "path": "{work}/projB"},
       {"do": "run", "cwd": "{work}/projB", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
       {"do": "link", "at": "{work}/projA/.claude/skills/deeper-reading", "to": "{work}/projB/.claude/skills/deeper-reading"},
-      {"do": "run", "cwd": "{work}/projA", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape", "passed": false}, "unchanged": true, "survives": ["{work}/projB/.claude/skills/deeper-reading/SKILL.md"]}
+      {"do": "run", "cwd": "{work}/projA", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape", "passed": false, "message_has": ["--scope user", "remove the link itself"]}, "unchanged": true, "survives": ["{work}/projB/.claude/skills/deeper-reading/SKILL.md"]}
     ]},
     {"id": "receipt_target_missing", "steps": [
       {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
@@ -89,6 +89,51 @@
       {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.owner_invalid", "message_has": ["remove the link itself"]}, "unchanged": true},
       {"do": "run", "cwd": "{work}", "args": ["verify", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.owner_invalid", "passed": false, "message_has": ["remove the link itself"]}, "unchanged": true},
       {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.owner_invalid", "message_has": ["remove the link itself"]}, "unchanged": true}
+    ]},
+    {"id": "project_link_out_first_install", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{work}/outside"},
+      {"do": "link", "at": "{project}/.claude", "to": "{work}/outside"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape", "message_has": ["--scope user", "remove the link itself"]}, "unchanged": true, "survives": ["{work}/outside"]},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project", "--dry-run"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape", "message_has": ["--scope user", "remove the link itself"]}, "unchanged": true, "survives": ["{work}/outside"]}
+    ]},
+    {"id": "project_first_install_inside", "steps": [
+      {"do": "mkdir", "path": "{project}"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "run", "cwd": "{project}", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false},
+      {"do": "run", "cwd": "{project}", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "uninstalled"}, "unchanged": false}
+    ]},
+    {"id": "project_dir_through_link", "steps": [
+      {"do": "mkdir", "path": "{project}"},
+      {"do": "link", "at": "{work}/link-project", "to": "{project}"},
+      {"do": "run", "cwd": "{work}/link-project", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "run", "cwd": "{work}/link-project", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false},
+      {"do": "run", "cwd": "{work}/link-project", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "uninstalled"}, "unchanged": false}
+    ]},
+    {"id": "project_dir_not_created", "steps": [
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "project", "--project-dir", "{work}/newproj"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false}
+    ]},
+    {"id": "project_dangling_link_out", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{work}/gone"},
+      {"do": "link", "at": "{project}/.claude", "to": "{work}/gone"},
+      {"do": "rmdir", "path": "{work}/gone"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape"}, "unchanged": true, "survives": ["{project}"]}
+    ]},
+    {"id": "project_dangling_link_skills", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{work}/gone"},
+      {"do": "link", "at": "{project}/.claude/skills", "to": "{work}/gone"},
+      {"do": "rmdir", "path": "{work}/gone"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape"}, "unchanged": true, "survives": ["{project}"]}
+    ]},
+    {"id": "project_link_out_no_receipt", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{work}/outside"},
+      {"do": "link", "at": "{project}/.claude", "to": "{work}/outside"},
+      {"do": "mkdir", "path": "{project}/.claude/skills/deeper-reading"},
+      {"do": "run", "cwd": "{project}", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": null, "passed": false}, "unchanged": true},
+      {"do": "run", "cwd": "{project}", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing"}, "unchanged": true}
     ]},
     {"id": "project_sibling_prefix", "steps": [
       {"do": "mkdir", "path": "{work}/p"},

@@ -53,10 +53,30 @@ def _canonical(path: Path) -> Path:
     return Path(resolved[4:] if resolved.startswith("\\\\?\\") else resolved)
 
 
-def _check_owner(target_name: str, scope: str, project_dir: str | None, target_root: Path) -> None:
+def _check_contained(scope: str, project_dir: str | None, target_root: Path) -> None:
+    """Refuse a project folder that resolves outside its project."""
+    if scope != "project":
+        return
+    project = _canonical(_project_dir(scope, project_dir))
+    try:
+        _canonical(target_root).relative_to(project)
+    except ValueError:
+        raise InstallError(
+            f"{target_root} resolves outside the project {project}; use `--scope user`, or make the folder "
+            "a real folder in the project (if `.claude` or `.claude/skills` is a link out, remove that link "
+            f"itself, not its contents); to remove an existing install there, {DELETE_ROUTE}",
+            "installer.project.escape",
+        ) from None
+
+
+def _check_owner(
+    target_name: str, scope: str, project_dir: str | None, target_root: Path, *, installing: bool = False
+) -> None:
     """Refuse a folder whose receipt belongs to another target, scope or project."""
     receipt = _read_receipt_object(target_root)
     if receipt is None:
+        if installing:
+            _check_contained(scope, project_dir, target_root)
         return
     owner, owner_scope = receipt.get("target"), receipt.get("scope")
     if not isinstance(owner, str) or owner not in ADAPTERS or owner_scope not in ("user", "project"):
@@ -74,15 +94,7 @@ def _check_owner(target_name: str, scope: str, project_dir: str | None, target_r
             f"use `--target {owner} --scope {owner_scope}` for it",
             "installer.owner.mismatch",
         )
-    if scope == "project":
-        project = _canonical(_project_dir(scope, project_dir))
-        try:
-            _canonical(target_root).relative_to(project)
-        except ValueError:
-            raise InstallError(
-                f"{target_root} resolves outside the project {project}; refusing it",
-                "installer.project.escape",
-            ) from None
+    _check_contained(scope, project_dir, target_root)
 
 
 def _failure(exc: InstallError, target_name: str, target_root: Path, **extra) -> dict:
@@ -154,7 +166,7 @@ def command_install(args) -> int:
     adapter = get_adapter(target_name)
     target_root = _target_root(adapter, args.scope, args.project_dir)
     try:
-        _check_owner(target_name, args.scope, args.project_dir, target_root)
+        _check_owner(target_name, args.scope, args.project_dir, target_root, installing=True)
     except InstallError as exc:
         _emit(_failure(exc, target_name, target_root), args.json)
         return 2

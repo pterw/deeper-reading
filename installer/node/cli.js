@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readlinkSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -116,10 +116,33 @@ function readOwnerReceipt(targetRoot) {
   }
 }
 
+// The real path of the deepest existing ancestor, with the parts that do not exist yet joined on.
 function canonicalPath(candidate) {
-  let real;
-  try { real = realpathSync.native(candidate); } catch { real = path.resolve(candidate); }
-  real = real.replace(/^\\\\\?\\/, "");
+  let existing = path.resolve(candidate);
+  const missing = [];
+  let real = null;
+  let hops = 0;
+  while (real === null) {
+    try {
+      real = realpathSync.native(existing);
+    } catch {
+      let target = null;
+      try { target = readlinkSync(existing); } catch { /* not a link */ }
+      if (target !== null && hops < 40) {
+        hops += 1;
+        existing = path.resolve(path.dirname(existing), target);
+        continue;
+      }
+      const parent = path.dirname(existing);
+      if (parent === existing) {
+        real = existing;
+      } else {
+        missing.push(path.basename(existing));
+        existing = parent;
+      }
+    }
+  }
+  real = path.join(real, ...missing.reverse()).replace(/^\\\\\?\\/, "");
   return process.platform === "win32" ? real.toLowerCase() : real;
 }
 
@@ -130,9 +153,23 @@ function isInside(folder, project) {
 
 // Ownership rule: a receipt at the resolved folder must belong to the requested root, and a
 // project folder must lie inside its project. Runs for install, verify and uninstall, not doctor.
-function guardOwnership(targetRoot, projectDir, env) {
+function guardContained(targetRoot, projectDir) {
+  if (projectDir !== null && !isInside(targetRoot, projectDir)) {
+    throw new InstallerError(
+      `${targetRoot} is outside the project ${projectDir}; use \`--scope user\`, or make the folder ` +
+        "a real folder in the project (if `.claude` or `.claude/skills` is a link out, remove that link " +
+        `itself, not its contents); to remove an existing install there, ${DELETE_ROUTE}`,
+      "installer.project.escape"
+    );
+  }
+}
+
+function guardOwnership(targetRoot, projectDir, env, command) {
   const receipt = readOwnerReceipt(targetRoot);
-  if (receipt === null) return;
+  if (receipt === null) {
+    if (command === "install") guardContained(targetRoot, projectDir);
+    return;
+  }
   const owner = receipt.target;
   if (!OWNER_TARGETS.includes(owner) || !SCOPES.has(receipt.scope)) {
     throw new InstallerError(
@@ -149,12 +186,7 @@ function guardOwnership(targetRoot, projectDir, env) {
       "installer.owner.mismatch"
     );
   }
-  if (projectDir !== null && !isInside(targetRoot, projectDir)) {
-    throw new InstallerError(
-      `${targetRoot} is outside the project ${projectDir}`,
-      "installer.project.escape"
-    );
-  }
+  guardContained(targetRoot, projectDir);
 }
 
 function resolveContext(command, options, cwd, env) {
@@ -172,7 +204,7 @@ function resolveContext(command, options, cwd, env) {
     ? path.resolve(options.projectDir || cwd)
     : null;
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
-  if (command !== "doctor") guardOwnership(targetRoot, projectDir, env);
+  if (command !== "doctor") guardOwnership(targetRoot, projectDir, env, command);
   const documentStatus = documentProfileStatus(options.documentProfile, {
     packageRoot: PACKAGE_ROOT
   });

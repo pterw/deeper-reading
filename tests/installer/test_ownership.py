@@ -14,6 +14,7 @@ CASES = json.loads((ROOT / 'tests' / 'fixtures' / 'installer-ownership-cases.jso
 STEP_KEYS = {
     'mkdir': {'do', 'path'},
     'link': {'do', 'at', 'to'},
+    'rmdir': {'do', 'path'},
     'file': {'do', 'path'},
     'receipt': {'do', 'path', 'delete', 'set'},
     'run': {'do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives'},
@@ -113,6 +114,8 @@ def play(step, work):
         Path(fill(step['path'], work)).mkdir(parents=True, exist_ok=True)
     elif step['do'] == 'link':
         make_link(Path(fill(step['at'], work)), Path(fill(step['to'], work)))
+    elif step['do'] == 'rmdir':
+        Path(fill(step['path'], work)).rmdir()
     elif step['do'] == 'file':
         path = Path(fill(step['path'], work))
         path.parent.mkdir(parents=True, exist_ok=True)

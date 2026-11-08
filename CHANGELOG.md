@@ -9,7 +9,10 @@
   install. Now the command exits 2 and changes nothing. `doctor` is not
   checked.
 - Installer: a project-scope folder that resolves outside its project, for
-  example a `.claude` that is a link out of the project, is refused.
+  example a `.claude` that is a link out of the project, is refused. `install`
+  (also `--dry-run`) refuses it before writing anything. Such a project worked
+  in 0.2.5 and can no longer install at project scope: use `--scope user` or
+  a real folder in the project.
 - Installer: a receipt whose target or scope is missing or unknown is
   refused. The message says to delete the skill folder.
 - Installer: if `~/.claude/skills` is a link to `~/.agents/skills`, the
@@ -21,7 +24,7 @@
   `installer.receipt.owner_invalid` and `installer.receipt.missing`. A failed
   `verify` now also carries `passed: false`.
 - Installer: when `install` or `uninstall` finds a folder with no receipt, as
-  after `npx skills add`, the refusal fails with `installer.receipt.missing`
+  after `npx skills add`, the refusal now carries `installer.receipt.missing`
   and says how to recover. For `claude` and `codex` it gives the
   `npx skills remove` command. Other targets get the delete route. Nothing is
   changed. `verify` keeps its existing failure, with no code.
