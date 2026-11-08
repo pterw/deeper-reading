@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -103,3 +104,17 @@ def test_manifest_without_media_prints_exactly_as_before(tmp_path, capsys):
     assert "Bytes: 0..7\n---\nchunk 1" in detail
     assert inspect_main([str(plain), "--summary"]) == 0
     assert "media" not in capsys.readouterr().out
+
+
+def test_summary_with_many_chunks_and_media_stays_linear(tmp_path, capsys):
+    count = 20_000
+    chunks = [{"id": f"c{n}", "ordinal": n, "content": "x", "locator": {}} for n in range(1, count + 1)]
+    media = [{"id": f"m{n}", "chunk_id": f"c{n}", "kind": "image"} for n in range(1, count + 1)]
+    path = tmp_path / "manifest.json"
+    path.write_text(json.dumps({"chunks": chunks, "media": media}), encoding="utf-8")
+    started = time.perf_counter()
+    assert inspect_main([str(path), "--summary"]) == 0
+    elapsed = time.perf_counter() - started
+    lines = capsys.readouterr().out.splitlines()
+    assert len(lines) == count and all(line.endswith("  media:1") for line in lines)
+    assert elapsed < 2
