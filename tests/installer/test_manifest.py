@@ -75,6 +75,8 @@ def test_payload_markdown_links_resolve_inside_payload():
     broken = []
     for rel in sorted(f for f in files if f.endswith('.md')):
         text = (ROOT / rel).read_text(encoding='utf-8')
+        # Text inside a fenced code block is an example, not a navigable link.
+        text = re.sub(r'^(```|~~~)[^\n]*\n.*?^\1', '', text, flags=re.M | re.S)
         for link in re.findall(r'\]\(([^)\s]+)\)', text):
             if re.match(r'[A-Za-z][A-Za-z0-9+.-]*:|#', link):
                 continue
