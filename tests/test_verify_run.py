@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -547,3 +548,94 @@ def test_reproduction_compares_source_uri(tmp_path, monkeypatch):
     findings = []
     module._reproduce_extraction_manifest(Path(run["source"]["local_path"]), manifest, findings)
     assert [f.code for f in findings] == ["reproduction.mismatch"]
+
+
+BIG = 20_000
+BIG_CHUNKS = 40_000  # list-membership pre-fix time must clearly exceed the bound
+LINEAR_BOUND_SECONDS = 3.0
+
+
+def _codes_for(module, run):
+    return [f.code for f in module._validate_findings(run)]
+
+
+def test_many_plan_nodes_resolve_in_linear_time():
+    module = load_module()
+    nodes = [f"n{i}" for i in range(BIG)]
+    events = [{"type": "node_passed", "node": n} for n in nodes]
+    events += [{"type": "verification_started"}, {"type": "verification_passed"}, {"type": "done"}]
+    run = {"plan": {"nodes": nodes}, "events": events}
+    started = time.perf_counter()
+    codes = _codes_for(module, run)
+    assert time.perf_counter() - started < LINEAR_BOUND_SECONDS
+    assert "done.node.unresolved" not in codes
+
+
+@pytest.mark.parametrize(
+    ("nodes", "events", "unresolved_nodes"),
+    [
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "node_passed", "node": ["unhashable"]},
+                {"type": "done"},
+            ],
+            ["b"],
+        ),
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "done"},
+                {"type": "node_passed", "node": "b"},
+            ],
+            ["b"],
+        ),
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "node_superseded", "node": "b"},
+                {"type": "done"},
+            ],
+            [],
+        ),
+        (
+            [1],
+            [{"type": "node_passed", "node": "1"}, {"type": "done"}],
+            [],
+        ),
+    ],
+    ids=["unhashable-event-node", "passed-after-done", "superseded-resolves", "non-str-plan-node"],
+)
+def test_node_resolution_uses_events_before_done(nodes, events, unresolved_nodes):
+    module = load_module()
+    findings = module._validate_findings({"plan": {"nodes": nodes}, "events": events})
+    unresolved = [f for f in findings if f.code == "done.node.unresolved"]
+    assert [f.detail for f in unresolved] == unresolved_nodes
+
+
+def test_many_chunk_verified_events_check_in_linear_time(monkeypatch):
+    module = load_module()
+    ids = [f"c{i}" for i in range(BIG_CHUNKS)]
+    monkeypatch.setattr(module, "_validate_chunk_evidence", lambda run, base, findings: (ids, ids))
+    events = [{"type": "chunk_verified", "chunk_id": c} for c in ids]
+    run = {"chunking": {}, "events": events}
+    started = time.perf_counter()
+    codes = _codes_for(module, run)
+    assert time.perf_counter() - started < LINEAR_BOUND_SECONDS
+    assert not [c for c in codes if c.startswith("events.chunk_verified.")]
+
+
+def test_chunk_verified_missing_and_unknown_keep_manifest_then_event_order(monkeypatch):
+    module = load_module()
+    monkeypatch.setattr(module, "_validate_chunk_evidence", lambda run, base, findings: (["a", "b"], ["a", "b"]))
+    events = [{"type": "chunk_verified", "chunk_id": c} for c in ("z", "a", "y")]
+    findings = module._validate_findings({"chunking": {}, "events": events})
+    coverage = [(f.code, f.detail) for f in findings if f.code.startswith("events.chunk_verified.")]
+    assert coverage[:3] == [
+        ("events.chunk_verified.missing", "b"),
+        ("events.chunk_verified.unknown", "z"),
+        ("events.chunk_verified.unknown", "y"),
+    ]

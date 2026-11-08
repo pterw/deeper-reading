@@ -6,6 +6,7 @@
   writes a new one, so a run that fails after that point leaves no stale
   passing file. The exit code stays the authority: a read-only or symlinked
   `dod.json` still fails the run (exit 1) and is left in place.
+- Verification of very large runs (tens of thousands of chunks) is much faster.
 - HTML: text after an unclosed or mismatched heading is no longer lost. Words in
   table cells, at `<br>` and in `<pre>` no longer merge, and table and `<pre>`
   blocks end with one newline.

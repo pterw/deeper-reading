@@ -795,13 +795,6 @@ def _event_types(run: dict[str, Any]) -> list[str]:
     return [str(e.get("type", "")) for e in run.get("events", [])]
 
 
-def _node_is_resolved(events: list[dict[str, Any]], node: str) -> bool:
-    return any(
-        e.get("node") == node and e.get("type") in {"node_passed", "node_superseded"}
-        for e in events
-    )
-
-
 def validate_findings(run: dict[str, Any]) -> list[Finding]:
     """Malformed input fails with findings rather than an unhandled exception."""
     if not isinstance(run, dict):
@@ -1010,21 +1003,23 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
     verified_events = [event for event in events if event.get("type") == "chunk_verified"]
     verified_event_ids = [str(event.get("chunk_id", "")) for event in verified_events]
     if manifest_chunk_ids:
+        verified_id_set = set(verified_event_ids)
+        manifest_id_set = set(manifest_chunk_ids)
         for chunk_id in manifest_chunk_ids:
-            if chunk_id not in verified_event_ids:
+            if chunk_id not in verified_id_set:
                 findings.append(Finding(
                     "events.chunk_verified.missing", "source_coverage_complete",
                     f"missing chunk_verified event for emitted chunk: {chunk_id}",
                     detail=chunk_id,
                 ))
         for chunk_id in verified_event_ids:
-            if chunk_id not in manifest_chunk_ids:
+            if chunk_id not in manifest_id_set:
                 findings.append(Finding(
                     "events.chunk_verified.unknown", "source_coverage_complete",
                     f"chunk_verified references unknown chunk: {chunk_id}",
                     detail=chunk_id,
                 ))
-        if len(verified_event_ids) != len(set(verified_event_ids)):
+        if len(verified_event_ids) != len(verified_id_set):
             findings.append(Finding(
                 "events.chunk_verified.duplicate", "source_coverage_complete",
                 "duplicate chunk_verified event",
@@ -1163,8 +1158,13 @@ def _validate_findings(run: dict[str, Any]) -> list[Finding]:
                     "verification_passed must follow the last material event",
                 ))
 
+    resolved_nodes = {
+        e["node"] for e in events[:done_i]
+        if isinstance(e.get("node"), str)
+        and e.get("type") in {"node_passed", "node_superseded"}
+    }
     for node in nodes:
-        if not _node_is_resolved(events[:done_i], str(node)):
+        if str(node) not in resolved_nodes:
             findings.append(Finding(
                 "done.node.unresolved", "plan_resolved",
                 f"plan node must be resolved before done: {node}", detail=str(node),
