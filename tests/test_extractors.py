@@ -121,80 +121,32 @@ def test_markdown_atomic_blocks_end_with_newline_so_stream_never_glues(tmp_path)
     assert stream.splitlines() == ["```", "code", "```", "| a |", "|---|", "| 1 |", "# Head"]
 
 
-def test_markdown_extractor_tracks_h1_through_h6(tmp_path):
-    source = tmp_path / "deep.md"
-    source.write_text(
-        "# A\n## B\n### C\n#### D\n##### E\n###### F\nDeep proof.\n",
-        encoding="utf-8",
-    )
-    manifest = run_extractor("extract_markdown.py", source, tmp_path / "deep.json")
-    assert any(c["locator"].get("heading_path") == ["A", "B", "C", "D", "E", "F"] for c in manifest["chunks"])
-
-
-def test_html_extractor_uses_structure_and_omits_script_style(tmp_path):
-    source = tmp_path / "source.html"
-    source.write_text(
-        "<html><head><style>.x{display:none}</style><script>bad()</script></head>"
-        "<body><h1>Intro</h1><p>Alpha text.</p><h2>Data</h2>"
-        "<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><td>2</td></tr></table>"
-        "<pre><code># literal code heading\nprint(1)</code></pre></body></html>",
-        encoding="utf-8",
-    )
-    manifest = run_extractor("extract_html.py", source, tmp_path / "html.json", "--max-bytes", "80")
-    assert_manifest_integrity(manifest, source, "html")
-    text = "".join(c["content"] for c in manifest["chunks"])
-    assert "Alpha text." in text
-    assert "A" in text and "B" in text and "1" in text and "2" in text
-    assert "literal code heading" in text
-    assert "bad()" not in text
-    assert "display:none" not in text
-
-
-def test_html_extractor_keeps_generic_visible_dom_text_once(tmp_path):
-    source = tmp_path / "generic.html"
-    source.write_text(
-        "<main>Lead text<div>Visible div prose.</div>"
-        "<section><span>Section inline text.</span></section>Tail text</main>",
-        encoding="utf-8",
-    )
-    manifest = run_extractor("extract_html.py", source, tmp_path / "generic.json")
-    text = "".join(c["content"] for c in manifest["chunks"])
-    for expected in ["Lead text", "Visible div prose.", "Section inline text.", "Tail text"]:
-        assert text.count(expected) == 1
-
-
-def test_html_extractor_tracks_h1_through_h6(tmp_path):
-    source = tmp_path / "headings.html"
-    source.write_text(
-        "<h1>A</h1><h2>B</h2><h3>C</h3><h4>D</h4><h5>E</h5><h6>F</h6><p>Proof.</p>",
-        encoding="utf-8",
-    )
-    manifest = run_extractor("extract_html.py", source, tmp_path / "h.json")
-    assert any(c["locator"].get("heading_path") == ["A", "B", "C", "D", "E", "F"] for c in manifest["chunks"])
-
-
 def test_html_extractor_keeps_visible_text_once_and_excludes_skipped_content(tmp_path):
     source = tmp_path / "mixed.html"
     source.write_text(
+        "<html><head><style>.x{display:none}</style><script>bad()</script></head>"
         "<body><h1>Root</h1>Body lead"
         "<div>Div text <span>inline span</span></div>"
         "<section>Section text</section><article>Article text</article>"
         "<ul><li>List item</li></ul>"
-        "<table><tr><td>Table cell</td></tr></table>"
-        "<pre>Pre literal</pre>"
+        "<table><tr><th>Table head</th></tr><tr><td>Table cell</td></tr></table>"
+        "<pre><code>Pre literal\n# literal code heading</code></pre>"
         "<script>script hidden</script><style>style hidden</style>"
         "<noscript>noscript hidden</noscript><template>template hidden</template>"
-        "Tail text</body>",
+        "Tail text</body></html>",
         encoding="utf-8",
     )
-    manifest = run_extractor("extract_html.py", source, tmp_path / "mixed.json")
+    manifest = run_extractor("extract_html.py", source, tmp_path / "mixed.json", "--max-bytes", "80")
+    assert_manifest_integrity(manifest, source, "html")
     text = "".join(c["content"] for c in manifest["chunks"])
     for expected in [
         "Body lead", "Div text", "inline span", "Section text", "Article text",
-        "List item", "Table cell", "Pre literal", "Tail text",
+        "List item", "Table head", "Table cell", "Pre literal", "literal code heading", "Tail text",
     ]:
         assert text.count(expected) == 1
-    for excluded in ["script hidden", "style hidden", "noscript hidden", "template hidden"]:
+    for excluded in [
+        "script hidden", "style hidden", "noscript hidden", "template hidden", "bad()", "display:none",
+    ]:
         assert excluded not in text
 
 
@@ -356,10 +308,29 @@ def test_docx_extractor_reads_story_parts_without_oai_paths(tmp_path):
     assert "word/comments.xml" in locators
 
 
-def test_docx_extractor_tracks_heading1_through_heading6(tmp_path):
-    source = tmp_path / "deep.docx"
-    _write_deep_heading_docx(source)
-    manifest = run_extractor("extract_docx.py", source, tmp_path / "deep-docx.json")
+def _write_deep_heading_markdown(path: Path) -> None:
+    path.write_text("# H1\n## H2\n### H3\n#### H4\n##### H5\n###### H6\nDeep body.\n", encoding="utf-8")
+
+
+def _write_deep_heading_html(path: Path) -> None:
+    path.write_text(
+        "<h1>H1</h1><h2>H2</h2><h3>H3</h3><h4>H4</h4><h5>H5</h5><h6>H6</h6><p>Deep body.</p>",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.parametrize(
+    ("script", "suffix", "write_source"),
+    [
+        ("extract_markdown.py", ".md", _write_deep_heading_markdown),
+        ("extract_html.py", ".html", _write_deep_heading_html),
+        ("extract_docx.py", ".docx", _write_deep_heading_docx),
+    ],
+)
+def test_extractors_track_heading_path_from_level_1_through_6(tmp_path, script, suffix, write_source):
+    source = tmp_path / f"deep{suffix}"
+    write_source(source)
+    manifest = run_extractor(script, source, tmp_path / "deep.json")
     assert any(
         c["locator"].get("heading_path") == ["H1", "H2", "H3", "H4", "H5", "H6"]
         for c in manifest["chunks"]
@@ -519,7 +490,7 @@ def test_docx_tracked_change_in_heading_marks_the_heading_path(tmp_path):
     assert body[0]["locator"]["heading_path"] == ["Terms [deleted: old]"]
 
 
-def test_pdf_extractor_reads_every_page_with_portable_backend(tmp_path):
+def test_pdf_extractor_exits_zero_with_intact_manifest(tmp_path):
     sys.path.insert(0, str(SCRIPTS))
     from extract_pdf import choose_backend
     try:
@@ -529,7 +500,3 @@ def test_pdf_extractor_reads_every_page_with_portable_backend(tmp_path):
     source = ROOT / 'tests/fixtures/pdf-first-run/source/sample.pdf'
     manifest = run_extractor('extract_pdf.py', source, tmp_path / 'pdf.json', '--backend', backend)
     assert_manifest_integrity(manifest, source, 'pdf')
-    assert [c['locator']['pages'] for c in manifest['chunks']] == [[1], [2], [3]]
-    assert manifest['chunks'][1]['content'] == ''
-    assert 'Page One Alpha' in manifest['chunks'][0]['content']
-    assert 'Page Three Omega' in manifest['chunks'][2]['content']

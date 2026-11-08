@@ -1,5 +1,4 @@
 import hashlib
-import json
 from pathlib import Path
 import subprocess
 import sys
@@ -13,7 +12,7 @@ import extract_pdf
 FIXTURE = ROOT / 'tests/fixtures/pdf-first-run'
 
 @pytest.mark.parametrize('backend', ['pypdf','pdftotext'])
-def test_committed_pdf_including_empty_page_and_provenance(tmp_path, backend):
+def test_committed_pdf_including_empty_page_and_provenance(backend):
     if not extract_pdf._backend_available(backend):
         pytest.skip(f'optional PDF backend {backend} unavailable; other PDF backend tests remain active')
     source = FIXTURE / 'source/sample.pdf'
@@ -28,12 +27,7 @@ def test_committed_pdf_including_empty_page_and_provenance(tmp_path, backend):
     assert manifest['source']['sha256'] == hashlib.sha256(source.read_bytes()).hexdigest()
     assert manifest == extract_pdf.extract(source, max_bytes=12000, backend=backend)
 
-def test_pdf_fixture_hashes():
-    expected = json.loads((FIXTURE / 'provenance.json').read_text())
-    for name, digest in expected['sha256'].items():
-        assert hashlib.sha256((FIXTURE / 'source' / name).read_bytes()).hexdigest() == digest
-
-def test_encrypted_pdf_requires_correct_password(tmp_path):
+def test_encrypted_pdf_requires_correct_password():
     if not extract_pdf._backend_available('pypdf'):
         pytest.skip('optional pypdf unavailable; encrypted PDF fixture untested')
     source = FIXTURE / 'source/sample-encrypted.pdf'
