@@ -170,13 +170,27 @@ _HTML_DIAGRAM_RE = re.compile(r'<(?:pre|div)\b[^>]*>', re.IGNORECASE)
 _HTML_DIAGRAM_QUOTED_RE = re.compile(rf'<(?:pre|div)\b{_TAG_QUOTED}', re.IGNORECASE)
 
 
+_DECIMAL_REF_RE = re.compile(r'&#([0-9]+);?')
+_MAX_REF_DIGITS = 7  # 1114111 is the largest code point; a longer value decodes to U+FFFD
+
+
+def _unescape(text: str) -> str:
+    """html.unescape without int() on a long digit run (quadratic, or ValueError on 3.11+)."""
+
+    def clamp(match: re.Match[str]) -> str:
+        digits = match.group(1).lstrip('0')
+        return '�' if len(digits) > _MAX_REF_DIGITS else f'&#{digits or "0"};'
+
+    return html.unescape(_DECIMAL_REF_RE.sub(clamp, text))
+
+
 def _attr(tag: str, name: str) -> str | None:
     match = re.search(
         rf'(?<![\w-]){name}\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))', tag, re.IGNORECASE
     )
     if match is None:
         return None
-    return html.unescape(next(group for group in match.groups() if group is not None))
+    return _unescape(next(group for group in match.groups() if group is not None))
 
 
 def _link_target(raw: str) -> str:
@@ -184,7 +198,16 @@ def _link_target(raw: str) -> str:
 
 
 def _is_image_target(target: str) -> bool:
-    return re.split(r'[?#]', target, maxsplit=1)[0].lower().endswith(_IMAGE_EXTENSIONS)
+    """Decode character references, then drop the first ?/# suffix, then test the extension.
+
+    A literal # in a file name is %23 in CommonMark, so a # left after decoding starts the fragment.
+    Where the destination cannot be decoded, it is recorded (R52).
+    """
+    try:
+        decoded = _unescape(target)
+    except ValueError:
+        return True
+    return re.split(r'[?#]', decoded, maxsplit=1)[0].lower().endswith(_IMAGE_EXTENSIONS)
 
 
 def _svg_starts(text: str) -> list[int]:
