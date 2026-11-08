@@ -78,3 +78,8 @@ If one fails:
 4. retry only the smallest diagnosed unit or use a documented semantics-preserving ingress path.
 
 If the only remaining path changes source authority or fidelity, follow `references/failure-recovery.md`.
+
+## Media
+
+This extractor records `img`, inline `svg`, `object`, `embed` and mermaid `pre` or `div` diagrams as media references; content inside script, style, noscript and template is ignored.
+Every media id needs a disposition in format QA: see [Media dispositions](evidence.md).

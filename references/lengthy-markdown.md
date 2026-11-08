@@ -35,3 +35,8 @@ python scripts/extract_markdown.py INPUT.md --run-root <run-root>
 The exact CLI shown by `--help` is authoritative if it differs from this example.
 
 The compliant-run manifest is `<run-root>/evidence/chunk-manifest.json`. The low-level `--out` option is reserved for isolated testing and verifier reproduction.
+
+## Media
+
+This extractor records Markdown images, linked image files, raw HTML images and SVG, and mermaid-style diagrams as media references; fenced diagram source (mermaid, plantuml, dot, graphviz, d2) counts as a diagram. Other fenced code and inline code spans are not scanned, and an image inside an indented code block is still recorded (a known limit).
+Every media id needs a disposition in format QA: see [Media dispositions](evidence.md).
