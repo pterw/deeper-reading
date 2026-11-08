@@ -12,6 +12,7 @@ from installer.manifest import load_manifest
 from installer.prerequisites import PrerequisiteStatus
 
 READY = PrerequisiteStatus('ready', ('test-ready',))
+NOT_AN_OBJECT = {'array': '[]', 'null': 'null', 'string': '"text"', 'skill-not-an-object': '{"skill": 5}'}
 
 
 def _package(root: Path, *, skill_root: str | None, version: str = '9.9.9', extra: str = '') -> Path:
@@ -93,7 +94,19 @@ def _cli(package: Path, home: Path, command: str):
 
 
 @pytest.mark.parametrize('command', ['doctor', 'install', 'verify'])
-@pytest.mark.parametrize('damage', ['root-not-a-string', 'root-outside-package', 'corrupt-json', 'missing-file'])
+@pytest.mark.parametrize(
+    'damage',
+    [
+        'root-not-a-string',
+        'root-outside-package',
+        'corrupt-json',
+        'missing-file',
+        'array',
+        'null',
+        'string',
+        'skill-not-an-object',
+    ],
+)
 def test_bad_manifest_fails_cleanly_through_the_cli(tmp_path, command, damage):
     repo = Path(__file__).resolve().parents[2]
     package = tmp_path / 'package'
@@ -111,6 +124,8 @@ def test_bad_manifest_fails_cleanly_through_the_cli(tmp_path, command, damage):
         manifest.write_text('{not json', encoding='utf-8')
     elif damage == 'missing-file':
         manifest.unlink()
+    elif damage in NOT_AN_OBJECT:
+        manifest.write_text(NOT_AN_OBJECT[damage], encoding='utf-8')
     else:
         data['skill']['root'] = 5 if damage == 'root-not-a-string' else '../elsewhere'
         manifest.write_text(json.dumps(data), encoding='utf-8')

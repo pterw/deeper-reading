@@ -36,7 +36,10 @@ def _frontmatter_name(skill_path: Path) -> str | None:
 
 def _skill_root_error(data: dict[str, Any], root: Path) -> str | None:
     """Return the first problem with ``skill.root``, or None when it is usable."""
-    raw = (data.get('skill') or {}).get('root', '.')
+    skill = data.get('skill') if isinstance(data, dict) else None
+    if not isinstance(data, dict) or not isinstance(skill if skill is not None else {}, dict):
+        return 'MANIFEST.json must be an object and skill must be an object'
+    raw = (skill or {}).get('root', '.')
     if not isinstance(raw, str):
         return 'skill.root must be a string'
     if not raw or '\\' in raw or raw.startswith('/') or re.match(r'[A-Za-z]:', raw):

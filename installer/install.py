@@ -260,6 +260,8 @@ def main(argv=None) -> int:
         return args.func(args)
     except InstallError as exc:
         data = {"state": "failed", "error": str(exc), "command": args.command}
+        if exc.code:
+            data["code"] = exc.code
         if args.command == "verify":
             data["passed"] = False
         _emit(data, args.json)
