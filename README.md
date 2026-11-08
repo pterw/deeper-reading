@@ -3,6 +3,7 @@
 Exhaustive document traversal and source-bound evidence for agent workflows.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/pterw/deeper-reading/ci.yml?branch=main)](https://github.com/pterw/deeper-reading/actions)
+[![npm](https://img.shields.io/npm/v/deeper-reading)](https://www.npmjs.com/package/deeper-reading)
 [![Release](https://img.shields.io/github/v/release/pterw/deeper-reading)](https://github.com/pterw/deeper-reading/releases)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
@@ -25,6 +26,19 @@ npx deeper-reading doctor --target auto --json
 npx deeper-reading install --target auto --scope user --dry-run --json
 npx deeper-reading install --target auto --scope user --json
 ```
+
+To keep the command available, install the package globally and drop the `npx`
+prefix:
+
+```sh
+npm install -g deeper-reading
+deeper-reading doctor --target auto --json
+deeper-reading install --target auto --scope user --dry-run --json
+deeper-reading install --target auto --scope user --json
+```
+
+Run `verify` and `uninstall` the same way; see [After installing](#after-installing)
+and the command table below.
 
 Installing the npm package alone does not install the Agent Skill. Only the
 explicit `install` command writes to a skill directory; there are no npm install
@@ -199,7 +213,7 @@ OCR claims fail verification.
 PDF manifests from before 0.2.3 require regeneration with their evidence: page
 boundaries and backend provenance are now explicit. Changing backend or version
 can change extraction. `--password` supports encrypted extraction, but final
-verification has no password input; see [runtime profiles](references/runtime-profiles.md)
+verification has no password input; see [PDF reference](references/pdf.md)
 for that limitation. The new fixture includes text, a table, an empty page and an
 encrypted variant, with [recorded source hashes](https://github.com/pterw/deeper-reading/blob/main/tests/fixtures/pdf-first-run/README.md).
 
