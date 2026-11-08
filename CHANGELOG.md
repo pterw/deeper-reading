@@ -59,7 +59,11 @@
   `media` list of the manifest (`media-0001`, with chunk, kind, syntax,
   reference and alt text). Chunk text, ids and hashes do not change, and a
   manifest without media is byte-identical to before. PDF media is not
-  recorded.
+  recorded. In Markdown, media outside a closed, well-formed fenced code block
+  counts, inline code and HTML comments included, so a doubtful case costs a
+  `not_read` disposition. Known limits: a fence-looking line inside an HTML
+  comment or `<pre>` pairs with a later fence, and brackets and parentheses
+  nest one level only.
 - Evidence: format QA gives every media reference a disposition in a top-level
   `media` list of the chunk evidence ledger: `read` (with the host vision tool
   and a summary) or `not_read` (with a reason). `build_evidence.py` rejects a

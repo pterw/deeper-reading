@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 import html
 from pathlib import Path
 from script_io import run_cli
@@ -129,28 +130,42 @@ def parse_markdown_blocks(text: str) -> list[Block]:
     return blocks
 
 
-_BACKTICK_RUN_RE = re.compile(r'`+')
 _IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg')
 _DIAGRAM_INFO = frozenset({'mermaid', 'plantuml', 'dot', 'graphviz', 'd2'})
+_OPENING_FENCE_RE = re.compile(r'^ {0,3}(`{3,}|~{3,})(.*)$')
+_CLOSING_FENCE_RE = re.compile(r'^ {0,3}(`+|~+)[ \t]*$')
 # Balanced delimiters nest one level only (CommonMark allows more); each alternative starts
 # with a different character, so the patterns stay linear on long runs of brackets.
-_BRACKETED = r'(?:[^\[\]]|\[[^\[\]]*\])*'
+# A backslash escapes the next character, so an escaped bracket never ends the text.
+_BRACKETED = r'(?:\\[\s\S]|[^\[\]\\]|\[(?:\\[\s\S]|[^\[\]\\])*\])*'
 _PARENTHESISED = r'(?:[^()]|\([^()]*\))*'
-_DESTINATION = r'(?:<[^>]*>|(?:[^()\s]|\([^()\s]*\))*)'
+# The link pattern first steps over `\x`, so an escaped bracket never starts a scan that runs
+# to the end of the text; `\!` is left alone so it can still start an image.
+_ESCAPED = r'\\[^!]'
+# Every `<img`, `<div` and `<pre` start is found by the plain scan, which ends a tag at the next
+# `>`. The quote-aware form only reads the tag's attributes: a quoted value may hold `>` but not
+# `<`, so it never spans the next tag, and a tag it cannot read falls back to the plain body.
+_TAG_QUOTED = r"""[^>"']*(?:(?:"[^"<]*"|'[^'<]*')[^>"']*){0,32}>"""
+# The svg tail ignores quote tricks: a miss there only treats a self-closing svg as unclosed.
+_SVG_TAIL = r"""(?:[^<>"']|"[^"]*"|'[^']*')*>"""
+_DESTINATION = r'(?:<[^<>]*>|(?:[^()\s]|\([^()\s]*\))*)'
 # The destination sits in a lookahead that is then consumed by a backreference: an atomic group
 # (Python 3.10 has none), so a missing `)` fails without retrying every shorter destination.
+# The closing `)` is looked up by `_md_matches`, not found by a pattern that rescans to the end.
 _MD_IMAGE_RE = re.compile(
-    rf'!\[({_BRACKETED})\](?:\(\s*(?=({_DESTINATION}))\2[^)]*\)|\[([^\]]*)\])?'
+    rf'!\[({_BRACKETED})\](?:\(\s*(?=({_DESTINATION}))\2|\[([^\]]*)\])?'
 )
 _MD_LINK_RE = re.compile(
-    rf'(?<!!)\[(?:[^\[\]!]|!(?!\[)|\[[^\[\]]*\]|!\[{_BRACKETED}\]\({_PARENTHESISED}\))*\]'
-    rf'\(\s*(?=({_DESTINATION}))\1[^)]*\)'
+    rf'{_ESCAPED}|(?<!!)\[(?:\\[\s\S]|[^\[\]!\\]|!(?!\[)|\[(?:\\[\s\S]|[^\[\]\\])*\]'
+    rf'|!\[{_BRACKETED}\]\({_PARENTHESISED}\))*\]'
+    rf'\(\s*(?=({_DESTINATION}))\1'
 )
-_HTML_COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
-_LINK_DEFINITION_RE = re.compile(r'^ {0,3}\[((?:[^\]\\]|\\.)+)\]:\s*\S', re.MULTILINE)
 _HTML_IMG_RE = re.compile(r'<img\b[^>]*>', re.IGNORECASE)
+_HTML_IMG_QUOTED_RE = re.compile(rf'<img\b{_TAG_QUOTED}', re.IGNORECASE)
 _HTML_SVG_TAG_RE = re.compile(r'<(/?)svg\b', re.IGNORECASE)
+_HTML_TAG_TAIL_RE = re.compile(_SVG_TAIL)
 _HTML_DIAGRAM_RE = re.compile(r'<(?:pre|div)\b[^>]*>', re.IGNORECASE)
+_HTML_DIAGRAM_QUOTED_RE = re.compile(rf'<(?:pre|div)\b{_TAG_QUOTED}', re.IGNORECASE)
 
 
 def _attr(tag: str, name: str) -> str | None:
@@ -171,102 +186,92 @@ def _is_image_target(target: str) -> bool:
 
 
 def _svg_starts(text: str) -> list[int]:
-    """Offsets of outermost <svg tags; nested svg and stray closers are skipped.
+    """Offsets of <svg tags, minus those nested inside an outer svg that closes later.
 
-    A self-closing <svg/> opens and closes at once, so it never changes the depth.
+    A self-closing <svg/> opens and closes at once; an unclosed <svg hides nothing after it.
     """
-    starts: list[int] = []
-    depth = 0
-    tag_end = -2  # cached text.find('>'); -1 means none left, so unclosed tags cost one scan
+    tokens: list[tuple[int, bool, bool]] = []  # (offset, is closer, is self-closing)
+    open_tokens: list[int] = []
+    closed_at: dict[int, int] = {}
     for match in _HTML_SVG_TAG_RE.finditer(text):
-        if match.group(1):
-            depth = max(depth - 1, 0)
+        index = len(tokens)
+        closer = bool(match.group(1))
+        tail = None if closer else _HTML_TAG_TAIL_RE.match(text, match.end())
+        self_closing = tail is not None and text[tail.end() - 2] == '/'
+        tokens.append((match.start(), closer, self_closing))
+        if closer and open_tokens:
+            closed_at[open_tokens.pop()] = match.start()
+        elif not closer and not self_closing:
+            open_tokens.append(index)
+    starts: list[int] = []
+    covered_until = -1
+    for index, (offset, closer, _) in enumerate(tokens):
+        if closer or offset < covered_until:
             continue
-        if tag_end != -1 and tag_end < match.end():
-            tag_end = text.find('>', match.end())
-        if depth == 0:
-            starts.append(match.start())
-        if not (tag_end > 0 and text[tag_end - 1] == '/'):
-            depth += 1
+        starts.append(offset)
+        covered_until = closed_at.get(index, covered_until)
     return starts
 
 
-def _trailing_backslashes(text: str, end: int) -> int:
-    start = end
-    while start > 0 and text[start - 1] == '\\':
-        start -= 1
-    return end - start
+def _html_tags(text: str, plain: re.Pattern, quoted: re.Pattern):
+    """Yield (offset, tag) for each tag start the plain scan finds, read quote-aware if it can."""
+    for match in plain.finditer(text):
+        yield match.start(), (quoted.match(text, match.start()) or match).group(0)
 
 
-def _mask_code_spans(text: str) -> str:
-    """Blank code spans: a complete backtick run closes on the next run of equal length."""
-    runs = [match.span() for match in _BACKTICK_RUN_RE.finditer(text)]
-    # An odd number of backslashes escapes the run's first backtick, so an opener is one shorter;
-    # a closer inside a code span is never escaped, so its length stays whole.
-    opener_start = [
-        start + (_trailing_backslashes(text, start) % 2) for start, _ in runs
-    ]
-    closer_of: list[int | None] = [None] * len(runs)
-    latest: dict[int, int] = {}
-    for index in range(len(runs) - 1, -1, -1):
-        closer_of[index] = latest.get(runs[index][1] - opener_start[index])
-        latest[runs[index][1] - runs[index][0]] = index
-    pieces: list[str] = []
-    position = index = 0
-    while index < len(runs):
-        closer = closer_of[index]
-        if closer is None:
-            index += 1
-            continue
-        start, end = opener_start[index], runs[closer][1]
-        pieces.append(text[position:start])
-        pieces.append(' ' * (end - start))
-        position = end
-        index = closer + 1
-    pieces.append(text[position:])
-    return ''.join(pieces)
+def _md_matches(text: str, regex: re.Pattern, group: int):
+    """Yield (match, destination) for each Markdown image or link match.
+
+    The destination is None when the match has none or no `)` follows it. The closing `)` is
+    the next one after the destination, looked up in the list of every `)`, so a missing one
+    costs a lookup, not a scan to the end. A match with a closing `)` is skipped past it.
+    """
+    closers = [match.start() for match in re.finditer(r'\)', text)]
+    pos = 0
+    while (match := regex.search(text, pos)) is not None:
+        target = match.group(group)
+        pos = match.end()
+        if target is not None:
+            index = bisect.bisect_left(closers, pos)
+            if index < len(closers):
+                pos = closers[index] + 1
+            else:
+                target, pos = None, match.start() + 1
+        yield match, target
 
 
-def _label_key(label: str) -> str:
-    return ' '.join(label.split()).casefold()
-
-
-def _definition_labels(blocks: list[Block]) -> set[str]:
-    """Normalised labels of the link definitions `[label]: url` in the non-fenced text."""
-    return {
-        _label_key(match.group(1))
-        for block in blocks
-        if block.locator.get('kind') != 'fenced_code'
-        for match in _LINK_DEFINITION_RE.finditer(block.text)
-    }
-
-
-def _text_media(
-    text: str, definitions: frozenset[str] | set[str] = frozenset()
-) -> list[tuple[int, str, str, str | None, str | None]]:
-    """Media references in non-code Markdown text, as (offset, kind, syntax, ref, alt)."""
-    text = _mask_code_spans(text)
-    text = _HTML_COMMENT_RE.sub(lambda match: ' ' * len(match.group(0)), text)
+def _text_media(text: str) -> list[tuple[int, str, str, str | None, str | None]]:
+    """Media references in Markdown text, as (offset, kind, syntax, ref, alt)."""
     found: list[tuple[int, str, str, str | None, str | None]] = []
-    for match in _MD_IMAGE_RE.finditer(text):
-        alt, target, label = match.groups()
-        if target is None and label is None and _label_key(alt) not in definitions:
-            continue
+    for match, target in _md_matches(text, _MD_IMAGE_RE, 2):
+        alt, label = match.group(1), match.group(3)
         ref = _link_target(target) if target is not None else (label or alt)
         found.append((match.start(), 'image', 'md_image', ref or None, alt))
-    for match in _MD_LINK_RE.finditer(text):
-        target = _link_target(match.group(1))
-        if _is_image_target(target):
-            found.append((match.start(), 'image', 'md_link', target, None))
-    for match in _HTML_IMG_RE.finditer(text):
-        tag = match.group(0)
+    for match, target in _md_matches(text, _MD_LINK_RE, 1):
+        if target is not None and _is_image_target(_link_target(target)):
+            found.append((match.start(), 'image', 'md_link', _link_target(target), None))
+    tags = text[: text.rfind('>') + 1]
+    for start, tag in _html_tags(tags, _HTML_IMG_RE, _HTML_IMG_QUOTED_RE):
         ref = _attr(tag, 'src') or _attr(tag, 'data-src')
-        found.append((match.start(), 'image', 'html_img', ref, _attr(tag, 'alt')))
+        found.append((start, 'image', 'html_img', ref, _attr(tag, 'alt')))
     found.extend((start, 'svg', 'html_svg', None, None) for start in _svg_starts(text))
-    for match in _HTML_DIAGRAM_RE.finditer(text):
-        if 'mermaid' in (_attr(match.group(0), 'class') or '').split():
-            found.append((match.start(), 'diagram', 'html_diagram', None, None))
+    for start, tag in _html_tags(tags, _HTML_DIAGRAM_RE, _HTML_DIAGRAM_QUOTED_RE):
+        if 'mermaid' in (_attr(tag, 'class') or '').split():
+            found.append((start, 'diagram', 'html_diagram', None, None))
     return sorted(found, key=lambda item: item[0])
+
+
+def _is_closed_fence(text: str) -> bool:
+    """True for a fence with a valid opener and a closer of the same character, as long."""
+    lines = text.splitlines()
+    opener = _OPENING_FENCE_RE.match(lines[0])
+    closer = _CLOSING_FENCE_RE.match(lines[-1]) if len(lines) > 1 else None
+    if opener is None or closer is None:
+        return False
+    fence, info = opener.groups()
+    if fence[0] == '`' and '`' in info:
+        return False
+    return closer.group(1)[0] == fence[0] and len(closer.group(1)) >= len(fence)
 
 
 def _fence_diagram(text: str) -> bool:
@@ -277,13 +282,13 @@ def _fence_diagram(text: str) -> bool:
 def collect_media(blocks: list[Block]) -> None:
     """Record media references on the blocks that hold them, in document order."""
     collector = MediaCollector()
-    definitions = _definition_labels(blocks)
     for index, block in enumerate(blocks):
         if block.locator.get('kind') == 'fenced_code':
             if _fence_diagram(block.text):
                 collector.add(index, 'diagram', 'fence_diagram')
-            continue
-        for _, kind, syntax, ref, alt in _text_media(block.text, definitions):
+            if _is_closed_fence(block.text):
+                continue
+        for _, kind, syntax, ref, alt in _text_media(block.text):
             collector.add(index, kind, syntax, ref, alt)
     collector.apply(blocks)
 

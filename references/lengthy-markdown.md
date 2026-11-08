@@ -38,5 +38,5 @@ The compliant-run manifest is `<run-root>/evidence/chunk-manifest.json`. The low
 
 ## Media
 
-This extractor records Markdown images, linked image files, raw HTML images and SVG, and mermaid-style diagrams as media references; fenced diagram source (mermaid, plantuml, dot, graphviz, d2) counts as a diagram. Other fenced code and inline code spans are not scanned, and an image inside an indented code block is still recorded (a known limit).
+This extractor records Markdown images, linked image files, raw HTML images and SVG, and mermaid-style diagrams as media references; fenced diagram source (mermaid, plantuml, dot, graphviz, d2) counts as a diagram. Media that matches these patterns outside a closed, well-formed fenced code block is recorded, inline code spans, HTML comments and indented code included; a doubtful case costs a `not_read` disposition. Known limits: a fence-looking line inside an HTML comment or `<pre>` block pairs with a later fence and the text between is skipped; brackets and parentheses nest one level only, so `![a [b [c]]](p.png)` is not recorded.
 Every media id needs a disposition in format QA: see [Media dispositions](evidence.md).

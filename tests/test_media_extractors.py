@@ -95,8 +95,8 @@ MEDIA_ROWS = [
     pytest.param("md", '# T\n\n<pre class="mermaid">graph TD</pre>\n', [("diagram", "html_diagram", None, None)], id="md-html-diagram-pre"),
     pytest.param("md", "# T\n\n```mermaid\ngraph TD\n```\n", [("diagram", "fence_diagram", None, None)], id="md-fence-mermaid"),
     pytest.param("md", "# T\n\n~~~PlantUML\n@startuml\n~~~\n", [("diagram", "fence_diagram", None, None)], id="md-fence-plantuml"),
-    pytest.param("md", "# T\n\nUse `![a](p.png)` to embed.\n", [], id="md-inline-code-span-ignored"),
-    pytest.param("md", "# T\n\n```python\n![a](p.png)\n<img src='x.png'>\n```\n", [], id="md-non-diagram-fence-ignored"),
+    pytest.param("md", "# T\n\nUse `![a](p.png)` to embed.\n", [("image", "md_image", "p.png", "a")], id="md-inline-code-span-recorded"),
+    pytest.param("md", "# T\n\n```python\n![a](p.png)\n<img src='x.png'>\n```\n", [], id="md-closed-non-diagram-fence-not-recorded"),
     pytest.param(
         "md",
         '# T\n\n<img src="first.png" alt="one"> and ![two](second.png) and [three](third.gif)\n',
@@ -114,25 +114,45 @@ MEDIA_ROWS = [
         id="md-image-inside-a-link",
     ),
     pytest.param("md", "# T\n\n![A  Pic]\n\n[a pic]: p.png\n", [("image", "md_image", "A  Pic", "A Pic")], id="md-image-shortcut-with-definition"),
-    pytest.param("md", "# T\n\nSee ![nodef] here.\n", [], id="md-image-shortcut-without-definition-ignored"),
-    pytest.param("md", "# T\n\n<!-- ![a](p.png) -->\n", [], id="md-image-inside-comment-ignored"),
+    pytest.param("md", "# T\n\nSee ![nodef] here.\n", [("image", "md_image", "nodef", "nodef")], id="md-image-shortcut-without-definition-recorded"),
+    pytest.param("md", "# T\n\n<!-- ![a](p.png) -->\n", [("image", "md_image", "p.png", "a")], id="md-image-inside-comment-recorded"),
     pytest.param(
         "md",
         "# T\n\n<!-- old\n![a](old.png) -->\n![b](real.png)\n",
-        [("image", "md_image", "real.png", "b")],
-        id="md-multiline-comment-then-real-image-only-real-recorded",
+        [("image", "md_image", "old.png", "a"), ("image", "md_image", "real.png", "b")],
+        id="md-multiline-comment-then-real-image-both-recorded",
     ),
     pytest.param("md", "# T\n\n![Plot [A]](plot.png)\n", [("image", "md_image", "plot.png", "Plot [A]")], id="md-image-with-bracketed-alt"),
     pytest.param("md", "# T\n\nSee [figure](plot(1).png) here.\n", [("image", "md_link", "plot(1).png", None)], id="md-link-to-parenthesised-destination"),
     pytest.param("md", '# T\n\n![pic](a(b).png "A title")\n', [("image", "md_image", "a(b).png", "pic")], id="md-image-parenthesised-destination-with-title"),
     pytest.param("md", '# T\n\n<svg><svg width="1" /><svg/><circle r="2"/></svg><svg><circle r="3"/></svg>\n', [("svg", "html_svg", None, None), ("svg", "html_svg", None, None)], id="md-self-closing-svg-does-not-deepen-nesting"),
     pytest.param("md", "# T\n\n<svg />\n", [("svg", "html_svg", None, None)], id="md-top-level-self-closing-svg-recorded"),
-    pytest.param("md", "# T\n\n`unmatched ![plot](plot.png) ``code``\n", [("image", "md_image", "plot.png", "plot")], id="md-unmatched-backtick-run-does-not-mask-image"),
-    pytest.param("md", "# T\n\nUse ``![a](p.png)`` to embed.\n", [], id="md-double-backtick-span-ignored"),
-    pytest.param("md", "# T\n\n\\`literal ![plot](plot.png) \\`more\n", [("image", "md_image", "plot.png", "plot")], id="md-escaped-backticks-do-not-mask-image"),
-    pytest.param("md", "# T\n\n\\` `![a](p.png)` after\n", [], id="md-escaped-backtick-then-real-span-masks-image"),
-    pytest.param("md", "# T\n\n\\\\`![a](p.png)` after\n", [], id="md-two-backslashes-backtick-is-real-opener"),
-    pytest.param("md", "# T\n\n\\\\\\`![a](p.png)` after\n", [("image", "md_image", "p.png", "a")], id="md-three-backslashes-backtick-is-escaped"),
+    pytest.param("md", "# T\n\nUse ``![a](p.png)`` to embed.\n", [("image", "md_image", "p.png", "a")], id="md-double-backtick-span-recorded"),
+    pytest.param("md", "# T\n\n    ```\n\n![vis](a.png)\n", [("image", "md_image", "a.png", "vis")], id="md-indented-fence-line-does-not-hide-later-image"),
+    pytest.param("md", "# T\n\n```code``` text ![v](a.png)\n\n![x](b.png)\n", [("image", "md_image", "a.png", "v"), ("image", "md_image", "b.png", "x")], id="md-backtick-in-info-fence-is-scanned-as-text"),
+    pytest.param("md", "# T\n\n```python\n![a](p.png)\n", [("image", "md_image", "p.png", "a")], id="md-unclosed-fence-is-scanned-as-text"),
+    pytest.param("md", "# T\n\n```mermaid\ngraph TD\n", [("diagram", "fence_diagram", None, None)], id="md-unclosed-diagram-fence-still-recorded"),
+    pytest.param("md", "# T\n\n````python\n![a](p.png)\n```\n", [("image", "md_image", "p.png", "a")], id="md-shorter-closer-leaves-fence-unclosed"),
+    pytest.param("md", "# T\n\n```python\n![a](p.png)\n    ```\n", [("image", "md_image", "p.png", "a")], id="md-closer-indented-four-leaves-fence-unclosed"),
+    pytest.param("md", "# T\n\n  ~~~python\n![a](p.png)\n  ~~~~\n\n![b](q.png)\n", [("image", "md_image", "q.png", "b")], id="md-closed-tilde-fence-with-longer-closer-not-recorded"),
+    pytest.param("md", "# T\n\n![a\\]b](x.png)\n", [("image", "md_image", "x.png", "a\\]b")], id="md-image-escaped-bracket-in-alt"),
+    pytest.param("md", "# T\n\n[a\\]b](x.png)\n", [("image", "md_link", "x.png", None)], id="md-link-escaped-bracket-in-text"),
+    pytest.param("md", '# T\n\n<img alt="a > b" src="a.png">\n', [("image", "html_img", "a.png", "a > b")], id="md-html-img-gt-in-quoted-attribute"),
+    pytest.param("md", '# T\n\n<div data-x="a>b" class="mermaid">g</div>\n', [("diagram", "html_diagram", None, None)], id="md-diagram-div-gt-in-quoted-attribute"),
+    pytest.param("md", '# T\n\n<svg data-x="a>b" /><svg><svg></svg></svg>\n', [("svg", "html_svg", None, None), ("svg", "html_svg", None, None)], id="md-self-closing-svg-gt-in-quoted-attribute"),
+    pytest.param("md", "# T\n\nthe <svg> tag\n<svg id=1></svg>\n<svg id=2></svg>\n", [("svg", "html_svg", None, None)] * 3, id="md-unclosed-svg-does-not-hide-later-svgs"),
+    pytest.param("md", "# T\n\n    ```python\n![a](p.png)\n```\n", [("image", "md_image", "p.png", "a")], id="md-closed-fence-with-four-space-opener-is-scanned-as-text"),
+    pytest.param("md", "# T\n\n```a`b\n![a](p.png)\n```\n", [("image", "md_image", "p.png", "a")], id="md-closed-backtick-fence-with-backtick-in-info-is-scanned-as-text"),
+    pytest.param("md", '# T\n\n<img alt=don\'t src="a.png">\n', [("image", "html_img", "a.png", "don't")], id="md-html-img-apostrophe-in-unquoted-attribute"),
+    pytest.param("md", '# T\n\n<img src="a.png" alt=don\'t> it\'s <img src="b.png">\n', [("image", "html_img", "a.png", "don't"), ("image", "html_img", "b.png", None)], id="md-html-img-apostrophes-do-not-swallow-the-next-tag"),
+    pytest.param("md", '# T\n\n<img alt="x> text <img src="b.png" alt="c">\n', [("image", "html_img", None, '"x'), ("image", "html_img", "b.png", "c")], id="md-html-img-stray-quote-does-not-span-a-later-tag"),
+    pytest.param("md", "# T\n\n<img src=a.png alt=it's>\n", [("image", "html_img", "a.png", "it's")], id="md-html-img-apostrophe-in-last-attribute"),
+    pytest.param("md", "# T\n\n<img alt=a<b src=x.png>\n", [("image", "html_img", "x.png", "a<b")], id="md-html-img-angle-bracket-inside-tag"),
+    pytest.param("md", '# T\n\n<img src="a.png" alt="x>\n', [("image", "html_img", "a.png", '"x')], id="md-html-img-unterminated-quote"),
+    pytest.param("md", "# T\n\n<div title=it's class=\"mermaid\">g</div>\n", [("diagram", "html_diagram", None, None)], id="md-diagram-div-apostrophe-in-unquoted-attribute"),
+    pytest.param("md", "# T\n\n<img alt=\"x>\n\n<img src=\"b.png\" alt=\"c\">\n", [("image", "html_img", None, '"x'), ("image", "html_img", "b.png", "c")], id="md-html-img-stray-quote-does-not-swallow-next-tag"),
+    pytest.param("md", "# T\n\n\\\\[a](p.png)\n", [("image", "md_link", "p.png", None)], id="md-link-after-escaped-backslash"),
+    pytest.param("md", "# T\n\n\\![a](p.png)\n", [("image", "md_image", "p.png", "a")], id="md-escaped-bang-image-still-recorded"),
     pytest.param("html", '<h1>T</h1><p>See <img src="a.png" alt="a  pic"> now.</p>', [("image", "img", "a.png", "a pic")], id="html-img"),
     pytest.param("html", '<h1>T</h1><img data-src="lazy.png"><p>text</p>', [("image", "img", "lazy.png", None)], id="html-img-data-src-alone-attaches-to-next-block"),
     pytest.param("html", "<h1>T</h1><p>x <svg><svg><g/></svg></svg> y</p>", [("svg", "svg", None, None)], id="html-svg-outermost-once"),
@@ -378,13 +398,31 @@ def test_extractor_records_media_references(tmp_path, fmt, text, expected):
         assert any(chunk["id"] == item["chunk_id"] for chunk in manifest["chunks"])
 
 
-@pytest.mark.parametrize("opener", ["![a](", "[a]("], ids=["image", "link"])
-def test_unclosed_markdown_destination_scans_in_linear_time(tmp_path, opener):
+@pytest.mark.parametrize(
+    ("opener", "expected"),
+    [("![a](", [("image", "md_image", "a", "a")]), ("[a](", [])],
+    ids=["image", "link"],
+)
+def test_unclosed_markdown_destination_scans_in_linear_time(tmp_path, opener, expected):
     text = f"# T\n\n{opener}data:image/png;base64,{'A' * 512 * 1024}\n"
     started = time.monotonic()
     manifest, found = manifest_media("md", text, tmp_path, max_bytes=2_000_000)
     assert time.monotonic() - started < 2
-    assert found == []
+    assert found == expected
+
+
+@pytest.mark.parametrize(
+    "unit",
+    [
+        "\\[", "\\[ a \\] ", "![a\\[", "![a\\[](", "![", "![a](<", "[a](", "[![a](x.png",
+        '<img "', '<img ">a "', "<img a=\">", "<svg ", "<div class=\"mermaid\" ",
+    ],
+)
+def test_adversarial_repeated_shapes_scan_in_linear_time(tmp_path, unit):
+    body = (unit * (512 * 1024 // len(unit) + 1))[: 512 * 1024]
+    started = time.monotonic()
+    manifest_media("md", f"# T\n\n{body}\n", tmp_path, max_bytes=2_000_000)
+    assert time.monotonic() - started < 4
 
 
 def test_media_entries_number_in_document_order(tmp_path):
