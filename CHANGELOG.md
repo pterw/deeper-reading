@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.5 - 2026-11-08
 
 - `README.md` is no longer installed into the skill directory, and an upgrade
   from an earlier release removes it. npm and the release ZIP still include it.
