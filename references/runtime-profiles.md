@@ -43,6 +43,8 @@ Invariant:
 
 The package-owned extractors/evidence ledger remain the traversal ground truth unless a future version explicitly migrates that contract under tests. Native helpers cannot shrink the canonical chunk universe, replace atomic evidence with summaries, waive `chunk_verified` coverage, or bypass source re-extraction.
 
+Native skill roots, the full-read rule and the PDF render loop live in [oai-native](oai-native.md).
+
 ## Resolution rule
 
 Before execution record:

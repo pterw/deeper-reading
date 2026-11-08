@@ -24,7 +24,10 @@ Before acquiring or extracting source bytes, read
 [`source-acquisition`](../../references/source-acquisition.md) and
 [`dependencies`](../../references/dependencies.md). Then read
 [`run-workspace`](../../references/run-workspace.md) for the run-root layout and
-the `--run-root` extractor commands. Then load exactly the route
+the `--run-root` extractor commands. Whenever the profile is or becomes
+`oai-native` (including after the extractor reports a PDF with no text layer),
+read [`oai-native`](../../references/oai-native.md) before reading any native
+OAI skill tree. Then load exactly the route
 for the selected format:
 
 - PDF: read [`pdf`](../../references/pdf.md), then run

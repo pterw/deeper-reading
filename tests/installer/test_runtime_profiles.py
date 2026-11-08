@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -19,7 +21,17 @@ def test_native_profile_is_optional_enhancement_only():
     native = text.split("## oai-native", 1)[1]
     assert "optional enhancement" in native.lower()
     assert "may NEVER alter" in native
-    assert "/home/oai/skills" not in native
+
+
+def _skill_prose_files():
+    return [ROOT / "SKILL.md", *ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("references/*.md")]
+
+
+@pytest.mark.parametrize("path", _skill_prose_files(), ids=lambda p: p.relative_to(ROOT).as_posix())
+def test_host_skill_path_appears_only_in_the_oai_native_reference(path):
+    assert list(ROOT.glob("skills/*/SKILL.md")), "skills glob matched nothing"
+    assert list(ROOT.glob("references/*.md")), "references glob matched nothing"
+    assert ("/home/oai/skills" in path.read_text(encoding="utf-8")) == (path.name == "oai-native.md")
 
 
 def test_standalone_profile_owns_extractors_and_process_modules():

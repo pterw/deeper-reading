@@ -54,6 +54,7 @@ INSTRUCTIONS = [
     ("exactly one ordered `chunk_verified` event per canonical emitted chunk", RUNTIME, EXHAUSTIVE),
     ("Text backends cannot justify an `ocr-verified` QA claim", "references/pdf.md", EXHAUSTIVE),
     ("copy the extractor manifest's `extraction` object into `run.json`", "references/pdf.md", EXHAUSTIVE),
+    ("**every Markdown file in that selected tree in full before execution**", "references/oai-native.md", EXHAUSTIVE),
     ("**do not attempt a fourth fix**", "references/failure-recovery.md", DEBUGGING),
     ("Do not require an external document skill merely to perform basic exhaustive text extraction", DEPENDENCIES, EXHAUSTIVE),
 ]

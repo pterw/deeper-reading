@@ -2,21 +2,20 @@
 
 ## Required document profile
 
-Resolve the document profile first. Under `oai-native`, use `/home/oai/skills/docx` for visual/layout mechanics. Under `standalone`, basic text extraction is provided by the bundled `scripts/extract_docx.py`; optional external providers are only for advanced capabilities the bundled core does not provide.
+Resolve the document profile first. Under `oai-native`, [oai-native](oai-native.md) adds the native mechanics. Under `standalone`, basic text extraction is provided by the bundled `scripts/extract_docx.py`; optional external providers are only for advanced capabilities the bundled core does not provide.
 
 Before DOCX execution:
 1. resolve the document profile through `references/runtime-profiles.md`;
 2. follow `references/dependencies.md`;
-3. under `oai-native`, read the entire `/home/oai/skills/docx` Markdown tree in full;
-4. under `standalone`, run `python scripts/extract_docx.py --help` before first use;
-5. resolve/read an external DOCX provider only when the task requires rendering, conversion, tracked-change/comment manipulation, or another advanced capability;
-6. read the current help for every helper before first use.
+3. under `standalone`, run `python scripts/extract_docx.py --help` before first use;
+4. resolve/read an external DOCX provider only when the task requires rendering, conversion, tracked-change/comment manipulation, or another advanced capability;
+5. read the current help for every helper before first use.
 
 The bundled extractor defines the anti-skimming text chunk universe. The resolved DOCX provider is authoritative only for additional mechanics within its declared capability profile.
 
 ## Anti-skimming extraction manifest
 
-Use `scripts/extract_docx.py` to traverse the OOXML story parts and emit the authoritative chunk manifest. The portable extractor reads the main document plus supported headers, footers, footnotes, endnotes, and comments without depending on `/home/oai/skills`. Every emitted chunk requires exactly one atomic extractive evidence verdict (or explicit non-match), one `chunk_verified` event, and inclusion in deterministic `TRAVERSAL_REPORT.md` before Done.
+Use `scripts/extract_docx.py` to traverse the OOXML story parts and emit the authoritative chunk manifest. The portable extractor reads the main document plus supported headers, footers, footnotes, endnotes, and comments without depending on any host-installed skill. Every emitted chunk requires exactly one atomic extractive evidence verdict (or explicit non-match), one `chunk_verified` event, and inclusion in deterministic `TRAVERSAL_REPORT.md` before Done.
 
 Within parsed story parts, paragraph styles named `Heading1` through `Heading6` (including the equivalent `Heading 1` through `Heading 6` spelling accepted by the parser) update the six-level `heading_path`. This does not claim support for arbitrary custom Word styles that merely look like headings.
 
