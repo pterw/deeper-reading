@@ -25,7 +25,7 @@ code, docs and commit messages honest about that.
 | `README.md` | **Product docs** | Install, commands, artifacts, limits. Not for agent orchestration. |
 | `CONTRIBUTING.md` | **Contributor guide** | Invariants and the steps for adding a format. |
 | `CHANGELOG.md` | **Release history** | One entry per release, newest on top. Product changes only. |
-| `AUDIT.md`, `MUTATION_REPORT.md`, `installer/USAGE.md` | **Release evidence** | Pinned by contract tests; see "Prose is behaviour" below. |
+| `AUDIT.md`, `MUTATION_REPORT.md`, `installer/USAGE.md` | **Release evidence** | Pinned where a test names them; see "Prose is behaviour" below. |
 | `docs/` (other) | **Records** | Smoke reports and baselines from earlier releases. Point-in-time; do not rewrite. |
 | `tools/`, `.github/` | **Development tooling** | CI and release workflows and the release-label check. Never shipped: outside the payload, the npm `files` list and the ZIP allowlist. |
 
@@ -160,9 +160,9 @@ Bound every long command with a timeout. A test that can hang is a defect.
   must read before its gate; references are never preloaded.
 - **Prose is behaviour.** The skill text is what the agent executes, so
   contract tests pin required instructions in it and in the release docs
-  (`README.md`, `CHANGELOG.md`, `AUDIT.md`, `MUTATION_REPORT.md`,
-  `installer/USAGE.md` and others). Before rewording any Markdown file, release
-  docs included, grep `tests/` for its file name and the phrase.
+  (`README.md`, `CHANGELOG.md`, `installer/USAGE.md` and others, where a test
+  names them). Before rewording any Markdown file, release docs included, grep
+  `tests/` for its file name and the phrase.
 
 ### Document scripts (`scripts/`, standard library only)
 
