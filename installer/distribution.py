@@ -15,7 +15,7 @@ EXCLUDED_PARTS = {'__pycache__', '.pytest_cache', '.git'}
 EXCLUDED_NAMES = {'.install-receipt.json'}
 EXCLUDED_SUFFIXES = {'.pyc', '.tgz'}
 RELEASE_FILES = {'LICENSE', 'MANIFEST.json', 'README.md', 'SKILL.md', 'VERSION',
-                 'CHANGELOG.md', 'CONTRIBUTING.md', 'package.json',
+                 'CHANGELOG.md', 'package.json',
                  'requirements-optional.txt'}
 RELEASE_DIRECTORIES = {'installer', 'references', 'scripts', 'skills'}
 

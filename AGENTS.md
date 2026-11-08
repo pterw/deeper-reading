@@ -19,7 +19,7 @@ code, docs and commit messages honest about that.
 |------|------|----------|
 | `AGENTS.md` (this file) | **Rules** | How agents behave: bootstrap, gates, roles, commits, anti-patterns. |
 | `references/definition-of-done.md` | **Predicate owner** | Owns the Definition of Done predicates; `PREDICATES` in `scripts/verification_findings.py` mirrors it, and the owner wins. |
-| `SKILL.md`, `skills/`, `references/`, `scripts/` | **Skill payload** | `MANIFEST.json` `payload` is what installers copy into a skill directory: `SKILL.md`, `README.md`, `VERSION`, `skills`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
+| `SKILL.md`, `skills/`, `references/`, `scripts/` | **Skill payload** | `MANIFEST.json` `payload` is what installers copy into a skill directory: `SKILL.md`, `LICENSE`, `VERSION`, `skills`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
 | `docs/superpowers/plans/*.md` | **Work orders** | Plans with checkbox tasks and binding interfaces. |
 | `.superpowers/sdd/<plan>/progress.md` | **Ledger** | Git-ignored, local. Events, verdicts and the `RESUME HERE` checkpoint for a plan in flight. |
 | `README.md` | **Product docs** | Install, commands, artifacts, limits. Not for agent orchestration. |

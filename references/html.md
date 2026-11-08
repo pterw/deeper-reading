@@ -56,24 +56,13 @@ For figures/tables:
 For equations:
 - preserve the source equation context; do not flatten mathematical structure into prose and treat the paraphrase as source evidence.
 
-## Do not manufacture a document
-
-Do not convert primary HTML into:
-- a summary DOCX;
-- a review PDF;
-- a paraphrased "working copy";
-
-and then use that derivative as proof of reading.
-
-A faithful conversion is a separate task and must preserve source content. A summary is downstream analysis.
-
 ## Ingress failures
 
 Browser/web access, shell networking, direct downloads, and connectors are separate ingress planes.
 
 If one fails:
 1. stop that operation;
-2. invoke systematic debugging;
+2. stop; load `debugging-document-workflows`; record `failure_diagnosed`;
 3. isolate whether the failure is source discovery, browser fetch, shell DNS, download size, authentication, or another boundary;
 4. retry only the smallest diagnosed unit or use a documented semantics-preserving ingress path.
 

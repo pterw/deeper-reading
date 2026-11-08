@@ -6,29 +6,6 @@ The evidence bundle proves **exhaustive traversal** and workflow state. It is no
 
 All emitted evidence is namespaced beneath one run root. See [Run workspace](run-workspace.md) for the binding path rules.
 
-```text
-<run-root>/
-  run.json
-  plan.md
-  source/
-  evidence/
-    skill-preflight.md
-    source-manifest.md
-    chunk-manifest.json
-    chunk-evidence.json
-    failure-ledger.md
-    verification-log.txt
-    format-qa.md
-    renders/
-    extracts/
-    diffs/
-    preflight/
-  deliverables/
-    TRAVERSAL_REPORT.md
-    ... requested generated files ...
-  dod.json
-```
-
 Keep evidence for different source documents/runs separate. Inputs may live outside the run root; emitted proof may not.
 
 ## Authoritative anti-skimming pair

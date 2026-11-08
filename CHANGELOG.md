@@ -1,5 +1,21 @@
 # Changelog
 
+## Unreleased
+
+- `README.md` is no longer installed into the skill directory, and an upgrade
+  from an earlier release removes it. npm and the release ZIP still include it.
+- `CONTRIBUTING.md` is no longer in the release ZIP.
+- `oai-native` guidance lives in `references/oai-native.md` and is read only
+  when the document profile is or becomes `oai-native`.
+- `references/run-workspace.md` (the run-root layout and the `--run-root`
+  extractor commands) is now read before extraction.
+
+### Compatibility
+
+- A user who edited or deleted the installed `README.md` gets
+  `modified managed files` on upgrade. Run `uninstall --force` and then
+  install again; a plain install over a modified target is also refused.
+
 ## 0.2.4 - 2026-11-08
 
 - Verifier: it deletes an existing `dod.json` file in the run root before it

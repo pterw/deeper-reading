@@ -158,7 +158,7 @@ test("receipt symlink escapes are rejected without touching outside bytes", (t) 
   assert.equal(readFileSync(victim, "utf8"), "keep");
 });
 
-test("upgrade removes files owned only by the old manifest", (t) => {
+for (const name of ["legacy-managed.txt", "README.md"]) test(`upgrade removes ${name} owned only by the old manifest`, (t) => {
   const { sandbox, targetRoot, options } = fixture(t);
   const packageRoot = path.join(sandbox, "package");
   cpSync(ROOT, packageRoot, {
@@ -166,16 +166,17 @@ test("upgrade removes files owned only by the old manifest", (t) => {
     filter: (source) => ![".git", "node_modules", "__pycache__", ".pytest_cache"].includes(path.basename(source))
   });
   const manifestPath = path.join(packageRoot, "MANIFEST.json");
+  const newManifestBytes = readFileSync(manifestPath);
   const oldManifest = loadManifest(manifestPath);
-  oldManifest.payload.push("legacy-managed.txt");
-  writeFileSync(path.join(packageRoot, "legacy-managed.txt"), "legacy", "utf8");
+  oldManifest.payload.push(name);
+  writeFileSync(path.join(packageRoot, name), "legacy", "utf8");
   writeFileSync(manifestPath, `${JSON.stringify(oldManifest, null, 2)}\n`, "utf8");
   installSkill({ ...options, packageRoot, manifest: oldManifest });
-  const nextManifest = loadManifest(manifestPath);
-  nextManifest.payload = nextManifest.payload.filter((entry) => entry !== "legacy-managed.txt");
-  writeFileSync(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`, "utf8");
-  installSkill({ ...options, packageRoot, manifest: nextManifest });
-  assert.equal(existsSync(path.join(targetRoot, "legacy-managed.txt")), false);
+  assert.equal(existsSync(path.join(targetRoot, name)), true);
+  writeFileSync(manifestPath, newManifestBytes);
+  installSkill({ ...options, packageRoot, manifest: loadManifest(manifestPath) });
+  assert.equal(existsSync(path.join(targetRoot, name)), false);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
 });
 
 test("successful install leaves no stage or backup siblings", (t) => {
@@ -195,7 +196,7 @@ test("failure after replacement restores the prior installation", (t) => {
     recursive: true,
     filter: (source) => ![".git", "node_modules", "__pycache__", ".pytest_cache"].includes(path.basename(source))
   });
-  writeFileSync(path.join(packageRoot, "README.md"), "replacement\n", "utf8");
+  writeFileSync(path.join(packageRoot, "references", "anti-patterns.md"), "replacement\n", "utf8");
   assert.throws(() => installSkill({
     ...options,
     packageRoot,

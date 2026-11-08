@@ -10,10 +10,12 @@ DELIVERABLE = "references/deliverable.md"
 RUNTIME = "references/runtime-profiles.md"
 DEPENDENCIES = "references/dependencies.md"
 MARKDOWN = "references/lengthy-markdown.md"
+RUN_WORKSPACE = "references/run-workspace.md"
 EXHAUSTIVE = "exhaustive-document-traversal"
 PLANNING = "planning-document-traversal"
 EXECUTING = "executing-document-traversal"
 VERIFYING = "verifying-exhaustive-traversal"
+DEBUGGING = "debugging-document-workflows"
 
 
 def text(rel: str) -> str:
@@ -37,6 +39,10 @@ INSTRUCTIONS = [
     ("the draft must provide an **explicit byte span**", EVIDENCE, EXECUTING),
     ("exactly one `chunk_verified` event per canonical manifest chunk", EVIDENCE, EXECUTING),
     ("`scripts/inspect_chunks.py`", DELIVERABLE, PLANNING),
+    ("python <skill-root>/scripts/extract_html.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_markdown.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_docx.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_pdf.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
     ("`# / ## / ### / #### / ##### / ######`", MARKDOWN, EXHAUSTIVE),
     ("`oversize_atomic: true`", MARKDOWN, EXHAUSTIVE),
     ("`scripts/extract_markdown.py`", MARKDOWN, EXHAUSTIVE),
@@ -46,8 +52,12 @@ INSTRUCTIONS = [
     ("**every non-skipped DOM text node exactly once**", "references/html.md", EXHAUSTIVE),
     ("paragraph styles named `Heading1` through `Heading6`", "references/docx.md", EXHAUSTIVE),
     ("exactly one ordered `chunk_verified` event per canonical emitted chunk", RUNTIME, EXHAUSTIVE),
-    ("Text backends cannot justify an `ocr-verified` QA claim", RUNTIME, EXHAUSTIVE),
+    ("Text backends cannot justify an `ocr-verified` QA claim", "references/pdf.md", EXHAUSTIVE),
+    ("copy the extractor manifest's `extraction` object into `run.json`", "references/pdf.md", EXHAUSTIVE),
+    ("**every Markdown file in that selected tree in full before execution**", "references/oai-native.md", EXHAUSTIVE),
+    ("**do not attempt a fourth fix**", "references/failure-recovery.md", DEBUGGING),
     ("Do not require an external document skill merely to perform basic exhaustive text extraction", DEPENDENCIES, EXHAUSTIVE),
+    ("do not substitute a derivative for the source", "references/control-flow.md", EXHAUSTIVE),
 ]
 
 

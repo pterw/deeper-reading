@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from installer.core import InstallError, install_skill
+from installer.core import InstallError, install_skill, verify_installation
 from installer.manifest import load_manifest
 from installer.prerequisites import PrerequisiteStatus
 
@@ -39,25 +39,26 @@ def test_upgrade_refuses_modified_managed_file(tmp_path):
     assert skill.read_bytes() == modified
 
 
-def test_upgrade_removes_files_owned_by_old_manifest_but_not_new_manifest(tmp_path):
+@pytest.mark.parametrize('name', ['legacy-managed.txt', 'README.md'])
+def test_upgrade_removes_files_owned_by_old_manifest_but_not_new_manifest(tmp_path, name):
     package = tmp_path / 'package'
     shutil.copytree(ROOT, package, ignore=shutil.ignore_patterns('__pycache__', '.pytest_cache'))
-    legacy = package / 'legacy-managed.txt'
-    legacy.write_text('old managed payload', encoding='utf-8')
+    (package / name).write_text('old managed payload', encoding='utf-8')
     manifest_path = package / 'MANIFEST.json'
-    data = json.loads(manifest_path.read_text(encoding='utf-8'))
-    data['payload'].append('legacy-managed.txt')
+    new_manifest_bytes = manifest_path.read_bytes()
+    data = json.loads(new_manifest_bytes)
+    data['payload'].append(name)
     manifest_path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
 
     target = tmp_path / 'skills' / 'deeper-reading'
     install(package, target)
-    assert (target / 'legacy-managed.txt').is_file()
+    assert (target / name).is_file()
 
-    data['payload'].remove('legacy-managed.txt')
-    manifest_path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8')
+    manifest_path.write_bytes(new_manifest_bytes)
     install(package, target)
 
-    assert not (target / 'legacy-managed.txt').exists()
+    assert not (target / name).exists()
+    assert verify_installation(target)['passed'] is True
 
 
 def test_install_refuses_existing_unmanaged_skill_root(tmp_path):

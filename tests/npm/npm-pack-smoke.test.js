@@ -101,7 +101,7 @@ test("packed CLI has exact inventory and an isolated lifecycle", (t) => {
   const expected = new Set(
     payloadFiles(ROOT, manifest).map((file) => portable(path.relative(ROOT, file)))
   );
-  for (const file of ["package.json", "MANIFEST.json", "LICENSE"]) {
+  for (const file of ["package.json", "MANIFEST.json", "LICENSE", "README.md"]) {
     expected.add(file);
   }
   for (const file of regularFiles(path.join(ROOT, "installer", "node"))) {

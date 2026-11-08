@@ -56,18 +56,7 @@ Read the corresponding `skills/<name>/SKILL.md` in full before using that phase.
 
 ## Failure ordering
 
-A failed node must emit `failure_diagnosed` before repair, re-chunking, sibling traversal, fallback traversal, or downstream work.
-
-After `architecture_stop`, execution cannot continue through another repair branch. The only valid redesign path is:
-
-```text
-architecture_stop
-  -> paths_exhausted
-  -> disclosure
-  -> alternative_designed
-  -> plan_revised
-  -> execution resumes
-```
+A failed node follows `debugging-document-workflows`; after `architecture_stop`, follow `recovering-document-workflows`. Both load [failure-recovery](failure-recovery.md).
 
 ## Optional native enhancement
 

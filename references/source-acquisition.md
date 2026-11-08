@@ -52,11 +52,11 @@ Do not wrap all of these into one command or one undiagnosable tool call.
 
 On an acquisition failure:
 1. stop downstream parsing/rendering;
-2. invoke systematic debugging;
+2. stop; load `debugging-document-workflows`; record `failure_diagnosed`;
 3. identify the failed plane;
 4. use **one recovery branch at a time** when the diagnosis supports it;
 5. verify that branch before trying another;
 6. iterate documented semantics-preserving branches one-by-one until resolved or the recovery tree reaches its stop condition;
 7. do not silently change from primary to secondary source.
 
-If the user's requirement specifically needs original PDF pages and no original PDF can be acquired after documented paths are exhausted, disclose that exact limitation and brainstorm alternatives rather than fabricating a substitute.
+If the user's requirement specifically needs original PDF pages and no original PDF can be acquired after documented paths are exhausted, disclose that exact limitation, then follow the recovery protocol rather than fabricating a substitute.
