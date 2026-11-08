@@ -54,10 +54,43 @@ def changelog_section(text: str, version: str) -> tuple[str, str] | None:
     return None
 
 
+def skill_root(root: Path) -> tuple[Path | None, str | None]:
+    """Return (folder holding VERSION, failure). No manifest or field means root."""
+    manifest = root / "MANIFEST.json"
+    if not manifest.is_file():
+        return root, None
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "MANIFEST.json is not readable JSON"
+    if not isinstance(data, dict):
+        return None, "MANIFEST.json must be a JSON object"
+    skill = data.get("skill")
+    if skill is not None and not isinstance(skill, dict):
+        return None, "MANIFEST.json skill must be an object"
+    value = skill.get("root", ".") if skill else "."
+    if not isinstance(value, str):
+        return None, "MANIFEST.json skill.root must be a string"
+    if not value or value.startswith("/") or "\\" in value or re.match(r"[A-Za-z]:", value):
+        return None, "MANIFEST.json skill.root must be a relative path"
+    if ".." in value.split("/"):
+        return None, "MANIFEST.json skill.root must not contain .."
+    folder = (root / value).resolve()
+    if not folder.is_relative_to(root.resolve()):
+        return None, "MANIFEST.json skill.root is outside the package root"
+    return folder, None
+
+
 def check(root: Path, tag: str | None) -> tuple[list[str], str | None]:
     """Return the failures and, when the section exists, its body."""
     failures = []
-    version = (root / "VERSION").read_text(encoding="utf-8").strip()
+    folder, problem = skill_root(root)
+    if problem:
+        return [problem], None
+    try:
+        version = (folder / "VERSION").read_text(encoding="utf-8").strip()
+    except OSError:
+        return [f"VERSION is missing or unreadable in {folder}"], None
     package = json.loads((root / "package.json").read_text(encoding="utf-8"))["version"]
     if package != version:
         failures.append(f"package.json version {package} differs from VERSION {version}")
