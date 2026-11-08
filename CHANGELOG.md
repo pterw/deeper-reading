@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+- Installer: `install` (also with `--dry-run`), `verify` and `uninstall` now
+  read the receipt in the skill folder and refuse a folder that another
+  target or scope installed. This can happen when a skills folder is a link.
+  Before, `uninstall --target claude` through a link could delete a codex
+  install. Now the command exits 2 and changes nothing. `doctor` is not
+  checked.
+- Installer: a project-scope folder that resolves outside its project, for
+  example a `.claude` that is a link out of the project, is refused.
+- Installer: a receipt whose target or scope is missing or unknown is
+  refused. The message says to delete the skill folder.
+- Installer: if `~/.claude/skills` is a link to `~/.agents/skills`, the
+  second target you use on that folder is now refused. The message names the
+  owning target and the command that works (`--target <owner>`). `codex` and
+  `generic-agents` share a folder by design and are still allowed.
+- Installer: with `--json`, a failure may now carry a `code`. The codes are
+  `installer.owner.mismatch`, `installer.project.escape`,
+  `installer.receipt.owner_invalid` and `installer.receipt.missing`. A failed
+  `verify` now also carries `passed: false`.
+- Installer: when `install` or `uninstall` finds a folder with no receipt, as
+  after `npx skills add`, the refusal fails with `installer.receipt.missing`
+  and says how to recover. For `claude` and `codex` it gives the
+  `npx skills remove` command. Other targets get the delete route. Nothing is
+  changed. `verify` keeps its existing failure, with no code.
+- `README.md` says the project's own installers are the supported route, with
+  npm the primary one, what `npx skills add` does to an npm install, and how
+  to recover. `installer/USAGE.md` lists the ownership checks and their codes.
+
 ## 0.2.5 - 2026-11-08
 
 - `README.md` is no longer installed into the skill directory, and an upgrade
