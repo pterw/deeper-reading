@@ -152,19 +152,6 @@ def _iter_live(element: ET.Element):
         yield from _iter_live(node)
 
 
-def _drawing_references(drawing: ET.Element) -> list[tuple[str, str | None]]:
-    """(kind, relationship id) for every picture, chart or diagram, in document order."""
-    found: list[tuple[str, str | None]] = []
-    for node in _iter_live(drawing):
-        if node.tag == f'{{{A}}}blip':
-            found.append(('image', node.get(f'{{{R}}}embed') or node.get(f'{{{R}}}link')))
-        elif node.tag in (f'{{{C}}}chart', f'{{{CX}}}chart'):
-            found.append(('diagram', node.get(f'{{{R}}}id')))
-        elif node.tag == f'{{{DGM}}}relIds':
-            found.append(('diagram', node.get(f'{{{R}}}dm')))
-    return found
-
-
 def _drawing_alt(drawing: ET.Element) -> str | None:
     for node in _iter_live(drawing):
         if node.tag == f'{{{WP}}}docPr':
@@ -172,10 +159,25 @@ def _drawing_alt(drawing: ET.Element) -> str | None:
     return None
 
 
-def _record_media(element: ET.Element, rels: dict[str, str], media: MediaCollector, position: int) -> None:
-    """Record drawings, VML images and OLE objects under element, in document order.
+def _drawing_item(node: ET.Element, rels: dict[str, str]) -> tuple[str, str | None] | None:
+    """(kind, target) when node is a DrawingML picture, chart or diagram reference."""
+    if node.tag == f'{{{A}}}blip':
+        return 'image', rels.get(node.get(f'{{{R}}}embed') or node.get(f'{{{R}}}link'))
+    if node.tag in (f'{{{C}}}chart', f'{{{CX}}}chart'):
+        return 'diagram', rels.get(node.get(f'{{{R}}}id'))
+    if node.tag == f'{{{DGM}}}relIds':
+        return 'diagram', rels.get(node.get(f'{{{R}}}dm'))
+    return None
 
-    A w:object is one reference: its preview picture inside is not recorded again."""
+
+def _record_media(
+    element: ET.Element, rels: dict[str, str], media: MediaCollector, position: int,
+    drawing: ET.Element | None = None,
+) -> None:
+    """Record pictures, charts, diagrams, VML images and OLE objects under element, once
+    each and in document order. drawing is the outermost enclosing w:drawing (its
+    wp:docPr gives the alt text). A w:object is one reference: nothing inside it is
+    recorded again."""
     for node in element:
         if node.tag == FALLBACK_TAG:
             continue
@@ -187,13 +189,11 @@ def _record_media(element: ET.Element, rels: dict[str, str], media: MediaCollect
         if node.tag == IMAGEDATA_TAG:
             media.add(position, 'image', 'vml_image', rels.get(node.get(f'{{{R}}}id')))
             continue
-        found = _drawing_references(node) if node.tag == DRAWING_TAG else []
-        if found:
-            alt = _drawing_alt(node)
-            for kind, rid in found:
-                media.add(position, kind, 'drawing', rels.get(rid), alt)
-        else:
-            _record_media(node, rels, media, position)
+        item = _drawing_item(node, rels) if drawing is not None else None
+        if item:
+            media.add(position, item[0], 'drawing', item[1], _drawing_alt(drawing))
+        enclosing = drawing if drawing is not None else (node if node.tag == DRAWING_TAG else None)
+        _record_media(node, rels, media, position, enclosing)
 
 
 def _walk_blocks(

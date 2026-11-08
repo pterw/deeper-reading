@@ -253,6 +253,51 @@ MEDIA_ROWS = [
         [("image", "drawing", "a.png", "in vml box")],
         id="docx-drawing-inside-a-vml-text-box",
     ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><wp:anchor><a:graphic><a:graphicData><a:blip r:embed="rId1"/></a:graphicData></a:graphic>'
+                 '<wps:wsp><wps:txbx><w:txbxContent><w:p><w:r><w:pict><v:imagedata r:id="rId2"/></w:pict></w:r></w:p>'
+                 "</w:txbxContent></wps:txbx></wps:wsp></wp:anchor></w:drawing></w:r>"),
+            {"rId1": "a.png", "rId2": "b.png"},
+        ),
+        [("image", "drawing", "a.png", None), ("image", "vml_image", "b.png", None)],
+        id="docx-drawing-text-box-holding-a-vml-image-records-both",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><wp:anchor><a:graphic><a:graphicData><a:blip r:embed="rId1"/></a:graphicData></a:graphic>'
+                 '<wps:wsp><wps:txbx><w:txbxContent><w:p><w:r><w:object><v:shape><v:imagedata r:id="rId4"/></v:shape>'
+                 '<o:OLEObject r:id="rId5"/></w:object></w:r></w:p></w:txbxContent></wps:txbx></wps:wsp></wp:anchor></w:drawing></w:r>'),
+            {"rId1": "a.png", "rId4": "media/preview.emf", "rId5": "embeddings/sheet.xlsx"},
+        ),
+        [("image", "drawing", "a.png", None), ("embedded", "ole_object", "embeddings/sheet.xlsx", None)],
+        id="docx-drawing-text-box-holding-an-ole-object-records-it-once",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", '<w:r><w:drawing><wp:anchor><a:graphic><a:graphicData><a:blip r:embed="rId1"/></a:graphicData></a:graphic>'
+                 "<wps:wsp><wps:txbx><w:txbxContent><w:p><w:r><w:object>"
+                 + dx_pic("rId4")
+                 + '<o:OLEObject r:id="rId5"/></w:object></w:r></w:p></w:txbxContent></wps:txbx></wps:wsp></wp:anchor></w:drawing></w:r>'),
+            {"rId1": "a.png", "rId4": "media/preview.png", "rId5": "embeddings/sheet.xlsx"},
+        ),
+        [("image", "drawing", "a.png", None), ("embedded", "ole_object", "embeddings/sheet.xlsx", None)],
+        id="docx-ole-object-with-drawing-preview-in-a-text-box-records-no-preview",
+    ),
+    pytest.param(
+        "docx",
+        dx_parts(
+            dx_p("x", "<w:r><w:drawing><wp:anchor><wps:wsp><wps:txbx><w:txbxContent>"
+                 '<w:p><w:r><w:pict><v:imagedata r:id="rId2"/></w:pict></w:r></w:p></w:txbxContent></wps:txbx></wps:wsp>'
+                 '<a:graphic><a:graphicData><a:blip r:embed="rId1"/></a:graphicData></a:graphic></wp:anchor></w:drawing></w:r>'),
+            {"rId1": "a.png", "rId2": "b.png"},
+        ),
+        [("image", "vml_image", "b.png", None), ("image", "drawing", "a.png", None)],
+        id="docx-vml-image-before-the-drawing-picture-comes-first",
+    ),
 ]
 
 
