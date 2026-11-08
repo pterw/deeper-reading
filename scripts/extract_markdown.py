@@ -219,25 +219,45 @@ def _html_tags(text: str, plain: re.Pattern, quoted: re.Pattern):
         yield match.start(), (quoted.match(text, match.start()) or match).group(0)
 
 
-def _md_matches(text: str, regex: re.Pattern, group: int):
-    """Yield (match, destination) for each Markdown image or link match.
+def _md_scan(text: str, regex: re.Pattern, group: int, closers: list[int], starts: list[int] | None):
+    """Yield (match, destination) scanning left to right; see `_md_matches`.
 
-    The destination is None when the match has none or no `)` follows it. The closing `)` is
-    the next one after the destination, looked up in the list of every `)`, so a missing one
-    costs a lookup, not a scan to the end. A match with a closing `)` is skipped past it.
+    With `starts`, a match whose `)` lies beyond another reference start is not skipped past
+    that `)`: the scan resumes right after its `](`.
     """
-    closers = [match.start() for match in re.finditer(r'\)', text)]
     pos = 0
     while (match := regex.search(text, pos)) is not None:
         target = match.group(group)
         pos = match.end()
         if target is not None:
             index = bisect.bisect_left(closers, pos)
-            if index < len(closers):
-                pos = closers[index] + 1
-            else:
+            start = bisect.bisect_left(starts, pos) if starts is not None else 0
+            if index == len(closers):
                 target, pos = None, match.start() + 1
+            elif starts is not None and start < len(starts) and starts[start] < closers[index]:
+                pos = match.start(group)
+            else:
+                pos = closers[index] + 1
         yield match, target
+
+
+def _md_matches(text: str, regex: re.Pattern, group: int):
+    """Yield (match, destination) for each Markdown image or link match.
+
+    The destination is None when the match has none or no `)` follows it. The closing `)` is the
+    next one after the destination, looked up in the list of every `)`, so a missing one costs a
+    lookup, not a scan to the end. A match with a closing `)` is skipped past it. A second scan
+    resumes right after the `](` when another reference starts (`![` or `](`) before that `)`, so
+    a reference inside a malformed outer one is found too; it adds matches, never drops one.
+    """
+    closers = [match.start() for match in re.finditer(r'\)', text)]
+    starts = [match.start() for match in re.finditer(r'!\[|\]\(', text)]
+    seen: set[int] = set()
+    for resume in (None, starts):
+        for match, target in _md_scan(text, regex, group, closers, resume):
+            if match.start() not in seen:
+                seen.add(match.start())
+                yield match, target
 
 
 def _text_media(text: str) -> list[tuple[int, str, str, str | None, str | None]]:
