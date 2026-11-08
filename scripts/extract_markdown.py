@@ -129,7 +129,7 @@ def parse_markdown_blocks(text: str) -> list[Block]:
     return blocks
 
 
-_CODE_SPAN_RE = re.compile(r'(`+)(?:(?!\1).)+?\1', re.DOTALL)
+_BACKTICK_RUN_RE = re.compile(r'`+')
 _IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg')
 _DIAGRAM_INFO = frozenset({'mermaid', 'plantuml', 'dot', 'graphviz', 'd2'})
 # Balanced delimiters nest one level only (CommonMark allows more); each alternative starts
@@ -182,6 +182,31 @@ def _svg_starts(text: str) -> list[int]:
     return starts
 
 
+def _mask_code_spans(text: str) -> str:
+    """Blank code spans: a complete backtick run closes on the next run of equal length."""
+    runs = [match.span() for match in _BACKTICK_RUN_RE.finditer(text)]
+    next_same: list[int | None] = [None] * len(runs)
+    latest: dict[int, int] = {}
+    for index in range(len(runs) - 1, -1, -1):
+        length = runs[index][1] - runs[index][0]
+        next_same[index] = latest.get(length)
+        latest[length] = index
+    pieces: list[str] = []
+    position = index = 0
+    while index < len(runs):
+        closer = next_same[index]
+        if closer is None:
+            index += 1
+            continue
+        start, end = runs[index][0], runs[closer][1]
+        pieces.append(text[position:start])
+        pieces.append(' ' * (end - start))
+        position = end
+        index = closer + 1
+    pieces.append(text[position:])
+    return ''.join(pieces)
+
+
 def _label_key(label: str) -> str:
     return ' '.join(label.split()).casefold()
 
@@ -200,7 +225,7 @@ def _text_media(
     text: str, definitions: frozenset[str] | set[str] = frozenset()
 ) -> list[tuple[int, str, str, str | None, str | None]]:
     """Media references in non-code Markdown text, as (offset, kind, syntax, ref, alt)."""
-    text = _CODE_SPAN_RE.sub(lambda match: ' ' * len(match.group(0)), text)
+    text = _mask_code_spans(text)
     text = _HTML_COMMENT_RE.sub(lambda match: ' ' * len(match.group(0)), text)
     found: list[tuple[int, str, str, str | None, str | None]] = []
     for match in _MD_IMAGE_RE.finditer(text):

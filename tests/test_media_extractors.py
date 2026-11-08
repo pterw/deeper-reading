@@ -124,6 +124,8 @@ MEDIA_ROWS = [
     pytest.param("md", "# T\n\n![Plot [A]](plot.png)\n", [("image", "md_image", "plot.png", "Plot [A]")], id="md-image-with-bracketed-alt"),
     pytest.param("md", "# T\n\nSee [figure](plot(1).png) here.\n", [("image", "md_link", "plot(1).png", None)], id="md-link-to-parenthesised-destination"),
     pytest.param("md", '# T\n\n![pic](a(b).png "A title")\n', [("image", "md_image", "a(b).png", "pic")], id="md-image-parenthesised-destination-with-title"),
+    pytest.param("md", "# T\n\n`unmatched ![plot](plot.png) ``code``\n", [("image", "md_image", "plot.png", "plot")], id="md-unmatched-backtick-run-does-not-mask-image"),
+    pytest.param("md", "# T\n\nUse ``![a](p.png)`` to embed.\n", [], id="md-double-backtick-span-ignored"),
     pytest.param("html", '<h1>T</h1><p>See <img src="a.png" alt="a  pic"> now.</p>', [("image", "img", "a.png", "a pic")], id="html-img"),
     pytest.param("html", '<h1>T</h1><img data-src="lazy.png"><p>text</p>', [("image", "img", "lazy.png", None)], id="html-img-data-src-alone-attaches-to-next-block"),
     pytest.param("html", "<h1>T</h1><p>x <svg><svg><g/></svg></svg> y</p>", [("svg", "svg", None, None)], id="html-svg-outermost-once"),
