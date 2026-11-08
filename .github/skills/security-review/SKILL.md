@@ -1,6 +1,8 @@
 ---
 name: security-review
 description: The trust boundaries in deeper-reading and the hostile case each change must keep. Use when a change touches installer paths, output writes, extraction, or evidence verification.
+metadata:
+  internal: true
 ---
 
 # Security review
