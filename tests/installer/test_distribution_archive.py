@@ -55,6 +55,8 @@ def test_distribution_archive_has_one_canonical_skill_root(tmp_path):
     assert prefix + 'installer/install.py' in names
     assert prefix + 'installer/install.sh' in names
     assert prefix + 'installer/install.ps1' in names
+    assert prefix + 'README.md' in names
+    assert prefix + 'CONTRIBUTING.md' not in names
     assert prefix + 'deeper-reading/SKILL.md' not in names
 
 
