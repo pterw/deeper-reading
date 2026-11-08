@@ -10,6 +10,7 @@ DELIVERABLE = "references/deliverable.md"
 RUNTIME = "references/runtime-profiles.md"
 DEPENDENCIES = "references/dependencies.md"
 MARKDOWN = "references/lengthy-markdown.md"
+RUN_WORKSPACE = "references/run-workspace.md"
 EXHAUSTIVE = "exhaustive-document-traversal"
 PLANNING = "planning-document-traversal"
 EXECUTING = "executing-document-traversal"
@@ -38,6 +39,10 @@ INSTRUCTIONS = [
     ("the draft must provide an **explicit byte span**", EVIDENCE, EXECUTING),
     ("exactly one `chunk_verified` event per canonical manifest chunk", EVIDENCE, EXECUTING),
     ("`scripts/inspect_chunks.py`", DELIVERABLE, PLANNING),
+    ("python <skill-root>/scripts/extract_html.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_markdown.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_docx.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
+    ("python <skill-root>/scripts/extract_pdf.py SOURCE --run-root <run-root>", RUN_WORKSPACE, EXHAUSTIVE),
     ("`# / ## / ### / #### / ##### / ######`", MARKDOWN, EXHAUSTIVE),
     ("`oversize_atomic: true`", MARKDOWN, EXHAUSTIVE),
     ("`scripts/extract_markdown.py`", MARKDOWN, EXHAUSTIVE),

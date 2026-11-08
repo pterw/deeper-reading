@@ -28,27 +28,7 @@ For bounded human/agent inspection outside the generated report, use the support
 
 ## 3. Machine/audit evidence bundle
 
-Every substantial run uses this namespace:
-
-```text
-<run-root>/
-├── plan.md
-├── run.json
-├── source/
-├── evidence/
-│   ├── skill-preflight.md
-│   ├── source-manifest.md
-│   ├── chunk-manifest.json
-│   ├── chunk-evidence.json
-│   ├── failure-ledger.md
-│   ├── verification-log.txt
-│   ├── format-qa.md
-│   └── ... optional renders/extracts/diffs/preflight ...
-├── deliverables/
-│   ├── TRAVERSAL_REPORT.md
-│   └── ... requested generated files ...
-└── dod.json
-```
+Every substantial run uses the namespace in [Run workspace](run-workspace.md), including `evidence/skill-preflight.md` and `evidence/format-qa.md`.
 
 `evidence/chunk-manifest.json`, `evidence/chunk-evidence.json`, `run.json`, and `dod.json` are machine/audit artifacts by default; return them when the user requests machine proof, an audit bundle, or debugging evidence.
 

@@ -22,7 +22,9 @@ Before establishing the traversal contract, read
 
 Before acquiring or extracting source bytes, read
 [`source-acquisition`](../../references/source-acquisition.md) and
-[`dependencies`](../../references/dependencies.md). Then load exactly the route
+[`dependencies`](../../references/dependencies.md). Then read
+[`run-workspace`](../../references/run-workspace.md) for the run-root layout and
+the `--run-root` extractor commands. Then load exactly the route
 for the selected format:
 
 - PDF: read [`pdf`](../../references/pdf.md), then run
