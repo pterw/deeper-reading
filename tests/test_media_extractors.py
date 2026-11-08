@@ -157,6 +157,8 @@ MEDIA_ROWS = [
     pytest.param("md", '# T\n\n![a](b.png "open\n![real](real.png)\n', [("image", "md_image", "b.png", "a"), ("image", "md_image", "real.png", "real")], id="md-unclosed-title-does-not-swallow-next-image"),
     pytest.param("md", "# T\n\n[t](x.png\n![real](real.png)\n", [("image", "md_link", "x.png", None), ("image", "md_image", "real.png", "real")], id="md-unclosed-link-keeps-its-record-and-the-next-image"),
     pytest.param("md", "# T\n\n[](<img [x](z.png)\n", [("image", "md_link", "z.png", None)], id="md-malformed-link-destination-does-not-swallow-next-link"),
+    pytest.param("md", "# T\n\n[figure](plot\\).png)\n", [("image", "md_link", "plot\\).png", None)], id="md-link-escaped-paren-belongs-to-destination"),
+    pytest.param("md", "# T\n\n![a](p\\).png)\n", [("image", "md_image", "p\\).png", "a")], id="md-image-escaped-paren-belongs-to-destination"),
     pytest.param("html", '<h1>T</h1><p>See <img src="a.png" alt="a  pic"> now.</p>', [("image", "img", "a.png", "a pic")], id="html-img"),
     pytest.param("html", '<h1>T</h1><img data-src="lazy.png"><p>text</p>', [("image", "img", "lazy.png", None)], id="html-img-data-src-alone-attaches-to-next-block"),
     pytest.param("html", "<h1>T</h1><p>x <svg><svg><g/></svg></svg> y</p>", [("svg", "svg", None, None)], id="html-svg-outermost-once"),
@@ -419,7 +421,7 @@ def test_unclosed_markdown_destination_scans_in_linear_time(tmp_path, opener, ex
     "unit",
     [
         "\\[", "\\[ a \\] ", "![a\\[", "![a\\[](", "![", "![a](<", "[a](", "[![a](x.png",
-        "![a](\n![b](b.png)\n",
+        "![a](\n![b](b.png)\n", "[a](\\)", "[a](\\(", "![a](\\)\\(",
         '<img "', '<img ">a "', "<img a=\">", "<svg ", "<div class=\"mermaid\" ",
     ],
 )

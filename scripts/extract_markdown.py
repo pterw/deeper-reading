@@ -148,7 +148,9 @@ _ESCAPED = r'\\[^!]'
 _TAG_QUOTED = r"""[^>"']*(?:(?:"[^"<]*"|'[^'<]*')[^>"']*){0,32}>"""
 # The svg tail ignores quote tricks: a miss there only treats a self-closing svg as unclosed.
 _SVG_TAIL = r"""(?:[^<>"']|"[^"]*"|'[^']*')*>"""
-_DESTINATION = r'(?:<[^<>]*>|(?:[^()\s]|\([^()\s]*\))*)'
+# A backslash escape (`\)`, `\(`) belongs to the destination, so an escaped `)` does not end it.
+_DEST_ATOM = r'\\\S|[^()\s\\]|\\(?!\S)'
+_DESTINATION = rf'(?:<[^<>]*>|(?:{_DEST_ATOM}|\((?:{_DEST_ATOM})*\))*)'
 # The destination sits in a lookahead that is then consumed by a backreference: an atomic group
 # (Python 3.10 has none), so a missing `)` fails without retrying every shorter destination.
 # The closing `)` is looked up by `_md_matches`, not found by a pattern that rescans to the end.
@@ -231,7 +233,7 @@ def _md_scan(text: str, regex: re.Pattern, group: int, closers: list[int], start
         pos = match.end()
         if target is not None:
             index = bisect.bisect_left(closers, pos)
-            start = bisect.bisect_left(starts, pos) if starts is not None else 0
+            start = bisect.bisect_left(starts, match.start(group)) if starts is not None else 0
             if index == len(closers):
                 target, pos = None, match.start() + 1
             elif starts is not None and start < len(starts) and starts[start] < closers[index]:
