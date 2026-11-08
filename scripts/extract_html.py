@@ -9,7 +9,7 @@ from pathlib import Path
 from script_io import run_cli
 import re
 
-from chunk_common import Block, build_manifest, manifest_output_path, pack_blocks, write_manifest
+from chunk_common import Block, MediaCollector, build_manifest, manifest_output_path, pack_blocks, write_manifest
 
 HEADING_LEVELS = {f'h{level}': level for level in range(1, 7)}
 SKIP_TAGS = {'script', 'style', 'noscript', 'template'}
@@ -21,6 +21,7 @@ FLOW_BOUNDARY_TAGS = {
 SPACE_TAGS = {'br', 'input'}
 CELL_SPACE_TAGS = FLOW_BOUNDARY_TAGS | set(HEADING_LEVELS)
 HEADING_CLOSING_TAGS = FLOW_BOUNDARY_TAGS | {'table', 'pre'}
+IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg')
 
 
 def _clean(text: str) -> str:
@@ -46,6 +47,40 @@ class StructuralHTMLParser(HTMLParser):
         self.pre_depth = 0
         self.pre: list[str] = []
         self.pre_heading_path: list[str] = []
+        self.media = MediaCollector()
+        self.svg_depth = 0
+        self.diagram_tag: str | None = None
+        self.diagram_depth = 0
+
+    def _record_media(self, tag: str, attrs) -> None:
+        """Record a media reference at the current block position, before any early return."""
+        values = {name.lower(): value for name, value in attrs}
+        here = len(self.blocks)
+        if self.diagram_tag is not None:
+            self.diagram_depth += tag == self.diagram_tag
+        if self.svg_depth:
+            self.svg_depth += tag == 'svg'
+            return
+        if tag == 'svg':
+            self.svg_depth = 1
+            self.media.add(here, 'svg', 'svg')
+            return
+        if self.diagram_tag is None and tag in {'pre', 'div'} and 'mermaid' in (values.get('class') or '').split():
+            self.diagram_tag, self.diagram_depth = tag, 1
+            # A diagram starts a block: flush pending text first so it attaches to its own block.
+            if self._heading_has_text():
+                self._close_heading()
+            self._flush_flow()
+            self.media.add(len(self.blocks), 'diagram', 'diagram')
+        if tag == 'img':
+            self.media.add(here, 'image', 'img', values.get('src') or values.get('data-src') or None,
+                           values.get('alt'))
+        elif tag in {'object', 'embed'}:
+            ref = values.get('data') or values.get('src') or None
+            is_image = (values.get('type') or '').lower().startswith('image/') or (
+                re.split(r'[?#]', ref or '', maxsplit=1)[0].lower().endswith(IMAGE_EXTENSIONS)
+            )
+            self.media.add(here, 'image' if is_image else 'embedded', tag, ref)
 
     def _path(self) -> list[str]:
         return [value for value in self.headings if value is not None]
@@ -128,6 +163,7 @@ class StructuralHTMLParser(HTMLParser):
             return
         if self.skip_depth:
             return
+        self._record_media(tag, attrs)
         if tag in SPACE_TAGS:
             self._add_space(tag)
             return
@@ -169,6 +205,16 @@ class StructuralHTMLParser(HTMLParser):
         if tag in FLOW_BOUNDARY_TAGS:
             self._flush_flow()
 
+    def _close_media(self, tag: str) -> None:
+        if self.svg_depth and (tag in HEADING_CLOSING_TAGS or tag in HEADING_LEVELS):
+            self.svg_depth = 0  # a block ended: an unclosed <svg> must not hide later media
+        elif self.svg_depth and tag == 'svg':
+            self.svg_depth -= 1
+        if self.diagram_tag is not None and tag == self.diagram_tag:
+            self.diagram_depth -= 1
+            if self.diagram_depth == 0:
+                self.diagram_tag = None
+
     def handle_endtag(self, tag: str) -> None:
         tag = tag.lower()
         if tag in SKIP_TAGS:
@@ -177,6 +223,7 @@ class StructuralHTMLParser(HTMLParser):
             return
         if self.skip_depth:
             return
+        self._close_media(tag)
         if self.table_depth:
             if tag in {'td', 'th'}:
                 self._flush_cell()
@@ -231,6 +278,7 @@ def extract(source: Path, *, max_bytes: int, source_uri: str | None = None) -> d
     parser.feed(source.read_text(encoding='utf-8-sig'))
     parser.close()
     parser.finish()
+    parser.media.apply(parser.blocks)
     packed = pack_blocks(parser.blocks, max_bytes)
     return build_manifest(
         source,

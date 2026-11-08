@@ -14,7 +14,7 @@ from media_helpers import (
 )
 
 # One row per media syntax: (format, source text, expected media as (kind, syntax, ref, alt)).
-# T8 (HTML) and T9 (DOCX) add rows here.
+# T9 (DOCX) add rows here.
 MEDIA_ROWS = [
     pytest.param("md", "# T\n\nSee ![a pic](img/p.png) now.\n", [("image", "md_image", "img/p.png", "a pic")], id="md-image"),
     pytest.param("md", "# T\n\n![a pic][fig]\n\n[fig]: p.png\n", [("image", "md_image", "fig", "a pic")], id="md-image-reference-form"),
@@ -53,6 +53,31 @@ MEDIA_ROWS = [
         "# T\n\n<!-- old\n![a](old.png) -->\n![b](real.png)\n",
         [("image", "md_image", "real.png", "b")],
         id="md-multiline-comment-then-real-image-only-real-recorded",
+    ),
+    pytest.param("html", '<h1>T</h1><p>See <img src="a.png" alt="a  pic"> now.</p>', [("image", "img", "a.png", "a pic")], id="html-img"),
+    pytest.param("html", '<h1>T</h1><img data-src="lazy.png"><p>text</p>', [("image", "img", "lazy.png", None)], id="html-img-data-src-alone-attaches-to-next-block"),
+    pytest.param("html", "<h1>T</h1><p>x <svg><svg><g/></svg></svg> y</p>", [("svg", "svg", None, None)], id="html-svg-outermost-once"),
+    pytest.param("html", '<h1>T</h1><p>x</p><object data="d.pdf" type="application/pdf"></object>', [("embedded", "object", "d.pdf", None)], id="html-object-embedded"),
+    pytest.param("html", '<h1>T</h1><p>x</p><object data="d.svg"></object><embed src="e.png" type="image/png">', [("image", "object", "d.svg", None), ("image", "embed", "e.png", None)], id="html-object-embed-image"),
+    pytest.param("html", '<h1>T</h1><div class="a mermaid"><div class="mermaid">graph TD</div></div>', [("diagram", "diagram", None, None)], id="html-diagram-div-nested-once"),
+    pytest.param("html", '<h1>T</h1><pre class="mermaid">graph TD</pre>', [("diagram", "diagram", None, None)], id="html-diagram-pre"),
+    pytest.param("html", '<h1>T</h1><script><img src="s.png"></script><noscript><img src="n.png"></noscript><p>x</p>', [], id="html-skipped-containers-ignored"),
+    pytest.param("html", '<h1>T</h1><table><tr><td>a <img src="t.png" alt="in table"></td></tr></table>', [("image", "img", "t.png", "in table")], id="html-img-inside-table"),
+    pytest.param("html", '<h1>T</h1><pre>code <img src="p.png"></pre>', [("image", "img", "p.png", None)], id="html-img-inside-pre"),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>one <img src="1.png"> two <svg></svg> three <img src="3.png"></p>',
+        [("image", "img", "1.png", None), ("svg", "svg", None, None), ("image", "img", "3.png", None)],
+        id="html-two-references-in-one-block-keep-source-order",
+    ),
+    pytest.param("html", '<h1>T</h1><p><svg><svg></svg><img src="x.png"></svg></p>', [("svg", "svg", None, None)], id="html-img-inside-nested-svg-only-svg-recorded"),
+    pytest.param("html", '<h1>T</h1><p>x</p><embed type="image/png" src="x">', [("image", "embed", "x", None)], id="html-embed-image-type-without-extension"),
+    pytest.param("html", '<h1>T</h1><div class="mermaidx">graph TD</div>', [], id="html-class-mermaidx-not-a-diagram"),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x<svg></p><p><img src="after.png"></p>',
+        [("svg", "svg", None, None), ("image", "img", "after.png", None)],
+        id="html-unclosed-svg-does-not-hide-later-media",
     ),
 ]
 
@@ -97,6 +122,29 @@ def test_fragment_split_paragraph_yields_the_reference_once(tmp_path):
     assert "![a](p.png)" in owner["content"]
 
 
+_FIRST = "<p>first paragraph text</p>"
+_AFTER = "<p>after paragraph text</p>"
+
+
+@pytest.mark.parametrize(
+    ("text", "owner_has", "owner_lacks"),
+    [
+        pytest.param(f'<h1>T</h1>{_FIRST}<p><img src="a.png"></p>{_AFTER}', "after paragraph", "first paragraph", id="img-alone-in-paragraph-takes-the-next-block"),
+        pytest.param(f'<h1>T</h1>{_FIRST}<p>last paragraph text</p><p><img src="a.png"></p>', "last paragraph", "first paragraph", id="img-last-in-document-takes-the-last-block"),
+        pytest.param(f'<h1>T</h1>{_FIRST}<table><tr><td>cell text <img src="a.png"></td></tr></table>{_AFTER}', "cell text", "first paragraph", id="img-in-table-takes-the-table"),
+        pytest.param(f'<h1>T</h1>{_FIRST}<pre>code text <img src="a.png"></pre>{_AFTER}', "code text", "first paragraph", id="img-in-pre-takes-the-pre"),
+        pytest.param(f'<h1>T</h1><div>intro loose text<pre class="mermaid">graph TD</pre></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-pre-after-loose-text-takes-its-own-block"),
+        pytest.param(f'<h1>T</h1><div>intro loose text<div class="mermaid">graph TD</div></div>{_AFTER}', "graph TD", "intro loose", id="mermaid-div-after-loose-text-takes-its-own-block"),
+    ],
+)
+def test_html_reference_attaches_to_the_chunk_of_its_own_block(tmp_path, text, owner_has, owner_lacks):
+    manifest, _ = manifest_media("html", text, tmp_path, max_bytes=20)
+    assert len(manifest["chunks"]) > 2
+    owner = next(c for c in manifest["chunks"] if c["id"] == manifest["media"][0]["chunk_id"])
+    assert owner_has in owner["content"]
+    assert owner_lacks not in owner["content"]
+
+
 def test_no_media_markdown_manifest_equals_golden_byte_for_byte(tmp_path):
     source = write_golden_source("md", tmp_path / "src")
     manifest = json.loads(extract_manifest_text("md", source, tmp_path / "m.json"))
@@ -105,23 +153,45 @@ def test_no_media_markdown_manifest_equals_golden_byte_for_byte(tmp_path):
 
 
 _WITHOUT_HOOK = """
-import json, sys
+import importlib, json, sys
 sys.path.insert(0, sys.argv[1])
-import extract_markdown
-extract_markdown.collect_media = lambda blocks: None
+module = importlib.import_module(sys.argv[3])
+exec(sys.argv[4])
 from pathlib import Path
-print(json.dumps(extract_markdown.extract(Path(sys.argv[2]), max_bytes=90)))
+print(json.dumps(module.extract(Path(sys.argv[2]), max_bytes=90)))
 """
 
+_SPLIT_WORDS = " ".join(f"word{n}" for n in range(30))
 
-def test_media_changes_nothing_but_the_media_key(tmp_path):
-    text = "# T\n\nOne ![a](p.png) two.\n\n```mermaid\ngraph TD\n```\n\n<svg></svg> tail\n"
-    source = write_source("md", text, tmp_path / "src")
-    with_media = json.loads(extract_manifest_text("md", source, tmp_path / "m.json", 90))
+
+@pytest.mark.parametrize(
+    ("fmt", "module", "stub", "text", "count"),
+    [
+        pytest.param(
+            "md", "extract_markdown", "module.collect_media = lambda blocks: None",
+            "# T\n\nOne ![a](p.png) two.\n\n```mermaid\ngraph TD\n```\n\n<svg></svg> tail\n", 3, id="md",
+        ),
+        pytest.param(
+            "html", "extract_html", "module.MediaCollector.apply = lambda self, blocks: None",
+            f'<h1>T</h1><div>loose <pre class="mermaid">graph TD</pre></div><table><tr><td>c <img src="t.png"></td></tr></table>'
+            f'<p>{_SPLIT_WORDS} <svg></svg></p><p><img src="z.png"></p>', 4, id="html",
+        ),
+    ],
+)
+def test_media_changes_nothing_but_the_media_key(tmp_path, fmt, module, stub, text, count):
+    source = write_source(fmt, text, tmp_path / "src")
+    with_media = json.loads(extract_manifest_text(fmt, source, tmp_path / "m.json", 90))
     result = subprocess.run(
-        [sys.executable, "-c", _WITHOUT_HOOK, str(SCRIPTS), str(source)],
+        [sys.executable, "-c", _WITHOUT_HOOK, str(SCRIPTS), str(source), module, stub],
         capture_output=True, text=True, check=True,
     )
     baseline = json.loads(result.stdout)
-    assert len(with_media.pop("media")) == 3
+    assert len(with_media.pop("media")) == count
     assert with_media == baseline
+
+
+def test_no_media_html_manifest_equals_golden_byte_for_byte(tmp_path):
+    source = write_golden_source("html", tmp_path / "src")
+    manifest = json.loads(extract_manifest_text("html", source, tmp_path / "m.json"))
+    assert "media" not in manifest
+    assert manifest_text(normalise(manifest)) == read_golden("manifest_html.json")
