@@ -1314,6 +1314,7 @@ def main() -> int:
     run_root = ledger.parent
     canonical_dod = canonical_run_paths(run_root)["dod"]
     validate_output(canonical_dod, inputs=[ledger], root=run_root)
+    canonical_dod.unlink(missing_ok=True)
     if args.write_dod is not None and not _same_path(args.write_dod, canonical_dod):
         print("FAIL: dod.json must be written to <run-root>/dod.json")
         return 1

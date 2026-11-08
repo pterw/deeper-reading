@@ -248,6 +248,73 @@ def test_cli_rejects_non_object_run_json_without_traceback(tmp_path):
     assert dod["passed"] is False
 
 
+def _stale_dod_run(tmp_path):
+    run = valid_run(tmp_path)
+    run.pop("_ledger_path", None)
+    ledger = tmp_path / "run.json"
+    ledger.write_text(json.dumps(run), encoding="utf-8")
+    stale = tmp_path / "dod.json"
+    stale.write_text(json.dumps({"passed": True}), encoding="utf-8")
+    return ledger, stale
+
+
+def test_failed_dod_write_leaves_no_stale_passing_dod(tmp_path, monkeypatch):
+    ledger, stale = _stale_dod_run(tmp_path)
+    module = load_module()
+
+    def broken_write(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(module, "write_text_atomic", broken_write)
+    monkeypatch.setattr(sys, "argv", ["verify_run.py", str(ledger)])
+    with pytest.raises(OSError, match="disk full"):
+        module.main()
+    assert not stale.exists()
+
+
+def test_mismatched_write_dod_leaves_no_stale_passing_dod(tmp_path):
+    ledger, stale = _stale_dod_run(tmp_path)
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger), "--write-dod", str(tmp_path / "other.json")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "dod.json must be written to" in result.stdout
+    assert not stale.exists()
+
+
+def test_failing_ledger_replaces_stale_passing_dod(tmp_path):
+    ledger = tmp_path / "run.json"
+    ledger.write_text("[]", encoding="utf-8")
+    (tmp_path / "dod.json").write_text(json.dumps({"passed": True}), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    dod = json.loads((tmp_path / "dod.json").read_text(encoding="utf-8"))
+    assert dod["passed"] is False
+
+
+def test_dod_directory_fails_without_removing_it(tmp_path):
+    ledger = tmp_path / "run.json"
+    ledger.write_text("{}", encoding="utf-8")
+    (tmp_path / "dod.json").mkdir()
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "FAIL:" in result.stderr
+    assert (tmp_path / "dod.json").is_dir()
+
+
 def _upgrade_fixture_ledger_to_v2(run):
     sys.path.insert(0, str(ROOT / "scripts"))
     from evidence_atoms import atom_id
