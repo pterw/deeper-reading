@@ -57,6 +57,39 @@ class Block:
     atomic_kind: str | None = None
 
 
+MEDIA_TEXT_CAP = 200
+
+
+class MediaCollector:
+    """Collects media references seen while extracting and attaches them to blocks.
+
+    An extractor calls add() with len(blocks) when it sees a reference, then apply()
+    once the blocks are complete. No text is invented, so chunk text and hashes stay put.
+    """
+
+    def __init__(self) -> None:
+        self._items: list[tuple[int, dict[str, Any]]] = []
+
+    def add(
+        self,
+        position: int,
+        kind: str,
+        syntax: str,
+        ref: str | None = None,
+        alt: str | None = None,
+    ) -> None:
+        self._items.append((position, {'kind': kind, 'syntax': syntax, 'ref': ref, 'alt': alt}))
+
+    def apply(self, blocks: list[Block]) -> None:
+        """Write each entry to the first non-empty block at or after its position."""
+        textual = [index for index, block in enumerate(blocks) if block.text]
+        if not textual:
+            return
+        for position, entry in self._items:
+            target = next((index for index in textual if index >= position), textual[-1])
+            blocks[target].locator.setdefault('media', []).append(dict(entry))
+
+
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
@@ -141,6 +174,8 @@ def pack_blocks(blocks: Iterable[Block], max_bytes: int) -> list[dict[str, Any]]
             if len(pieces) > 1:
                 piece_locator['fragment'] = piece_index
                 piece_locator['fragments'] = len(pieces)
+                if piece_index > 1:
+                    piece_locator.pop('media', None)
             if current_text and current_heading != heading_list:
                 flush()
             if current_text and utf8_len(current_text + piece) > max_bytes:
@@ -154,6 +189,29 @@ def pack_blocks(blocks: Iterable[Block], max_bytes: int) -> list[dict[str, Any]]
 
     flush()
     return packed
+
+
+def _media_ref(ref: Any) -> Any:
+    if not isinstance(ref, str):
+        return ref
+    data_uri = re.match(r'data:[^;,]*', ref)
+    return (data_uri.group(0) if data_uri else ref)[:MEDIA_TEXT_CAP]
+
+
+def _media_alt(alt: Any) -> Any:
+    return ' '.join(alt.split())[:MEDIA_TEXT_CAP] if isinstance(alt, str) else alt
+
+
+def _strip_media(locator: Any, chunk_id: str, found: list[dict[str, Any]]) -> Any:
+    """Return locator without media, appending its entries (F2 id not yet set) to found."""
+    if not isinstance(locator, dict):
+        return locator
+    clean = {key: value for key, value in locator.items() if key != 'media'}
+    for entry in locator.get('media') or []:
+        found.append({'chunk_id': chunk_id, **entry})
+    if isinstance(clean.get('blocks'), list):
+        clean['blocks'] = [_strip_media(item, chunk_id, found) for item in clean['blocks']]
+    return clean
 
 
 def build_manifest(
@@ -176,16 +234,18 @@ def build_manifest(
     chunks: list[dict[str, Any]] = []
     cursor = 0
     stream = bytearray()
+    media_found: list[dict[str, Any]] = []
 
     for ordinal, item in enumerate(packed_chunks, start=1):
         content = str(item['content'])
         raw = content.encode('utf-8')
         content_hash = sha256_bytes(raw)
         chunk_id = f'{source_format}-{ordinal:06d}-{content_hash[:12]}'
+        locator = _strip_media(item.get('locator', {}), chunk_id, media_found)
         chunk = {
             'id': chunk_id,
             'ordinal': ordinal,
-            'locator': item.get('locator', {}),
+            'locator': locator,
             'text_byte_start': cursor,
             'text_byte_end': cursor + len(raw),
             'content_sha256': content_hash,
@@ -211,7 +271,7 @@ def build_manifest(
     if backend:
         chunking['backend'] = backend
 
-    return {
+    manifest: dict[str, Any] = {
         'schema_version': SCHEMA_VERSION,
         'source': source,
         'chunking': chunking,
@@ -219,10 +279,69 @@ def build_manifest(
         'extracted_text_sha256': sha256_bytes(bytes(stream)),
         'chunks': chunks,
     }
+    if media_found:
+        manifest['media'] = [
+            {
+                'id': f'media-{number:04d}',
+                'chunk_id': found['chunk_id'],
+                'kind': found['kind'],
+                'syntax': found['syntax'],
+                'ref': _media_ref(found.get('ref')),
+                'alt': _media_alt(found.get('alt')),
+            }
+            for number, found in enumerate(media_found, start=1)
+        ]
+    return manifest
 
 
 def _md_escape(value: str) -> str:
     return value.replace("|", "\\|").replace("\n", "<br>")
+
+
+def _media_section(manifest: dict[str, Any], ledger: dict[str, Any]) -> tuple[list[str], list[str]]:
+    """Summary bullets and table for media references; both empty when the manifest has none."""
+    raw_media = manifest.get("media")
+    media = [item for item in raw_media if isinstance(item, dict)] if isinstance(raw_media, list) else []
+    if not media:
+        return [], []
+    raw_dispositions = ledger.get("media")
+    dispositions = {
+        item.get("id"): item
+        for item in (raw_dispositions if isinstance(raw_dispositions, list) else [])
+        if isinstance(item, dict) and item.get("disposition") in ("read", "not_read")
+    }
+    rows = []
+    counts = {"read": 0, "not_read": 0, "missing": 0}
+    for item in media:
+        given = dispositions.get(item.get("id"), {})
+        state = str(given.get("disposition", "missing"))
+        counts[state] += 1
+        detail = given.get("tool") if state == "read" else given.get("reason")
+        cells = [
+            f"`{_md_escape(str(item.get('id', '')))}`",
+            f"`{_md_escape(str(item.get('chunk_id', '')))}`",
+            *(_md_escape(str(item.get(key) or "")) for key in ("kind", "syntax", "ref", "alt")),
+            state,
+            _md_escape(str(detail or "")),
+        ]
+        rows.append("| " + " | ".join(cells) + " |")
+    summary = [
+        f"- Media references: {len(media)}",
+        f"- Media read: {counts['read']}",
+        f"- Media not read: {counts['not_read']}",
+        f"- Media without disposition: {counts['missing']}",
+    ]
+    table = [
+        "## Media",
+        "",
+        "Chunk is the first chunk of the nearest following block, and the coverage above is of extracted text only.",
+        "",
+        "| Media | Chunk | Kind | Syntax | Reference | Alt | Disposition | Tool or reason |",
+        "|---|---|---|---|---|---|---|---|",
+        *rows,
+        "",
+    ]
+    return summary, table
 
 
 def render_traversal_report(manifest: dict[str, Any], ledger: dict[str, Any]) -> str:
@@ -253,6 +372,8 @@ def render_traversal_report(manifest: dict[str, Any], ledger: dict[str, Any]) ->
     source_label = str(source.get("path") or source.get("uri") or "unknown")
     source_format = str(source.get("format") or "unknown")
 
+    media_summary, media_table = _media_section(manifest, ledger)
+
     lines = [
         "# Traversal Report",
         "",
@@ -266,7 +387,9 @@ def render_traversal_report(manifest: dict[str, Any], ledger: dict[str, Any]) ->
         f"- Non-match verdicts: {non_match_count}",
         f"- Assertions: {assertion_count}",
         f"- Constraints: {constraint_count}",
+        *media_summary,
         "",
+        *media_table,
         "## Chunk index",
         "",
         "| # | Chunk | Location | Kinds | Outcome | Atoms |",

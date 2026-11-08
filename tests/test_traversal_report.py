@@ -5,6 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
+from media_helpers import normalise, read_golden
+
 ROOT = Path(__file__).resolve().parents[1]
 VERIFY = ROOT / "scripts" / "verify_run.py"
 REPORT = ROOT / "scripts" / "traversal_report.py"
@@ -156,6 +160,77 @@ def test_first_run_report_is_grouped_complete_and_deterministic():
     next_heading = first.find("\n### ", detail_start + 1)
     detail = first[detail_start: next_heading if next_heading >= 0 else None]
     assert detail.count("<details><summary>Full locator</summary>") == 1
+
+
+def _normalised_run(tmp_path: Path):
+    make_run(tmp_path)
+    manifest = json.loads((tmp_path / "evidence" / "chunk-manifest.json").read_text(encoding="utf-8"))
+    ledger = json.loads((tmp_path / "evidence" / "chunk-evidence.json").read_text(encoding="utf-8"))
+    return normalise(manifest, ledger)
+
+
+def test_no_media_manifest_ledger_and_report_equal_their_goldens(tmp_path):
+    from scripts.chunk_common import render_traversal_report
+
+    manifest, ledger = _normalised_run(tmp_path)
+    assert "media" not in manifest
+    assert "media" not in ledger
+    assert json.dumps(ledger, indent=2) + "\n" == read_golden("ledger.json")
+    assert render_traversal_report(manifest, ledger) == read_golden("TRAVERSAL_REPORT.md")
+
+
+_MEDIA_HEAD = (
+    "## Media\n"
+    "\n"
+    "Chunk is the first chunk of the nearest following block, and the coverage above is of extracted text only.\n"
+    "\n"
+    "| Media | Chunk | Kind | Syntax | Reference | Alt | Disposition | Tool or reason |\n"
+    "|---|---|---|---|---|---|---|---|\n"
+)
+
+
+@pytest.mark.parametrize(
+    ("dispositions", "counts", "last_cells"),
+    [
+        pytest.param(
+            [
+                {"id": "media-0001", "disposition": "read", "tool": "vision", "summary": "a chart"},
+                {"id": "media-0002", "disposition": "not_read", "reason": "decorative"},
+            ],
+            (1, 1, 1),
+            ("read | vision", "not_read | decorative", "missing | "),
+            id="one-of-each",
+        ),
+        pytest.param(None, (0, 0, 3), ("missing | ",) * 3, id="no-ledger-media-key"),
+    ],
+)
+def test_report_lists_each_media_with_its_disposition_and_counts_missing(tmp_path, dispositions, counts, last_cells):
+    from scripts.chunk_common import render_traversal_report
+
+    manifest, ledger = _normalised_run(tmp_path)
+    first = manifest["chunks"][0]["id"]
+    manifest["media"] = [
+        {"id": "media-0001", "chunk_id": first, "kind": "image", "syntax": "md_image", "ref": "p1.png", "alt": "a|b"},
+        {"id": "media-0002", "chunk_id": first, "kind": "svg", "syntax": "html_svg", "ref": None, "alt": None},
+        {"id": "media-0003", "chunk_id": first, "kind": "diagram", "syntax": "fence_diagram", "ref": None, "alt": "flow"},
+    ]
+    if dispositions is not None:
+        ledger["media"] = dispositions
+    report = render_traversal_report(manifest, ledger)
+    read, not_read, missing = counts
+    summary = (
+        f"- Media references: 3\n- Media read: {read}\n"
+        f"- Media not read: {not_read}\n- Media without disposition: {missing}\n"
+    )
+    assert summary in report
+    prefixes = (
+        f"| `media-0001` | `{first}` | image | md_image | p1.png | a\\|b | ",
+        f"| `media-0002` | `{first}` | svg | html_svg |  |  | ",
+        f"| `media-0003` | `{first}` | diagram | fence_diagram |  | flow | ",
+    )
+    rows = "".join(f"{prefix}{cells} |\n" for prefix, cells in zip(prefixes, last_cells, strict=True))
+    # The whole section, from its heading to the blank line before "## Chunk index".
+    assert report[report.index("## Media") : report.index("## Chunk index")] == _MEDIA_HEAD + rows + "\n"
 
 
 def test_deliverable_contract_makes_traversal_report_user_visible():

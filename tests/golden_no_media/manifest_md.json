@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "/golden/source",
+    "uri": "file:///golden/source",
+    "format": "markdown",
+    "sha256": "aaa4016ed8721ac0e9289bc2664738afafa5386b534936367fd5b6ffd22e1028",
+    "size_bytes": 195
+  },
+  "chunking": {
+    "strategy": "markdown-heading-ast-blocks",
+    "max_bytes": 90,
+    "chunk_count": 4
+  },
+  "extracted_text_bytes": 190,
+  "extracted_text_sha256": "44ea8ae3e62e8ee98a037d0dd1a63bbc960215e5d53821efdcfc7022c067ca9d",
+  "chunks": [
+    {
+      "id": "markdown-000001-504f397dbf88",
+      "ordinal": 1,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 1,
+            "heading_path": [
+              "Intro"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Intro"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Intro"
+        ]
+      },
+      "text_byte_start": 0,
+      "text_byte_end": 84,
+      "content_sha256": "504f397dbf8871c5ca008ff24baeb8f1aa64bd763a69b0762e1b948b76b35e30",
+      "content": "# Intro\nAlpha paragraph with enough words to need a second chunk when packed small.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000002-df7b80e56c7f",
+      "ordinal": 2,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Intro"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 84,
+      "text_byte_end": 129,
+      "content_sha256": "df7b80e56c7fdd4cdabe1070c0180898f1e77f885c4ee65d6f666f967598767f",
+      "content": "| Name | Value |\n| --- | --- |\n| alpha | 1 |\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000003-ba3658b5ef52",
+      "ordinal": 3,
+      "locator": {
+        "kind": "fenced_code",
+        "heading_path": [
+          "Intro"
+        ],
+        "atomic_kind": "fenced_code"
+      },
+      "text_byte_start": 129,
+      "text_byte_end": 158,
+      "content_sha256": "ba3658b5ef52561c584a827b03e14db45979d86c7bd918eb67e4f4243d44031f",
+      "content": "```python\nprint('alpha')\n```\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000004-a4e4c3bb4db7",
+      "ordinal": 4,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Intro",
+              "Tail"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Intro",
+              "Tail"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Intro",
+          "Tail"
+        ]
+      },
+      "text_byte_start": 158,
+      "text_byte_end": 190,
+      "content_sha256": "a4e4c3bb4db78dde85f47d7bbd3e0a7af548c8dcabbbae9c0fb71c2fdffb6597",
+      "content": "## Tail\nOmega `code` paragraph.\n",
+      "oversize_atomic": false
+    }
+  ]
+}
