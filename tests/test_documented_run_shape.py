@@ -28,8 +28,9 @@ def run_command(line: str, fills: dict[str, str]) -> subprocess.CompletedProcess
         for placeholder, value in fills.items():
             token = token.replace(placeholder, value)
         argv.append(sys.executable if token == "python" else token)
+    # Bounded: a hung extractor or verifier fails the test instead of blocking the suite.
     return subprocess.run(
-        argv, cwd=ROOT, capture_output=True, text=True, check=False
+        argv, cwd=ROOT, capture_output=True, text=True, check=False, timeout=120
     )
 
 
