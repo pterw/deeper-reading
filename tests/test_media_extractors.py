@@ -125,6 +125,8 @@ MEDIA_ROWS = [
     pytest.param("md", "# T\n\n![Plot [A]](plot.png)\n", [("image", "md_image", "plot.png", "Plot [A]")], id="md-image-with-bracketed-alt"),
     pytest.param("md", "# T\n\nSee [figure](plot(1).png) here.\n", [("image", "md_link", "plot(1).png", None)], id="md-link-to-parenthesised-destination"),
     pytest.param("md", '# T\n\n![pic](a(b).png "A title")\n', [("image", "md_image", "a(b).png", "pic")], id="md-image-parenthesised-destination-with-title"),
+    pytest.param("md", '# T\n\n<svg><svg width="1" /><svg/><circle r="2"/></svg><svg><circle r="3"/></svg>\n', [("svg", "html_svg", None, None), ("svg", "html_svg", None, None)], id="md-self-closing-svg-does-not-deepen-nesting"),
+    pytest.param("md", "# T\n\n<svg />\n", [("svg", "html_svg", None, None)], id="md-top-level-self-closing-svg-recorded"),
     pytest.param("md", "# T\n\n`unmatched ![plot](plot.png) ``code``\n", [("image", "md_image", "plot.png", "plot")], id="md-unmatched-backtick-run-does-not-mask-image"),
     pytest.param("md", "# T\n\nUse ``![a](p.png)`` to embed.\n", [], id="md-double-backtick-span-ignored"),
     pytest.param("md", "# T\n\n\\`literal ![plot](plot.png) \\`more\n", [("image", "md_image", "plot.png", "plot")], id="md-escaped-backticks-do-not-mask-image"),

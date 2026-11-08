@@ -171,15 +171,22 @@ def _is_image_target(target: str) -> bool:
 
 
 def _svg_starts(text: str) -> list[int]:
-    """Offsets of outermost <svg tags; nested svg and stray closers are skipped."""
+    """Offsets of outermost <svg tags; nested svg and stray closers are skipped.
+
+    A self-closing <svg/> opens and closes at once, so it never changes the depth.
+    """
     starts: list[int] = []
     depth = 0
+    tag_end = -2  # cached text.find('>'); -1 means none left, so unclosed tags cost one scan
     for match in _HTML_SVG_TAG_RE.finditer(text):
         if match.group(1):
             depth = max(depth - 1, 0)
-        else:
-            if depth == 0:
-                starts.append(match.start())
+            continue
+        if tag_end != -1 and tag_end < match.end():
+            tag_end = text.find('>', match.end())
+        if depth == 0:
+            starts.append(match.start())
+        if not (tag_end > 0 and text[tag_end - 1] == '/'):
             depth += 1
     return starts
 
