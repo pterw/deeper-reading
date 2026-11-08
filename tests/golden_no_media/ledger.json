@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "manifest_sha256": "5b89021d20206c2a2c0fb6b3453d4160180be458c95cabf60d840193bd8c61d3",
+  "source_sha256": "d9644aaad2127232a17ebf0d46bdf36f4344b8f68a40c6cd9150d737a41dd52f",
+  "entries": [
+    {
+      "chunk_id": "html-000001-420a9fb11d94",
+      "ordinal": 1,
+      "chunk_sha256": "420a9fb11d94d31c1c98c7ee23ff8583b56bf770becc064b277138871c9aa300",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Alpha proof.",
+          "chunk_byte_start": 2,
+          "chunk_byte_end": 14
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "html-000002-2c769b58d2bd",
+      "ordinal": 2,
+      "chunk_sha256": "2c769b58d2bda9fb3cfca6dfdcb234eea5748ce51474bd01f9a5b3b75665df8c",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Beta caveat.",
+          "chunk_byte_start": 2,
+          "chunk_byte_end": 14
+        }
+      ],
+      "constraints": []
+    }
+  ]
+}

@@ -18,6 +18,8 @@ Every substantial exhaustive-read run also emits `<run-root>/deliverables/TRAVER
 - outcome: `evidence` or `non_match`;
 - each atomic extractive assertion/constraint, or the explicit non-match reason.
 
+When the source has images, SVG or diagrams, the report also lists each media reference with its disposition (read, not read, or missing) in a `## Media` table after the run summary and before the chunk index. Say in the deliverable which media were not read.
+
 `TRAVERSAL_REPORT.md` is **grouped by canonical chunk**: it contains a run summary, compact chunk index, and one detail section per chunk. A chunk's human-readable locator and block kinds are shown once, with all byte-anchored atoms nested beneath it. The raw canonical locator remains available for auditability.
 
 For bounded human/agent inspection outside the generated report, use the supported read-only helper `scripts/inspect_chunks.py` with `--summary` or an ordinal range via `--from` / `--to`. This helper reads the canonical manifest; it does not alter coverage or evidence.

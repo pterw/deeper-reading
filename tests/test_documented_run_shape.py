@@ -119,3 +119,30 @@ def test_incomplete_documented_run_fails_verification(tmp_path: Path, edit) -> N
     doc = with_run_json(EVIDENCE_DOC.read_text(encoding="utf-8"), edit)
     result = drive_documented_run(doc, tmp_path)
     assert result.returncode != 0
+
+
+def test_documented_media_draft_builds_a_ledger_for_the_media_source(
+    tmp_path: Path,
+) -> None:
+    blocks = fences(EVIDENCE_DOC.read_text(encoding="utf-8"))
+    source = tmp_path / "source" / "source.md"
+    source.parent.mkdir()
+    source.write_bytes((blocks["markdown media-source.md"] + "\n").encode("utf-8"))
+    draft = tmp_path / "draft-evidence.json"
+    draft.write_text(blocks["json media-draft.json"] + "\n", encoding="utf-8")
+    fills = {"<run-root>": tmp_path.as_posix(), "<source>": source.as_posix()}
+    extract = "python scripts/extract_markdown.py <source> --run-root <run-root>"
+    done = run_command(extract, fills)
+    assert done.returncode == 0, done.stdout + done.stderr
+    manifest_path = tmp_path / "evidence" / "chunk-manifest.json"
+    ledger_path = tmp_path / "evidence" / "chunk-evidence.json"
+    build = (
+        f"python scripts/build_evidence.py {manifest_path.as_posix()} "
+        f"{draft.as_posix()} --out {ledger_path.as_posix()}"
+    )
+    done = run_command(build, {})
+    assert done.returncode == 0, done.stdout + done.stderr
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    assert [m["id"] for m in manifest["media"]] == ["media-0001"]
+    assert ledger["media"] == json.loads(blocks["json media-draft.json"])["media"]

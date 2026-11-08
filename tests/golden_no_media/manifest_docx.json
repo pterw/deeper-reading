@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "/golden/source",
+    "uri": "file:///golden/source",
+    "format": "docx",
+    "sha256": "6cb5cb13f93ec0c047b18c58b1301ea8ffc2a61d1a4406d29ef3f082e20586cc",
+    "size_bytes": 697
+  },
+  "chunking": {
+    "strategy": "docx-ooxml-story-blocks",
+    "max_bytes": 90,
+    "chunk_count": 3,
+    "backend": "stdlib-zip-xml"
+  },
+  "extracted_text_bytes": 131,
+  "extracted_text_sha256": "961ee112961044256a30d63cf28d5bdde88c0fd7ea40f851946aed81c29552c2",
+  "chunks": [
+    {
+      "id": "docx-000001-a8ce85a5484a",
+      "ordinal": 1,
+      "locator": {
+        "blocks": [
+          {
+            "part": "word/document.xml",
+            "block_index": 1,
+            "kind": "heading",
+            "heading_path": [
+              "Intro"
+            ],
+            "level": 1
+          }
+        ],
+        "heading_path": [
+          "Intro"
+        ]
+      },
+      "text_byte_start": 0,
+      "text_byte_end": 6,
+      "content_sha256": "a8ce85a5484af260d225c2ec0203b33bed1c80a7b24729e0cb372517fc3f2aff",
+      "content": "Intro\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "docx-000002-de2475c860dd",
+      "ordinal": 2,
+      "locator": {
+        "blocks": [
+          {
+            "part": "word/document.xml",
+            "block_index": 2,
+            "kind": "paragraph",
+            "heading_path": [
+              "Intro"
+            ],
+            "fragment": 1,
+            "fragments": 2
+          }
+        ],
+        "heading_path": [
+          "Intro"
+        ]
+      },
+      "text_byte_start": 6,
+      "text_byte_end": 92,
+      "content_sha256": "de2475c860ddf5aa16861b60f5e500b57a37de2b642a74b84ac428d8bd06faa6",
+      "content": "Alpha paragraph with enough words to need a second chunk when packed small. [deleted: ",
+      "oversize_atomic": false
+    },
+    {
+      "id": "docx-000003-074af72220d7",
+      "ordinal": 3,
+      "locator": {
+        "blocks": [
+          {
+            "part": "word/document.xml",
+            "block_index": 2,
+            "kind": "paragraph",
+            "heading_path": [
+              "Intro"
+            ],
+            "fragment": 2,
+            "fragments": 2
+          },
+          {
+            "part": "word/document.xml",
+            "block_index": 3,
+            "kind": "paragraph",
+            "heading_path": [
+              "Intro"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Intro"
+        ]
+      },
+      "text_byte_start": 92,
+      "text_byte_end": 131,
+      "content_sha256": "074af72220d79479a03929aaa1b02221eb216c4cc48b8b2c6863086cb2307246",
+      "content": "$100][inserted: $200]\nOmega paragraph.\n",
+      "oversize_atomic": false
+    }
+  ]
+}

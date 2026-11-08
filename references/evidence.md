@@ -91,6 +91,57 @@ python scripts/build_evidence.py evidence/chunk-manifest.json draft-evidence.jso
 
 The builder fills canonical chunk IDs and hashes from the manifest rather than trusting draft copies. `chunk-evidence.json` remains the coverage authority paired with `chunk-manifest.json`; schema v2 does not create a separate semantic authority.
 
+## Media dispositions
+
+Markdown, HTML and DOCX extraction records the images, SVG and diagrams it sees (what each format records is listed in its format reference). The manifest gets an optional top-level `media` list, present only when the source has media: each entry has `id` (`media-0001`, ...), `chunk_id` (the first chunk of the nearest following block), `kind` (`image`, `svg`, `diagram` or `embedded`), `syntax`, `ref` and `alt`. A manifest without media has no `media` key and nothing about it changes. Run `scripts/inspect_chunks.py` with `--from` / `--to` to see the media ids in the chunk detail view before the ledger exists (`--summary` shows only a count).
+
+Format QA gives every manifest media id exactly one disposition, and the ledger carries them in a top-level `media` list next to `entries`:
+
+- `{"id": "media-0001", "disposition": "read", "tool": "<host vision tool>", "summary": "<what it shows>"}`: the agent looked at it with a host vision tool and says what it shows. `tool` and `summary` are required.
+- `{"id": "media-0002", "disposition": "not_read", "reason": "<why>"}`: the agent did not read it and says why. `reason` is required.
+
+The third outcome is in the deliverable: tell the user which media were not read. A `not_read` entry is honest only when the deliverable says so.
+
+Alt text and the text inside an inline SVG are read as text, but they are not the picture. A `read` disposition needs a vision tool that actually looked at the media.
+
+The draft given to `build_evidence.py` carries the same top-level `media` list. The builder checks it against the manifest, copies it into the ledger, and fails without writing a ledger when an id is missing, unknown or duplicated, or an entry is invalid. When the manifest has no media the ledger omits `media`, even if the draft has `media: []`. The ledger is bound to the manifest hash, so a re-extraction that changes the media list stales the dispositions.
+
+A small worked example. The source, saved as `<run-root>/source/source.md`:
+
+```markdown media-source.md
+# Pump layout
+
+The layout of the pump room is shown in the figure.
+
+![Pump room layout](pump-room.png)
+
+Prime the pump before service.
+```
+
+The draft, saved as `<run-root>/draft-evidence.json`. The image is attached to the chunk that holds or follows it, and it is read with a host vision tool:
+
+```json media-draft.json
+{
+  "entries": [
+    {
+      "ordinal": 1,
+      "outcome": "non_match",
+      "reason": "Layout and priming notes; no claim relevant to the request."
+    }
+  ],
+  "media": [
+    {
+      "id": "media-0001",
+      "disposition": "read",
+      "tool": "host vision tool",
+      "summary": "A floor plan with the pump in the centre of the room and one door."
+    }
+  ]
+}
+```
+
+What the verifier does and does not prove: it checks that every media reference has a disposition (`media.disposition.missing`, `.unknown`, `.duplicate` or `.invalid` otherwise). It does not prove the media was understood, and dispositions are agent-authored like every ledger verdict. Media edits to the ledger are caught only by the report byte-compare. PDF media is outside this section; see `references/pdf.md`.
+
 ## Discrete traversal events
 
 The run event stream must include exactly one `chunk_verified` event per canonical manifest chunk, in manifest order. For 12 emitted chunks there are 12 discrete `chunk_verified` events before final verification. The event stream cannot stop at chunk 4 merely because the answer was found.
@@ -98,6 +149,8 @@ The run event stream must include exactly one `chunk_verified` event per canonic
 ## Human-readable traversal proof
 
 `scripts/traversal_report.py --run-root <run-root>` renders `<run-root>/deliverables/TRAVERSAL_REPORT.md` from the canonical manifest/evidence pair. The report is grouped by canonical chunk: a compact run summary and chunk index lead to one detail section per chunk, with its locator rendered once and all atomic assertions/constraints or the non-match reason nested beneath it.
+
+When the manifest has media, the report adds media counts after the run summary and a `## Media` table with each reference's disposition (`read`, `not_read` or `missing`); see Media dispositions above.
 
 `TRAVERSAL_REPORT.md` is deterministic. `scripts/verify_run.py` regenerates the canonical report from the machine evidence and rejects a missing, forged, stale, hand-edited, or noncanonical report.
 
@@ -135,7 +188,7 @@ The run event stream must include exactly one `chunk_verified` event per canonic
 
 ## Canonical-universe reproduction
 
-The supplied manifest is not trusted merely because its own hashes are self-consistent. `scripts/verify_run.py` re-runs the bundled extractor against the bound source bytes with the manifest's extraction parameters and requires the reproduced manifest to match exactly, except that the absolute `source.path` is not compared (`source.sha256` and `size_bytes` still bind the bytes, and the run folder may have moved). A relative `source.local_path` in `run.json` resolves against the run folder. A forged 4-chunk manifest derived from a source that canonically emits 12 chunks therefore fails.
+The supplied manifest is not trusted merely because its own hashes are self-consistent. `scripts/verify_run.py` re-runs the bundled extractor against the bound source bytes with the manifest's extraction parameters and requires the reproduced manifest to match exactly, except that the absolute `source.path` is not compared (`source.sha256` and `size_bytes` still bind the bytes, and the run folder may have moved). A relative `source.local_path` in `run.json` resolves against the run folder. The manifest `media` list is part of that comparison, so a forged or edited media list fails too. A forged 4-chunk manifest derived from a source that canonically emits 12 chunks therefore fails.
 
 The verifier's reproduction scratch may live in an OS temporary directory because it is ephemeral and automatically cleaned. It cannot satisfy any run evidence predicate; only canonical files inside `<run-root>` count toward DoD.
 

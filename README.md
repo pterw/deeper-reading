@@ -84,10 +84,16 @@ discovery formats and compatibility requirements.
 
 | Format | Extraction | Locators and boundaries | Requires separate QA |
 | --- | --- | --- | --- |
-| Markdown | Standard library | H1–H6 heading paths; fenced code and tables stay atomic | Rendered meaning, linked material |
-| HTML | Standard-library HTML parser | Heading/structural context; tables and preformatted text stay atomic | CSS, scripts, generated content, figures |
-| DOCX | Standard-library ZIP + OOXML parsing | Document/story parts, Heading1–Heading6, paragraphs and tables | Layout, revision meaning, field evaluation, visual fidelity |
+| Markdown | Standard library | H1–H6 heading paths; fenced code and tables stay atomic | Rendered meaning, linked material, images and diagrams |
+| HTML | Standard-library HTML parser | Heading/structural context; tables and preformatted text stay atomic | CSS, scripts, generated content, figures, images and diagrams |
+| DOCX | Standard-library ZIP + OOXML parsing | Document/story parts, Heading1–Heading6, paragraphs and tables | Layout, revision meaning, field evaluation, visual fidelity, images and diagrams |
 | PDF | Optional text backend | Ordered page locators; empty pages remain represented | OCR, graphics, equations and visual layout |
+
+For Markdown, HTML and DOCX, the manifest lists every image, SVG and diagram
+reference it finds. Each one needs a disposition in the evidence ledger: read
+with a host vision tool, or not read with a reason. The verifier checks that
+every one has a disposition. It does not prove the media was understood. See
+[evidence](references/evidence.md).
 
 PDF backends are detected in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then
 `pdftotext`. To choose the declared optional Python backend, run

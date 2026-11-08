@@ -62,7 +62,41 @@ def compact_locator(chunk: dict[str, Any]) -> str:
     return json.dumps(locator, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
 
-def summary_line(chunk: dict[str, Any]) -> str:
+def group_media(media: list[dict[str, Any]] | None) -> dict[Any, list[dict[str, Any]]]:
+    grouped: dict[Any, list[dict[str, Any]]] = {}
+    for entry in media or []:
+        if not isinstance(entry, dict):
+            continue
+        try:
+            grouped.setdefault(entry.get("chunk_id"), []).append(entry)
+        except TypeError:
+            continue
+    return grouped
+
+
+def chunk_media(
+    chunk: dict[str, Any], grouped: dict[Any, list[dict[str, Any]]] | None
+) -> list[dict[str, Any]]:
+    try:
+        return (grouped or {}).get(chunk.get("id"), [])
+    except TypeError:
+        return []
+
+
+def media_line(entry: dict[str, Any]) -> str:
+    ref = entry.get("ref")
+    parts = [
+        str(entry.get("id", "")),
+        str(entry.get("kind", "")),
+        str(entry.get("syntax", "")),
+        str(ref) if ref else "(no reference)",
+    ]
+    if entry.get("alt"):
+        parts.append(f"alt: {entry['alt']}")
+    return " ".join(parts)
+
+
+def summary_line(chunk: dict[str, Any], grouped: dict[Any, list[dict[str, Any]]] | None = None) -> str:
     ordinal = chunk.get("ordinal")
     chunk_id = str(chunk.get("id", ""))
     locator = chunk.get("locator") if isinstance(chunk.get("locator"), dict) else {}
@@ -71,10 +105,12 @@ def summary_line(chunk: dict[str, Any]) -> str:
     content = chunk.get("content")
     size = len(content.encode("utf-8")) if isinstance(content, str) else 0
     ordinal_text = f"{ordinal:02d}" if isinstance(ordinal, int) else "??"
-    return f"{ordinal_text}  {chunk_id}  [{kind_text}]  {size}B  {compact_locator(chunk)}"
+    line = f"{ordinal_text}  {chunk_id}  [{kind_text}]  {size}B  {compact_locator(chunk)}"
+    count = len(chunk_media(chunk, grouped))
+    return f"{line}  media:{count}" if count else line
 
 
-def detail_block(chunk: dict[str, Any]) -> str:
+def detail_block(chunk: dict[str, Any], grouped: dict[Any, list[dict[str, Any]]] | None = None) -> str:
     ordinal = chunk.get("ordinal")
     chunk_id = str(chunk.get("id", ""))
     content = chunk.get("content") if isinstance(chunk.get("content"), str) else ""
@@ -88,6 +124,7 @@ def detail_block(chunk: dict[str, Any]) -> str:
         f"Location: {compact_locator(chunk)}",
         f"Kinds: [{kinds}]",
         f"Bytes: {start}..{end}",
+        *[media_line(entry) for entry in chunk_media(chunk, grouped)],
         "---",
         content,
     ])

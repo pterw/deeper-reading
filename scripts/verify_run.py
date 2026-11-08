@@ -19,7 +19,7 @@ from typing import Any
 SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
-from chunk_common import canonical_run_paths, render_traversal_report
+from chunk_common import canonical_run_paths, check_dispositions, manifest_media, render_traversal_report
 from evidence_atoms import atom_id as evidence_atom_id
 if __package__:
     from .verification_findings import PREDICATES, Finding, codes_of, group_by_predicate
@@ -126,6 +126,12 @@ def _without_source_path(manifest: Any) -> Any:
     return {**manifest, "source": source}
 
 
+def _without_media(manifest: Any) -> Any:
+    """`_without_source_path` minus the top-level `media` list."""
+    base = _without_source_path(manifest)
+    return {k: v for k, v in base.items() if k != "media"} if isinstance(base, dict) else base
+
+
 def _reproduce_extraction_manifest(
     source_path: Path, manifest: dict[str, Any], findings: list[Finding]
 ) -> None:
@@ -207,10 +213,10 @@ def _reproduce_extraction_manifest(
             ))
             return
         if _without_source_path(reproduced) != _without_source_path(manifest):
-            findings.append(Finding(
-                "reproduction.mismatch", "source_coverage_complete",
-                "reproduced extraction manifest does not match supplied manifest",
-            ))
+            message = "reproduced extraction manifest does not match supplied manifest"
+            if _without_media(reproduced) == _without_media(manifest):
+                message += "; manifest predates media recording; re-extract"
+            findings.append(Finding("reproduction.mismatch", "source_coverage_complete", message))
 
 
 def _validate_atomic_extracts(
@@ -531,6 +537,15 @@ def _validate_chunk_evidence(
             "coverage.ledger.source_sha.mismatch", "source_coverage_complete",
             "chunk evidence source_sha256 does not match manifest source sha256",
         ))
+    for code, message, detail in check_dispositions(manifest_media(manifest), ledger.get("media", [])):
+        if code == "media.disposition.missing":
+            findings.append(Finding("media.disposition.missing", "format_qa_complete", message, detail=detail))
+        elif code == "media.disposition.unknown":
+            findings.append(Finding("media.disposition.unknown", "format_qa_complete", message, detail=detail))
+        elif code == "media.disposition.duplicate":
+            findings.append(Finding("media.disposition.duplicate", "format_qa_complete", message, detail=detail))
+        else:
+            findings.append(Finding("media.disposition.invalid", "format_qa_complete", message, detail=detail))
     entries = ledger.get("entries")
     if not isinstance(entries, list):
         findings.append(Finding(

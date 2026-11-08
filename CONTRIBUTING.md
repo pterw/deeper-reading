@@ -48,6 +48,7 @@ If contributing support for an additional document format:
 4. Document the format's structural invariants in a reference under `references/`, named for the format (`references/html.md`, `references/pdf.md`, `references/lengthy-markdown.md`).
 5. Add the format's route to `skills/exhaustive-document-traversal/SKILL.md`, linking that reference.
 6. Add deterministic test coverage in `tests/test_extractors.py`, and update `tests/test_phase_gated_loading.py` for the new route and reference.
+7. Record images, SVG and diagrams through `MediaCollector` in `scripts/chunk_common.py`, and add a row to `tests/test_media_extractors.py`.
 
 Other changes have a matching list of files to update: see the
 [AGENTS.md "Maintenance Matrix"](https://github.com/pterw/deeper-reading/blob/main/AGENTS.md#maintenance-matrix).

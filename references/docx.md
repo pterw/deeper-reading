@@ -68,3 +68,8 @@ If the live skills route a text-heavy authored deliverable through DOCX:
 5. run the live PDF verification workflow on the converted PDF.
 
 Do not use this authoring path for source-paper reading unless the user explicitly asks for a faithful conversion.
+
+## Media
+
+This extractor records pictures, charts and diagrams inside drawings, VML images and embedded OLE objects in the body, table cells, headers, footers, footnotes, endnotes and comments, one record per picture. A text box without a picture is not recorded, its text is already extracted.
+Every media id needs a disposition in format QA: see [Media dispositions](evidence.md).

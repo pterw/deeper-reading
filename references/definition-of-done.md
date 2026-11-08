@@ -17,7 +17,7 @@ A run is DONE only when every required predicate below has fresh evidence.
 | Re-chunking was local | Any size/scope retry is a child of the failed unit; verified upstream chunks were not broadly rerun without reason. |
 | Recovery redesign ordering was respected | Any `alternative_designed` event follows `architecture_stop`, `paths_exhausted`, and `disclosure`, and execution resumes only after `plan_revised`. |
 | Source fidelity is preserved | No undisclosed substitution of primary/secondary source, original/derivative artifact, or requested task semantics occurred. |
-| Format QA is complete | Required live HTML/PDF/DOCX visual/structural checks passed for the operations actually performed and are recorded under `evidence/`. |
+| Format QA is complete | Required live HTML/PDF/DOCX visual/structural checks passed for the operations actually performed and are recorded under `evidence/`. Every media id in the manifest has a disposition in the ledger (see [Media dispositions](evidence.md)). |
 | Requested deliverable exists | The exact requested result is produced **and** deterministic `deliverables/TRAVERSAL_REPORT.md` exists as the user-visible traversal proof. |
 | No unresolved required failure remains | Failure ledger has zero unresolved required nodes; disclosed optional limitations are marked non-blocking only when they do not violate the request. |
 | Final verification is fresh | `verification-before-completion` is invoked after the last material change; `evidence/verification-log.txt` records the fresh proving commands/actions and their results. |

@@ -8,7 +8,7 @@ import json
 from pathlib import Path
 from script_io import run_cli
 
-from chunk_view import detail_block, summary_line
+from chunk_view import detail_block, group_media, summary_line
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,6 +31,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.first < 1 or args.last < 0 or (args.last and args.last < args.first):
         print("FAIL: chunk range must satisfy 1 <= --from <= --to")
         return 1
+    media = value.get("media")
+    grouped = group_media(media if isinstance(media, list) else None)
     last = args.last or len(chunks)
     for chunk in chunks:
         if not isinstance(chunk, dict) or type(chunk.get("ordinal")) is not int:
@@ -39,7 +41,7 @@ def main(argv: list[str] | None = None) -> int:
         ordinal = chunk["ordinal"]
         if ordinal < args.first or ordinal > last:
             continue
-        print(summary_line(chunk) if args.summary else detail_block(chunk))
+        print(summary_line(chunk, grouped) if args.summary else detail_block(chunk, grouped))
     return 0
 
 

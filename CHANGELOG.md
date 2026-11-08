@@ -51,12 +51,42 @@
   existence.
 - Installers: `LICENSE` is now installed with the skill. Upgrading an existing
   install adds it as a managed file.
+- Extraction: Markdown, HTML and DOCX extractors now record images, SVG,
+  diagrams and embedded objects (Markdown and HTML images, Markdown links to
+  image files, inline SVG, mermaid blocks and diagram fences, `<object>` and
+  `<embed>`; DOCX drawings, VML images
+  and OLE objects in every story part). They appear in an optional top-level
+  `media` list of the manifest (`media-0001`, with chunk, kind, syntax,
+  reference and alt text). Chunk text, ids and hashes do not change, and a
+  manifest without media is byte-identical to before. PDF media is not
+  recorded. In Markdown, media outside a closed, well-formed fenced code block
+  counts, inline code and HTML comments included, so a doubtful case costs a
+  `not_read` disposition. Known limits: a fence-looking line inside an HTML
+  comment or `<pre>` pairs with a later fence, and brackets and parentheses
+  nest one level only.
+- Evidence: format QA gives every media reference a disposition in a top-level
+  `media` list of the chunk evidence ledger: `read` (with the host vision tool
+  and a summary) or `not_read` (with a reason). `build_evidence.py` rejects a
+  draft whose list does not match the manifest, and the verifier reports
+  `media.disposition.missing`, `.unknown`, `.duplicate` and `.invalid`. The
+  check proves each reference has a disposition, not that the media was
+  understood.
+- Reports: `TRAVERSAL_REPORT.md` gains media counts and a `## Media` table when
+  the manifest has media, and `inspect_chunks.py` lists each chunk's media (and
+  `media:N` in `--summary`) so the ids are known before the ledger exists.
 
 ### Compatibility
 
 - Run folders made with 0.2.3 for HTML, DOCX or Markdown sources whose extraction
   changed fail reproduction until the source is re-extracted (chunk text, ids and
   hashes change).
+- Run folders whose Markdown, HTML or DOCX source holds media no longer
+  reproduce from their earlier manifest: the verifier reports
+  `reproduction.mismatch`, with the hint "manifest predates media recording;
+  re-extract" when only the `media` list differs. Re-extract the source, add a
+  `media` list of dispositions to the draft, rebuild the ledger with
+  `build_evidence.py`, re-render `TRAVERSAL_REPORT.md`, and record the new
+  manifest hash in `run.json` (`chunking.manifest_sha256`), then verify.
 - The verifier finding codes `preflight.legacy` and `events.legacy` are removed.
   Ledgers carrying the four old preflight keys (such as `using_superpowers_read`)
   or `systematic_debugging` / `brainstorming` events now verify instead of

@@ -1,0 +1,112 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "/golden/source",
+    "uri": "file:///golden/source",
+    "format": "html",
+    "sha256": "59e3bfb00312ed72f18d0519051e4fe42cfde4f2ea554c705e589e76db91133a",
+    "size_bytes": 239
+  },
+  "chunking": {
+    "strategy": "html-heading-structural-blocks",
+    "max_bytes": 90,
+    "chunk_count": 4
+  },
+  "extracted_text_bytes": 127,
+  "extracted_text_sha256": "4c8eba677275a5bdfbf7c204ef08cbe17fd7f1fc928c3c742764f2584b7d3e17",
+  "chunks": [
+    {
+      "id": "html-000001-632578072851",
+      "ordinal": 1,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 1,
+            "heading_path": [
+              "Intro"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Intro"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Intro"
+        ]
+      },
+      "text_byte_start": 0,
+      "text_byte_end": 82,
+      "content_sha256": "6325780728514e1392eff21e4edd0ebc83df2d709e1d0788b28e335a60754ac8",
+      "content": "Intro\nAlpha paragraph with enough words to need a second chunk when packed small.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "html-000002-0abb598f5789",
+      "ordinal": 2,
+      "locator": {
+        "kind": "table",
+        "heading_path": [
+          "Intro"
+        ],
+        "atomic_kind": "table"
+      },
+      "text_byte_start": 82,
+      "text_byte_end": 90,
+      "content_sha256": "0abb598f5789e4680107dd1fca726437a9397b130aa6dafcaf76e61ad604d085",
+      "content": "alpha\t1\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "html-000003-2fed55f1437c",
+      "ordinal": 3,
+      "locator": {
+        "kind": "pre",
+        "heading_path": [
+          "Intro"
+        ],
+        "atomic_kind": "pre"
+      },
+      "text_byte_start": 90,
+      "text_byte_end": 105,
+      "content_sha256": "2fed55f1437cb5d2c9d3529fe2d09fe465a663b62f5caae159cae1048ba952a4",
+      "content": "print('alpha')\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "html-000004-708c8be6814b",
+      "ordinal": 4,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Intro",
+              "Tail"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Intro",
+              "Tail"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Intro",
+          "Tail"
+        ]
+      },
+      "text_byte_start": 105,
+      "text_byte_end": 127,
+      "content_sha256": "708c8be6814b1c7c1cd53e88f6818bab0abf92929d36fd7e526241c135ee9fa3",
+      "content": "Tail\nOmega paragraph.\n",
+      "oversize_atomic": false
+    }
+  ]
+}
