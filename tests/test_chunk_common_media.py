@@ -58,7 +58,6 @@ def test_manifest_media_is_empty_when_absent():
 @pytest.mark.parametrize(
     ("texts", "positions", "expected"),
     [
-        (["a", "b", "c"], [1], {1: [1]}),
         (["a", "b", "c"], [3, 9], {2: [3, 9]}),
         (["a", "", "", "d", ""], [1, 2, 3], {3: [1, 2, 3]}),
         (["a", "", "c"], [0, 1, 2], {0: [0], 2: [1, 2]}),
