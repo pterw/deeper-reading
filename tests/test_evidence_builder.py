@@ -184,3 +184,84 @@ def test_deepseek_prototype_is_fixture_only_not_runtime():
         assert "deepseek-first-run/prototype" not in text
     manifest = json.loads((ROOT / "MANIFEST.json").read_text(encoding="utf-8"))
     assert "tests" not in manifest["payload"]
+
+
+MEDIA_REFS = [
+    {"id": "media-0001", "chunk_id": "markdown-000001-fixture", "kind": "image", "syntax": "md_image", "ref": "a.png", "alt": None},
+    {"id": "media-0002", "chunk_id": "markdown-000001-fixture", "kind": "svg", "syntax": "html_svg", "ref": None, "alt": None},
+]
+READ = {"id": "media-0001", "disposition": "read", "tool": "vision", "summary": "a bar chart"}
+NOT_READ = {"id": "media-0002", "disposition": "not_read", "reason": "decorative"}
+
+
+def _media_manifest(tmp_path: Path) -> Path:
+    path = write_manifest(tmp_path, ["alpha"])
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    manifest["media"] = MEDIA_REFS
+    path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def _media_draft(tmp_path: Path, media) -> Path:
+    path = tmp_path / "draft.json"
+    entries = [{"ordinal": 1, "outcome": "non_match", "reason": "checked"}]
+    path.write_text(json.dumps({"entries": entries, "media": media}) + "\n", encoding="utf-8")
+    return path
+
+
+@pytest.mark.parametrize(
+    ("media", "code"),
+    [
+        pytest.param([READ], "media.disposition.missing", id="missing"),
+        pytest.param([READ, NOT_READ, {**NOT_READ, "id": "media-0007"}], "media.disposition.unknown", id="unknown"),
+        pytest.param([READ, NOT_READ, dict(READ)], "media.disposition.duplicate", id="duplicate"),
+    ],
+)
+def test_builder_rejects_bad_dispositions_without_writing_a_ledger(tmp_path, media, code):
+    out = tmp_path / "out.json"
+    result = run_builder(_media_manifest(tmp_path), _media_draft(tmp_path, media), out)
+    assert result.returncode == 1
+    assert code in result.stdout
+    assert not out.exists()
+
+
+def test_builder_copies_valid_dispositions_into_the_ledger(tmp_path):
+    out = tmp_path / "out.json"
+    result = run_builder(_media_manifest(tmp_path), _media_draft(tmp_path, [READ, NOT_READ]), out)
+    assert result.returncode == 0, result.stdout
+    assert json.loads(out.read_text(encoding="utf-8"))["media"] == [READ, NOT_READ]
+
+
+def _golden_ledger_inputs(tmp_path: Path):
+    sys.path.insert(0, str(ROOT / "tests"))
+    from media_helpers import manifest_text, normalise, read_golden
+
+    source = tmp_path / "source.html"
+    source.write_text("<h1>A</h1><p>Alpha proof.</p><h1>B</h1><p>Beta caveat.</p>", encoding="utf-8")
+    extracted = tmp_path / "raw-manifest.json"
+    subprocess.run(
+        [sys.executable, str(SCRIPTS / "extract_html.py"), str(source), "--out", str(extracted), "--max-bytes", "80"],
+        capture_output=True, text=True, check=True,
+    )
+    manifest = tmp_path / "manifest.json"
+    manifest.write_bytes(manifest_text(normalise(json.loads(extracted.read_text(encoding="utf-8")))).encode("utf-8"))
+    entries = [
+        {"ordinal": 1, "outcome": "evidence", "assertions": [{"text": "Alpha proof."}]},
+        {"ordinal": 2, "outcome": "evidence", "assertions": [{"text": "Beta caveat."}]},
+    ]
+    return manifest, entries, read_golden("ledger.json")
+
+
+@pytest.mark.parametrize("draft_media", [None, []], ids=["no-media-key", "empty-media-list"])
+def test_no_media_manifest_builds_a_ledger_without_media_key(tmp_path, draft_media):
+    manifest, entries, golden = _golden_ledger_inputs(tmp_path)
+    draft = tmp_path / "draft.json"
+    body = {"entries": entries} if draft_media is None else {"entries": entries, "media": draft_media}
+    draft.write_text(json.dumps(body) + "\n", encoding="utf-8")
+    out = tmp_path / "out.json"
+    result = run_builder(manifest, draft, out)
+    assert result.returncode == 0, result.stdout
+    ledger = json.loads(out.read_text(encoding="utf-8"))
+    assert "media" not in ledger
+    # The golden ledger is schema 1 and carries no atom ids; the builder emits schema 2 with ids.
+    assert json.dumps(_without_atom_ids(ledger), indent=2) + "\n" == golden

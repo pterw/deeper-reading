@@ -10,6 +10,7 @@ from pathlib import Path
 from script_io import run_cli, write_text_atomic
 from typing import Any
 
+from chunk_common import check_dispositions, manifest_media
 from evidence_atoms import EvidenceBindingError, bind_atom
 
 
@@ -118,12 +119,20 @@ def build(manifest_path: Path, draft_path: Path, out_path: Path) -> dict[str, An
     source = manifest.get("source")
     if not isinstance(source, dict) or not isinstance(source.get("sha256"), str):
         raise EvidenceBindingError("manifest source.sha256 is required")
-    return {
+    media = manifest_media(manifest)
+    problems = check_dispositions(media, draft.get("media", []))
+    if problems:
+        code, message, detail = problems[0]
+        raise EvidenceBindingError(f"{code}: {message} ({detail})")
+    ledger: dict[str, Any] = {
         "schema_version": 2,
         "manifest_sha256": hashlib.sha256(manifest_bytes).hexdigest(),
         "source_sha256": source["sha256"],
         "entries": entries,
     }
+    if media:
+        ledger["media"] = draft["media"]
+    return ledger
 
 
 def main(argv: list[str] | None = None) -> int:

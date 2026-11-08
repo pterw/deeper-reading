@@ -214,6 +214,60 @@ def _strip_media(locator: Any, chunk_id: str, found: list[dict[str, Any]]) -> An
     return clean
 
 
+def manifest_media(manifest: Any) -> list[dict[str, Any]]:
+    """The manifest's media references; empty when the key is absent or malformed."""
+    raw = manifest.get('media') if isinstance(manifest, dict) else None
+    return [entry for entry in raw if isinstance(entry, dict)] if isinstance(raw, list) else []
+
+
+def _filled(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _disposition_problem(entry: dict[str, Any]) -> str | None:
+    disposition = entry.get('disposition')
+    if disposition == 'read':
+        if not (_filled(entry.get('tool')) and _filled(entry.get('summary'))):
+            return 'a read disposition needs a non-empty tool and summary'
+    elif disposition == 'not_read':
+        if not _filled(entry.get('reason')):
+            return 'a not_read disposition needs a non-empty reason'
+    else:
+        return 'disposition must be read or not_read'
+    return None
+
+
+def check_dispositions(media: list[dict[str, Any]], dispositions: Any) -> list[tuple[str, str, str]]:
+    """Check agent dispositions against the manifest's media; return (code, message, detail) items."""
+    if not isinstance(dispositions, list):
+        return [('media.disposition.invalid', 'media dispositions must be a list', 'media')]
+    known = {entry.get('id') for entry in media}
+    seen: set[Any] = set()
+    problems: list[tuple[str, str, str]] = []
+    for index, entry in enumerate(dispositions):
+        if not isinstance(entry, dict):
+            problems.append(('media.disposition.invalid', 'media disposition must be an object', f'media[{index}]'))
+            continue
+        media_id = entry.get('id')
+        detail = media_id if _filled(media_id) else f'media[{index}]'
+        if not isinstance(media_id, str) or media_id not in known:
+            problems.append(('media.disposition.unknown', 'media disposition names an id not in the manifest', detail))
+            continue
+        if media_id in seen:
+            problems.append(('media.disposition.duplicate', 'media id has more than one disposition', detail))
+            continue
+        seen.add(media_id)
+        problem = _disposition_problem(entry)
+        if problem:
+            problems.append(('media.disposition.invalid', problem, detail))
+    problems.extend(
+        ('media.disposition.missing', 'media reference has no disposition', str(entry.get('id')))
+        for entry in media
+        if entry.get('id') not in seen
+    )
+    return problems
+
+
 def build_manifest(
     source_path: Path,
     source_format: str,
