@@ -19,6 +19,30 @@ Use `scripts/extract_pdf.py` to emit page-located text chunks and the authoritat
 
 At final verification, re-extract the original source with the bundled extractor and require exact equality with the run-provided chunk universe. Never trust `chunks.json` as self-authenticating.
 
+## PDF provenance
+
+For a PDF run, copy the extractor manifest's `extraction` object into `run.json`:
+
+```json
+{"extraction": {"backend": "pypdf 5.3.0", "format": "pdf", "capabilities": ["text"]}}
+```
+
+Use the actual backend and version emitted locally, not the example value.
+The `backend` value carries the version, so a run whose `extraction` differs from the manifest's (a different backend or backend version) fails `extraction.manifest.mismatch`; after changing either, re-extract and rebuild the evidence.
+The verifier requires this object and compares it with the independently
+reproduced manifest. It also requires a known backend (`pypdf`, `pdftotext`,
+`pymupdf` or `pdfplumber`), `format` `pdf`, and `capabilities` equal to
+`["text"]`, the text adapter's. It rejects any QA check naming OCR, because
+Text backends cannot justify an `ocr-verified` QA claim. The record is
+included in `dod.json`. Richer QA needs separately recorded evidence from an
+approved provider; it is not inferred from a text library's possible
+capabilities.
+
+Extraction accepts `--password` for encrypted files, but final verification
+re-extracts without a password, so it fails closed rather than storing
+credentials in a ledger. Use an explicitly approved decrypted source with its
+own identity and fidelity record if final verification is required.
+
 ## Visual and structural truth
 
 Standalone extraction proves exhaustive traversal of the extractor-visible text, not figures, equations, tables rendered as graphics, or page layout. If the requested task depends on those features and no approved visual provider is available, the run must disclose the missing capability and cannot claim that visual content was exhaustively verified.
