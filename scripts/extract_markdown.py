@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import html
+from html.parser import HTMLParser
 from pathlib import Path
 from script_io import run_cli
 import re
@@ -170,13 +171,61 @@ _HTML_DIAGRAM_RE = re.compile(r'<(?:pre|div)\b[^>]*>', re.IGNORECASE)
 _HTML_DIAGRAM_QUOTED_RE = re.compile(rf'<(?:pre|div)\b{_TAG_QUOTED}', re.IGNORECASE)
 
 
-def _attr(tag: str, name: str) -> str | None:
-    match = re.search(
-        rf'(?<![\w-]){name}\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))', tag, re.IGNORECASE
-    )
-    if match is None:
-        return None
-    return html.unescape(next(group for group in match.groups() if group is not None))
+_DECIMAL_REF_RE = re.compile(r'&#([0-9]+);?')
+_MAX_REF_DIGITS = 7  # 1114111 is the largest code point; a longer value decodes to U+FFFD
+
+
+def _clamp_references(text: str) -> str:
+    """Replace each decimal reference with a long digit run by U+FFFD; leave all else as written."""
+
+    def clamp(match: re.Match[str]) -> str:
+        digits = match.group(1).lstrip('0')
+        return '�' if len(digits) > _MAX_REF_DIGITS else f'&#{digits or "0"};'
+
+    return _DECIMAL_REF_RE.sub(clamp, text)
+
+
+def _unescape(text: str) -> str:
+    """html.unescape without int() on a long digit run (quadratic, or ValueError on 3.11+)."""
+    return html.unescape(_clamp_references(text))
+
+
+class _StartTag(HTMLParser):
+    """Keeps the attributes of the first start tag, as extract_html.py reads them (last duplicate wins)."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.attrs: dict[str, str | None] | None = None
+
+    def handle_starttag(self, tag: str, attrs) -> None:
+        if self.attrs is None:
+            self.attrs = {name.lower(): value for name, value in attrs}
+
+
+_MEDIA_ATTRS = ('src', 'data-src', 'alt', 'class')
+# A tag whose quotes all close and which ends in '>'; each repetition starts with a quote, so it is linear.
+_CLOSED_TAG_RE = re.compile(r"""<[^>"']*(?:(?:"[^"]*"|'[^']*')[^>"']*)*>\Z""")
+
+
+def _regex_attrs(tag: str) -> dict[str, str | None]:
+    """The whole-tag search, for a tag HTMLParser leaves unfinished (an unterminated quote)."""
+    found: dict[str, str | None] = {}
+    for name in _MEDIA_ATTRS:
+        match = re.search(
+            rf'(?<![\w-]){name}\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s>]+))', tag, re.IGNORECASE
+        )
+        if match is not None:
+            found[name] = _unescape(next(group for group in match.groups() if group is not None))
+    return found
+
+
+def _tag_attrs(tag: str) -> dict[str, str | None]:
+    """The attributes of one raw tag: tokenized once, so a name inside a quoted value never matches."""
+    if _CLOSED_TAG_RE.match(tag) is None:
+        return _regex_attrs(tag)
+    parser = _StartTag()
+    parser.feed(_clamp_references(tag))
+    return parser.attrs if parser.attrs is not None else _regex_attrs(tag)
 
 
 def _link_target(raw: str) -> str:
@@ -184,7 +233,16 @@ def _link_target(raw: str) -> str:
 
 
 def _is_image_target(target: str) -> bool:
-    return re.split(r'[?#]', target, maxsplit=1)[0].lower().endswith(_IMAGE_EXTENSIONS)
+    """Decode character references, then drop the first ?/# suffix, then test the extension.
+
+    A literal # in a file name is %23 in CommonMark, so a # left after decoding starts the fragment.
+    Where the destination cannot be decoded, it is recorded (R52).
+    """
+    try:
+        decoded = _unescape(target)
+    except ValueError:
+        return True
+    return re.split(r'[?#]', decoded, maxsplit=1)[0].lower().endswith(_IMAGE_EXTENSIONS)
 
 
 def _svg_starts(text: str) -> list[int]:
@@ -274,11 +332,11 @@ def _text_media(text: str) -> list[tuple[int, str, str, str | None, str | None]]
             found.append((match.start(), 'image', 'md_link', _link_target(target), None))
     tags = text[: text.rfind('>') + 1]
     for start, tag in _html_tags(tags, _HTML_IMG_RE, _HTML_IMG_QUOTED_RE):
-        ref = _attr(tag, 'src') or _attr(tag, 'data-src')
-        found.append((start, 'image', 'html_img', ref, _attr(tag, 'alt')))
+        attrs = _tag_attrs(tag)
+        found.append((start, 'image', 'html_img', attrs.get('src') or attrs.get('data-src'), attrs.get('alt')))
     found.extend((start, 'svg', 'html_svg', None, None) for start in _svg_starts(text))
     for start, tag in _html_tags(tags, _HTML_DIAGRAM_RE, _HTML_DIAGRAM_QUOTED_RE):
-        if 'mermaid' in (_attr(tag, 'class') or '').split():
+        if 'mermaid' in (_tag_attrs(tag).get('class') or '').split():
             found.append((start, 'diagram', 'html_diagram', None, None))
     return sorted(found, key=lambda item: item[0])
 

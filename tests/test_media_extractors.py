@@ -159,6 +159,26 @@ MEDIA_ROWS = [
     pytest.param("md", "# T\n\n[](<img [x](z.png)\n", [("image", "md_link", "z.png", None)], id="md-malformed-link-destination-does-not-swallow-next-link"),
     pytest.param("md", "# T\n\n[figure](plot\\).png)\n", [("image", "md_link", "plot\\).png", None)], id="md-link-escaped-paren-belongs-to-destination"),
     pytest.param("md", "# T\n\n![a](p\\).png)\n", [("image", "md_image", "p\\).png", "a")], id="md-image-escaped-paren-belongs-to-destination"),
+    pytest.param("md", "# T\n\n[figure](plot&#46;png)\n", [("image", "md_link", "plot&#46;png", None)], id="md-link-decimal-reference-in-extension"),
+    pytest.param("md", "# T\n\n[a](p&#x2E;png) [b](p&period;png)\n", [("image", "md_link", "p&#x2E;png", None), ("image", "md_link", "p&period;png", None)], id="md-link-hex-and-named-reference-in-extension"),
+    pytest.param("md", "# T\n\n[v](p&#46;png?v=2&#35;top)\n", [("image", "md_link", "p&#46;png?v=2&#35;top", None)], id="md-link-reference-extension-then-query-and-fragment"),
+    pytest.param("md", "# T\n\n[d](guide&#46;html)\n", [], id="md-link-non-image-after-decoding-ignored"),
+    pytest.param("md", "# T\n\n[x](p&num;.png)\n", [], id="md-link-named-hash-reference-is-a-fragment-delimiter"),
+    pytest.param("md", "# T\n\n[x](p&#35;.png)\n", [], id="md-link-numeric-hash-reference-is-a-fragment-delimiter"),
+    pytest.param("md", f"# T\n\n[x](p&#{'9' * 5000};.png)\n", [("image", "md_link", f"p&#{'9' * 197}", None)], id="md-link-undecodable-reference-recorded"),
+    pytest.param("md", f'# T\n\n<img src="a&#{"9" * 5000};.png">\n', [("image", "html_img", "a�.png", None)], id="md-html-img-undecodable-reference-recorded"),
+    pytest.param("md", f'# T\n\n<img src="a&#{"0" * 5000}46;png">\n', [("image", "html_img", "a.png", None)], id="md-html-img-long-zero-run-reference-decoded"),
+    pytest.param("md", f"# T\n\n[x](plot&#{'0' * 5000}46;html)\n", [], id="md-link-long-zero-run-reference-decoded-non-image"),
+    pytest.param("md", '# T\n\n<div title="class=example" class="mermaid">g</div>\n', [("diagram", "html_diagram", None, None)], id="md-diagram-name-inside-another-value-is-not-an-attribute"),
+    pytest.param("md", '# T\n\n<img title="src=x.png" src="y.png">\n', [("image", "html_img", "y.png", None)], id="md-html-img-name-inside-another-value-is-not-an-attribute"),
+    pytest.param("md", '# T\n\n<img src="a.png" src="b.png">\n', [("image", "html_img", "b.png", None)], id="md-html-img-duplicate-name-last-wins"),
+    pytest.param("md", '# T\n\n<img data-src="a.png" src="">\n', [("image", "html_img", "a.png", None)], id="md-html-img-empty-src-falls-back-to-data-src"),
+    pytest.param("md", "# T\n\n<img src='a.png' alt='p q'>\n", [("image", "html_img", "a.png", "p q")], id="md-html-img-single-quoted-values"),
+    pytest.param("md", "# T\n\n<img src=a.png alt=pic>\n", [("image", "html_img", "a.png", "pic")], id="md-html-img-unquoted-values"),
+    pytest.param("md", '# T\n\n<IMG SRC="a.png" ALT="pic">\n', [("image", "html_img", "a.png", "pic")], id="md-html-img-upper-case-names"),
+    pytest.param("md", f'# T\n\n<img src="a.png" alt="&#{"9" * 5000};>\n', [("image", "html_img", "a.png", '"\ufffd')], id="md-html-img-unterminated-tag-long-reference-decoded"),
+    pytest.param("md", '# T\n\n<img src="a.png" alt= "x>\n', [("image", "html_img", "a.png", '"x')], id="md-html-img-unterminated-tag-uses-the-whole-tag-search"),
+    pytest.param("md", '# T\n\n<div class="notmermaid">g</div>\n', [], id="md-div-class-containing-mermaid-is-not-a-diagram"),
     pytest.param("html", '<h1>T</h1><p>See <img src="a.png" alt="a  pic"> now.</p>', [("image", "img", "a.png", "a pic")], id="html-img"),
     pytest.param("html", '<h1>T</h1><img data-src="lazy.png"><p>text</p>', [("image", "img", "lazy.png", None)], id="html-img-data-src-alone-attaches-to-next-block"),
     pytest.param("html", "<h1>T</h1><p>x <svg><svg><g/></svg></svg> y</p>", [("svg", "svg", None, None)], id="html-svg-outermost-once"),
@@ -402,6 +422,27 @@ def test_extractor_records_media_references(tmp_path, fmt, text, expected):
     assert ("media" in manifest) == bool(expected)
     for item in manifest.get("media", []):
         assert any(chunk["id"] == item["chunk_id"] for chunk in manifest["chunks"])
+
+
+@pytest.mark.parametrize(
+    ("tag", "expected"),
+    [
+        ('<img title="src=x.png" alt="d" src="y.png">', ("y.png", "d", False)),
+        ('<img data-x="alt=q" src="p.png">', ("p.png", None, False)),
+        ('<div title="class=example" class="mermaid">g</div>', (None, None, True)),
+        ('<img src="a.png" src="b.png" alt="1" alt="2">', ("b.png", "2", False)),
+        ("<IMG SRC='a.png' Alt=pic>", ("a.png", "pic", False)),
+        ('<img data-src="lazy.png" alt="z">', ("lazy.png", "z", False)),
+        ('<img src="" data-src="a.png">', ("a.png", None, False)),
+        ('<img src="" alt="e">', (None, "e", False)),
+    ],
+)
+def test_raw_html_tag_reads_the_same_attributes_in_markdown_and_html(tmp_path, tag, expected):
+    sources = {"md": f"# T\n\n{tag}\n", "html": f"<h1>T</h1>{tag}<p>text</p>"}
+    for fmt, text in sources.items():
+        _, found = manifest_media(fmt, text, tmp_path / fmt)
+        (kind, _, ref, alt), = found
+        assert (ref, alt, kind == "diagram") == expected, fmt
 
 
 @pytest.mark.parametrize(
