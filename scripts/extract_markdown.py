@@ -136,13 +136,15 @@ _DIAGRAM_INFO = frozenset({'mermaid', 'plantuml', 'dot', 'graphviz', 'd2'})
 # with a different character, so the patterns stay linear on long runs of brackets.
 _BRACKETED = r'(?:[^\[\]]|\[[^\[\]]*\])*'
 _PARENTHESISED = r'(?:[^()]|\([^()]*\))*'
-_DESTINATION = r'(<[^>]*>|(?:[^()\s]|\([^()\s]*\))*)'
+_DESTINATION = r'(?:<[^>]*>|(?:[^()\s]|\([^()\s]*\))*)'
+# The destination sits in a lookahead that is then consumed by a backreference: an atomic group
+# (Python 3.10 has none), so a missing `)` fails without retrying every shorter destination.
 _MD_IMAGE_RE = re.compile(
-    rf'!\[({_BRACKETED})\](?:\(\s*{_DESTINATION}[^)]*\)|\[([^\]]*)\])?'
+    rf'!\[({_BRACKETED})\](?:\(\s*(?=({_DESTINATION}))\2[^)]*\)|\[([^\]]*)\])?'
 )
 _MD_LINK_RE = re.compile(
     rf'(?<!!)\[(?:[^\[\]!]|!(?!\[)|\[[^\[\]]*\]|!\[{_BRACKETED}\]\({_PARENTHESISED}\))*\]'
-    rf'\(\s*{_DESTINATION}[^)]*\)'
+    rf'\(\s*(?=({_DESTINATION}))\1[^)]*\)'
 )
 _HTML_COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
 _LINK_DEFINITION_RE = re.compile(r'^ {0,3}\[((?:[^\]\\]|\\.)+)\]:\s*\S', re.MULTILINE)

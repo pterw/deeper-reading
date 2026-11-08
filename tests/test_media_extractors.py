@@ -1,6 +1,7 @@
 import json
 import subprocess
 import sys
+import time
 import zipfile
 
 import pytest
@@ -333,6 +334,15 @@ def test_extractor_records_media_references(tmp_path, fmt, text, expected):
     assert ("media" in manifest) == bool(expected)
     for item in manifest.get("media", []):
         assert any(chunk["id"] == item["chunk_id"] for chunk in manifest["chunks"])
+
+
+@pytest.mark.parametrize("opener", ["![a](", "[a]("], ids=["image", "link"])
+def test_unclosed_markdown_destination_scans_in_linear_time(tmp_path, opener):
+    text = f"# T\n\n{opener}data:image/png;base64,{'A' * 512 * 1024}\n"
+    started = time.monotonic()
+    manifest, found = manifest_media("md", text, tmp_path, max_bytes=2_000_000)
+    assert time.monotonic() - started < 2
+    assert found == []
 
 
 def test_media_entries_number_in_document_order(tmp_path):
