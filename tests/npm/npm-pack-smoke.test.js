@@ -10,6 +10,7 @@ import {
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import { usablePathDirectory } from "../../installer/node/adapters.js";
 import { loadManifest, payloadFiles } from "../../installer/node/manifest.js";
 import { npmCommand, npxCommand, parseJson, ROOT } from "../node/helpers.js";
 
@@ -31,10 +32,23 @@ function quoteArgument(value) {
   return `"${value}"`;
 }
 
-function launch(command, args) {
+function resolveWindowsScript(command, env) {
+  if (path.isAbsolute(command)) return command;
+  const key = Object.keys(env).find((name) => name.toLowerCase() === "path");
+  for (const entry of String(env[key] ?? "").split(path.delimiter)) {
+    const directory = usablePathDirectory(entry, true);
+    if (directory === null) continue;
+    const candidate = path.join(path.resolve(directory), command);
+    if (existsSync(candidate)) return candidate;
+  }
+  assert.fail(`${command} was not found in an absolute PATH directory`);
+}
+
+function launch(command, args, env) {
   if (process.platform !== "win32" || !/\.(cmd|bat)$/i.test(command)) {
     return { file: command, args, extra: {} };
   }
+  command = resolveWindowsScript(command, env);
   const comspec = process.env.ComSpec
     || path.join(process.env.SystemRoot || "C:\\Windows", "System32", "cmd.exe");
   const line = `"${[command, ...args].map(quoteArgument).join(" ")}"`;
@@ -46,7 +60,7 @@ function launch(command, args) {
 }
 
 function run(command, args, options) {
-  const launched = launch(command, args);
+  const launched = launch(command, args, options.env ?? process.env);
   const result = spawnSync(launched.file, launched.args, {
     ...options,
     ...launched.extra,
