@@ -12,7 +12,12 @@ import {
 } from "node:fs";
 import path from "node:path";
 
-export class InstallerError extends Error {}
+export class InstallerError extends Error {
+  constructor(message, code) {
+    super(message);
+    if (code !== undefined) this.code = code;
+  }
+}
 
 const EXCLUDED_DIRECTORIES = new Set(["__pycache__", ".pytest_cache"]);
 const WINDOWS_DRIVE = /^[A-Za-z]:/;

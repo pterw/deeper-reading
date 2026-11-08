@@ -1,0 +1,166 @@
+{
+  "tests": "tests/mutants/bridge",
+  "pattern": "bridge_ownership_guard.py",
+  "mutants": [
+    {
+      "name": "py-owner-scope-not-validated",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": " or owner not in ADAPTERS or owner_scope not in (\"user\", \"project\"):",
+          "new": " or owner not in ADAPTERS:"
+        }
+      ]
+    },
+    {
+      "name": "py-target-not-string",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "if not isinstance(owner, str) or owner not in ADAPTERS",
+          "new": "if owner not in ADAPTERS"
+        }
+      ]
+    },
+    {
+      "name": "py-owner-root-comparison-skipped",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "if owner_root != target_root:",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "py-project-receipt-met-by-user-builds-owner-root",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "if owner_scope == \"project\" and scope == \"user\":",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "py-project-containment-skipped",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "_canonical(target_root).relative_to(project)",
+          "new": "_canonical(target_root).relative_to(_canonical(target_root))"
+        }
+      ]
+    },
+    {
+      "name": "py-containment-prefix-sibling-accepted",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "_canonical(target_root).relative_to(project)",
+          "new": "if not str(_canonical(target_root)).startswith(str(project)): raise ValueError"
+        }
+      ]
+    },
+    {
+      "name": "py-doctor-guarded",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "\"runtime_detected\": adapter.detect(),",
+          "new": "\"runtime_detected\": _check_owner(target_name, args.scope, args.project_dir, target_root) or adapter.detect(),"
+        }
+      ]
+    },
+    {
+      "name": "py-code-dropped-from-payload",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "if exc.code:",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "node-owner-scope-not-validated",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "if (!OWNER_TARGETS.includes(owner) || !SCOPES.has(receipt.scope)) {",
+          "new": "if (!OWNER_TARGETS.includes(owner)) {"
+        }
+      ]
+    },
+    {
+      "name": "node-owner-root-comparison-skipped",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "if (ownerRoot !== targetRoot) {",
+          "new": "if (false) {"
+        }
+      ]
+    },
+    {
+      "name": "node-project-receipt-met-by-user-builds-owner-root",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "const ownerRoot = receipt.scope === \"project\" && projectDir === null ? null",
+          "new": "const ownerRoot = receipt.scope === \"project\" && projectDir === null ? getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(\"project\", path.resolve(\".\"))"
+        }
+      ]
+    },
+    {
+      "name": "node-project-containment-skipped",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "if (projectDir !== null && !isInside(targetRoot, projectDir)) {",
+          "new": "if (false) {"
+        }
+      ]
+    },
+    {
+      "name": "node-containment-prefix-sibling-accepted",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "return relative !== \"..\" && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);",
+          "new": "return canonicalPath(folder).startsWith(canonicalPath(project));"
+        }
+      ]
+    },
+    {
+      "name": "node-doctor-guarded",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "if (command !== \"doctor\") guardOwnership(targetRoot, projectDir, env);",
+          "new": "guardOwnership(targetRoot, projectDir, env);"
+        }
+      ]
+    },
+    {
+      "name": "node-code-dropped-from-payload",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "if (error instanceof InstallerError && error.code !== undefined) payload.code = error.code;",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "node-user-scope-honours-project-dir",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "const projectDir = options.scope === \"project\"",
+          "new": "const projectDir = (options.scope === \"project\" || options.projectDir)"
+        }
+      ]
+    }
+  ]
+}

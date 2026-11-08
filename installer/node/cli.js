@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TARGET_NAMES, detectTarget, getAdapter } from "./adapters.js";
 import { documentProfileStatus, pythonRuntimeStatus } from "./prerequisites.js";
-import { loadManifest, validateManifest } from "./manifest.js";
+import { InstallerError, loadManifest, validateManifest } from "./manifest.js";
 import { installSkill, uninstallSkill, verifyInstallation } from "./core.js";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -99,6 +99,64 @@ function homeDirectory(env) {
   return env.USERPROFILE || env.HOME || os.homedir();
 }
 
+const RECEIPT_NAME = ".install-receipt.json";
+const OWNER_TARGETS = TARGET_NAMES.filter((name) => name !== "auto");
+const DELETE_ROUTE = "delete the skill folder `deeper-reading` for each agent; if it is a link, " +
+  "remove the link itself and not its contents; never delete only the shared `.agents` folder; " +
+  "then run `install` for each agent.";
+
+// The receipt at the resolved folder, or null when it is absent, unreadable or not a JSON object
+// (the core keeps its own handling of those).
+function readOwnerReceipt(targetRoot) {
+  try {
+    const receipt = JSON.parse(readFileSync(path.join(targetRoot, RECEIPT_NAME), "utf8"));
+    return receipt !== null && typeof receipt === "object" && !Array.isArray(receipt) ? receipt : null;
+  } catch {
+    return null;
+  }
+}
+
+function canonicalPath(candidate) {
+  let real;
+  try { real = realpathSync.native(candidate); } catch { real = path.resolve(candidate); }
+  real = real.replace(/^\\\\\?\\/, "");
+  return process.platform === "win32" ? real.toLowerCase() : real;
+}
+
+function isInside(folder, project) {
+  const relative = path.relative(canonicalPath(project), canonicalPath(folder));
+  return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+// Ownership rule: a receipt at the resolved folder must belong to the requested root, and a
+// project folder must lie inside its project. Runs for install, verify and uninstall, not doctor.
+function guardOwnership(targetRoot, projectDir, env) {
+  const receipt = readOwnerReceipt(targetRoot);
+  if (receipt === null) return;
+  const owner = receipt.target;
+  if (!OWNER_TARGETS.includes(owner) || !SCOPES.has(receipt.scope)) {
+    throw new InstallerError(
+      `the installation receipt names no valid owner; the recovery is to ${DELETE_ROUTE}`,
+      "installer.receipt.owner_invalid"
+    );
+  }
+  const ownerRoot = receipt.scope === "project" && projectDir === null ? null
+    : getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(receipt.scope, projectDir);
+  if (ownerRoot !== targetRoot) {
+    throw new InstallerError(
+      `${targetRoot} belongs to target ${owner} (scope ${receipt.scope}); ` +
+        `run this command with --target ${owner} --scope ${receipt.scope}`,
+      "installer.owner.mismatch"
+    );
+  }
+  if (projectDir !== null && !isInside(targetRoot, projectDir)) {
+    throw new InstallerError(
+      `${targetRoot} is outside the project ${projectDir}`,
+      "installer.project.escape"
+    );
+  }
+}
+
 function resolveContext(command, options, cwd, env) {
   const manifestPath = path.join(PACKAGE_ROOT, "MANIFEST.json");
   const manifest = loadManifest(manifestPath);
@@ -114,6 +172,7 @@ function resolveContext(command, options, cwd, env) {
     ? path.resolve(options.projectDir || cwd)
     : null;
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
+  if (command !== "doctor") guardOwnership(targetRoot, projectDir, env);
   const documentStatus = documentProfileStatus(options.documentProfile, {
     packageRoot: PACKAGE_ROOT
   });
@@ -327,6 +386,8 @@ export function run(argv, io = {}) {
       error: error.message,
       command: error.command ?? fallbackCommand
     };
+    if (error instanceof InstallerError && error.code !== undefined) payload.code = error.code;
+    if (payload.command === "verify") payload.passed = false;
     if (json) emit(write, true, payload);
     else writeError(`error: ${error.message}`);
     return 2;
