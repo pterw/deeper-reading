@@ -136,7 +136,7 @@ The real first-run corpus is now a golden regression fixture:
 
 The production builder rebinding test must reproduce every known-good v1 text/span pair while emitting schema-v2 atom IDs.
 
-The six run-local prototype scripts are preserved for provenance under the fixture tree but production code is forbidden from importing them. They are evidence of the path that discovered the useful machinery, not trusted runtime code.
+The six run-local prototype scripts are no longer kept in the repository; they were evidence of the path that discovered the useful machinery, never trusted runtime code.
 
 ## Full-release relationship
 

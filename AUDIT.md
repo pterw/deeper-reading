@@ -109,7 +109,7 @@ Invariant:
 192 assertions
 ```
 
-The original run-local scripts are preserved byte-for-byte under the fixture's `prototype/` directory but are not imported or executed as trusted production code. The production binder rebinds the supplied first-run corpus and reproduces the known-good text/span semantics while adding v2 atom IDs.
+The original run-local scripts are not kept in the repository, and no production code depends on them. The production binder rebinds the supplied first-run corpus and reproduces the known-good text/span semantics while adding v2 atom IDs.
 
 ## Human audit surfaces
 

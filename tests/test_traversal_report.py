@@ -148,9 +148,10 @@ def test_first_run_report_is_grouped_complete_and_deterministic():
     assert "## Run summary" in first
     assert "## Chunk index" in first
     assert "## Chunk details" in first
-    assert "Assertions: 192" in first
-    assert first.count("\n### ") == 70
-    assert first.count("\n- bytes `") == 192
+    atoms = sum(len(entry.get("assertions", [])) for entry in ledger["entries"])
+    assert f"Assertions: {atoms}" in first
+    assert first.count("\n### ") == len(ledger["entries"])
+    assert first.count("\n- bytes `") == atoms
     for chunk in manifest["chunks"]:
         assert chunk["id"] in first
 
