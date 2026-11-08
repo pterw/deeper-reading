@@ -199,7 +199,7 @@ def command_uninstall(args) -> int:
     target_root = _target_root(adapter, args.scope, args.project_dir)
     try:
         _check_owner(target_name, args.scope, args.project_dir, target_root)
-        result = uninstall_skill(target_root, force=args.force)
+        result = uninstall_skill(target_root, force=args.force, target_name=target_name, scope=args.scope)
     except InstallError as exc:
         _emit(_failure(exc, target_name, target_root), args.json)
         return 2

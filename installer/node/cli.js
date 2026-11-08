@@ -298,7 +298,9 @@ function runVerify(context, env) {
 }
 
 function runUninstall(context, options) {
-  const result = uninstallSkill(context.targetRoot, { force: options.force });
+  const result = uninstallSkill(context.targetRoot, {
+    force: options.force, targetName: context.targetName, scope: context.scope
+  });
   return {
     code: 0,
     payload: { command: "uninstall", target: context.targetRoot, ...result }

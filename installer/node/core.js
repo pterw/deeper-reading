@@ -99,7 +99,7 @@ function loadOwnedInstallation(targetRoot, options = {}) {
 
 function requireOwnedInstallation(loaded, messages) {
   if (loaded.problems.receiptMissing) {
-    throw new InstallerError(messages.missing);
+    throw new InstallerError(messages.missing, "installer.receipt.missing");
   }
   if (loaded.problems.receiptInvalid !== null) {
     throw new InstallerError(`invalid installation receipt: ${loaded.problems.receiptInvalid}`);
@@ -158,9 +158,33 @@ function verifyInstalled(targetRoot, expectedHashes) {
   return errors;
 }
 
-function upgradeOwnership(targetRoot, expectedHashes) {
+const SKILLS_AGENTS = { claude: "claude-code", codex: "codex" };
+const DELETE_ROUTE =
+  "delete the skill folder `deeper-reading` for each agent; if it is a link, remove the link itself " +
+  "and not its contents; never delete only the shared `.agents` folder; then run `install` for each agent.";
+
+// The refusal text for a folder with no receipt: it was probably replaced by `npx skills add`.
+function missingReceiptMessage(base, targetName, scope) {
+  const agent = SKILLS_AGENTS[targetName];
+  const parts = [`${base}. The folder has no installation receipt; it was likely replaced by \`npx skills add\`.`];
+  if (agent) {
+    const global = scope === "project" ? "" : " -g";
+    const where = scope === "project" ? " (from the project directory)" : "";
+    parts.push(
+      `Either run \`npx skills remove deeper-reading${global} -a ${agent} -y\`${where} ` +
+      "(a shared `.agents` folder may belong to more than one agent, so `remove` must list each agent, " +
+      "for example `-a claude-code codex`), or"
+    );
+  }
+  parts.push(`${agent ? "" : "To recover, "}${DELETE_ROUTE}`);
+  return parts.join(" ");
+}
+
+function upgradeOwnership(targetRoot, expectedHashes, options) {
   const loaded = requireOwnedInstallation(loadOwnedInstallation(targetRoot), {
-    missing: "existing target is unmanaged; installation receipt missing",
+    missing: missingReceiptMessage(
+      "existing target is unmanaged; installation receipt missing", options.targetName, options.scope
+    ),
     ownership: "existing target has no managed payload ownership record"
   });
   const modified = inspectOwnedFiles(loaded.files)
@@ -226,7 +250,7 @@ function prepare(options) {
   const expectedHashes = payloadHashes(packageRoot, options.manifest);
   const hadTarget = existsSync(targetRoot);
   const staleOwned = hadTarget
-    ? upgradeOwnership(targetRoot, expectedHashes)
+    ? upgradeOwnership(targetRoot, expectedHashes, options)
     : new Set();
   return { packageRoot, targetRoot, expectedHashes, hadTarget, staleOwned };
 }
@@ -437,7 +461,9 @@ export function uninstallSkill(targetRoot, options = {}) {
 function uninstallLocked(targetRoot, options) {
   const target = path.resolve(targetRoot);
   const loaded = requireOwnedInstallation(loadOwnedInstallation(target), {
-    missing: "installation receipt missing; refusing unmanaged operation",
+    missing: missingReceiptMessage(
+      "installation receipt missing; refusing unmanaged operation", options.targetName, options.scope
+    ),
     ownership: "installation receipt has no managed payload ownership record"
   });
   const modified = inspectOwnedFiles(loaded.files)

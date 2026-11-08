@@ -33,7 +33,7 @@ REQUIRED_IDS = {
     'installer-recovery-cases.json': {
         'install_claude_user', 'install_claude_project', 'install_codex_user',
         'uninstall_claude_user', 'uninstall_claude_user_force', 'uninstall_codex_user',
-        'install_other_user', 'uninstall_other_user',
+        'install_other_user', 'uninstall_other_user', 'uninstall_claude_project',
     },
 }
 

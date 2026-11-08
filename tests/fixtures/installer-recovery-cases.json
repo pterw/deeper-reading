@@ -3,43 +3,49 @@
     {"id": "install_claude_user", "steps": [
       {"do": "mkdir", "path": "{home}/.claude/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.claude/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -g -a claude-code -y", "more than one agent", "-a claude-code codex", "remove the link itself", "never delete only the shared"]}, "unchanged": true}
     ]},
     {"id": "install_claude_project", "steps": [
       {"do": "mkdir", "path": "{project}"},
       {"do": "mkdir", "path": "{project}/.claude/skills/deeper-reading"},
       {"do": "file", "path": "{project}/.claude/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -a claude-code -y", "remove the link itself", "from the project directory"]}, "unchanged": true}
     ]},
     {"id": "install_codex_user", "steps": [
       {"do": "mkdir", "path": "{home}/.agents/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.agents/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "codex", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "codex", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -g -a codex -y", "remove the link itself"]}, "unchanged": true}
     ]},
     {"id": "uninstall_claude_user", "steps": [
       {"do": "mkdir", "path": "{home}/.claude/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.claude/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -g -a claude-code -y", "remove the link itself"]}, "unchanged": true}
     ]},
     {"id": "uninstall_claude_user_force", "steps": [
       {"do": "mkdir", "path": "{home}/.claude/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.claude/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user", "--force"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user", "--force"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -g -a claude-code -y", "remove the link itself"]}, "unchanged": true}
     ]},
     {"id": "uninstall_codex_user", "steps": [
       {"do": "mkdir", "path": "{home}/.agents/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.agents/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "codex", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove", "remove the link itself"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "codex", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -g -a codex -y", "remove the link itself"]}, "unchanged": true}
+    ]},
+    {"id": "uninstall_claude_project", "steps": [
+      {"do": "mkdir", "path": "{project}"},
+      {"do": "mkdir", "path": "{project}/.claude/skills/deeper-reading"},
+      {"do": "file", "path": "{project}/.claude/skills/deeper-reading/notes.txt"},
+      {"do": "run", "cwd": "{project}", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["skills remove deeper-reading -a claude-code -y", "remove the link itself", "from the project directory"]}, "unchanged": true}
     ]},
     {"id": "install_other_user", "steps": [
       {"do": "mkdir", "path": "{home}/.agents/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.agents/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "generic-agents", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["remove the link itself"], "message_lacks": ["skills remove"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "generic-agents", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["npx skills add", "remove the link itself", "never delete only the shared"], "message_lacks": ["skills remove"]}, "unchanged": true}
     ]},
     {"id": "uninstall_other_user", "steps": [
       {"do": "mkdir", "path": "{home}/.agents/skills/deeper-reading"},
       {"do": "file", "path": "{home}/.agents/skills/deeper-reading/notes.txt"},
-      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "generic-agents", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["remove the link itself"], "message_lacks": ["skills remove"]}, "unchanged": true}
+      {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "generic-agents", "--scope", "user"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing", "message_has": ["npx skills add", "remove the link itself", "never delete only the shared"], "message_lacks": ["skills remove"]}, "unchanged": true}
     ]}
   ]
 }
