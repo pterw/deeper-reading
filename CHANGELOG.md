@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.4 - 2026-11-08
 
 - Verifier: it deletes an existing `dod.json` file in the run root before it
   writes a new one, so a run that fails after that point leaves no stale
