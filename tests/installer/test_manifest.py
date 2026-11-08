@@ -77,6 +77,9 @@ def test_payload_markdown_links_resolve_inside_payload():
         text = (ROOT / rel).read_text(encoding='utf-8')
         # Text inside a fenced code block is an example, not a navigable link.
         text = re.sub(r'^(```|~~~)[^\n]*\n.*?^\1', '', text, flags=re.M | re.S)
+        # Likewise an inline code span: a backtick run to the next run of the
+        # same length, within one paragraph.
+        text = re.sub(r'(?<!`)(`+)(?!`)(?:(?!\n[ \t]*\n).)*?(?<!`)\1(?!`)', '', text, flags=re.S)
         for link in re.findall(r'\]\(([^)\s]+)\)', text):
             if re.match(r'[A-Za-z][A-Za-z0-9+.-]*:|#', link):
                 continue
