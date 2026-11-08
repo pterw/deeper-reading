@@ -42,7 +42,10 @@ def write_receipt(target: Path, data: dict) -> None:
 
 def test_unmutated_installation_baseline_passes(tmp_path):
     target = valid_install(tmp_path)
-    assert verify_installation(target)['passed'] is True
+    result = verify_installation(target)
+    assert result['passed'] is True
+    assert all(result['predicates'].values())
+    assert result['violations'] == []
 
 
 def test_mutation_relocates_canonical_skill_under_nested_root(tmp_path):
