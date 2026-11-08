@@ -132,9 +132,17 @@ def parse_markdown_blocks(text: str) -> list[Block]:
 _CODE_SPAN_RE = re.compile(r'(`+)(?:(?!\1).)+?\1', re.DOTALL)
 _IMAGE_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg')
 _DIAGRAM_INFO = frozenset({'mermaid', 'plantuml', 'dot', 'graphviz', 'd2'})
-_MD_IMAGE_RE = re.compile(r'!\[([^\]]*)\](?:\(\s*(<[^>]*>|[^)\s]*)[^)]*\)|\[([^\]]*)\])?')
+# Balanced delimiters nest one level only (CommonMark allows more); each alternative starts
+# with a different character, so the patterns stay linear on long runs of brackets.
+_BRACKETED = r'(?:[^\[\]]|\[[^\[\]]*\])*'
+_PARENTHESISED = r'(?:[^()]|\([^()]*\))*'
+_DESTINATION = r'(<[^>]*>|(?:[^()\s]|\([^()\s]*\))*)'
+_MD_IMAGE_RE = re.compile(
+    rf'!\[({_BRACKETED})\](?:\(\s*{_DESTINATION}[^)]*\)|\[([^\]]*)\])?'
+)
 _MD_LINK_RE = re.compile(
-    r'(?<!!)\[(?:[^\[\]]|!\[[^\]]*\]\([^)]*\))*\]\(\s*(<[^>]*>|[^)\s]*)[^)]*\)'
+    rf'(?<!!)\[(?:[^\[\]!]|!(?!\[)|\[[^\[\]]*\]|!\[{_BRACKETED}\]\({_PARENTHESISED}\))*\]'
+    rf'\(\s*{_DESTINATION}[^)]*\)'
 )
 _HTML_COMMENT_RE = re.compile(r'<!--.*?-->', re.DOTALL)
 _LINK_DEFINITION_RE = re.compile(r'^ {0,3}\[((?:[^\]\\]|\\.)+)\]:\s*\S', re.MULTILINE)
