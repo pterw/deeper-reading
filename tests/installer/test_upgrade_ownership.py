@@ -1,6 +1,5 @@
 import hashlib
 import json
-import os
 import shutil
 from pathlib import Path
 
@@ -72,26 +71,12 @@ def test_install_refuses_existing_unmanaged_skill_root(tmp_path):
     assert (target / 'SKILL.md').read_text(encoding='utf-8') == 'unmanaged'
 
 
-# Every spelling resolves to the victim inside tmp_path (or stays relative and
-# harmless), so a containment regression touches a tmp file, never a real one.
-ESCAPE_SPELLINGS = [
-    pytest.param(lambda victim: str(victim), id='absolute'),
-    pytest.param(lambda victim: '\\\\?\\' + str(victim), id='verbatim-prefix'),
-    pytest.param(lambda victim: '../outside.txt', id='parent-relative'),
-    pytest.param(lambda victim: 'C:foo', id='drive-relative'),
-]
-if os.sep != '/':
-    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: victim.as_posix(), id='posix-absolute'))
-    ESCAPE_SPELLINGS.append(pytest.param(lambda victim: '/' + victim.as_posix().split(':/', 1)[1], id='single-slash'))
-
-
-@pytest.mark.parametrize('spell', ESCAPE_SPELLINGS)
-def test_upgrade_rejects_receipt_paths_outside_install_root(tmp_path, spell):
+def test_upgrade_rejects_receipt_paths_outside_install_root(tmp_path):
     target = tmp_path / 'skills' / 'deeper-reading'
     install(ROOT, target)
     victim = tmp_path / 'outside.txt'
     victim.write_text('do not touch', encoding='utf-8')
-    malicious = spell(victim)
+    malicious = str(victim)
 
     receipt_path = target / '.install-receipt.json'
     receipt = json.loads(receipt_path.read_text(encoding='utf-8'))

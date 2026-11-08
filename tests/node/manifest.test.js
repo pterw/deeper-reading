@@ -65,8 +65,18 @@ test("managedPath rejects lexical and symlink escapes", (t) => {
   mkdirSync(root);
   mkdirSync(outside);
   writeFileSync(path.join(outside, "victim.txt"), "keep", "utf8");
-  for (const raw of ["/tmp/x", "../x", "C:/x", "C:\\x", "\\\\server\\share\\x"])
-    assert.throws(() => managedPath(root, raw), InstallerError);
+  // Absolute spellings are built from the tmp victim so they never name a real location.
+  const victim = path.join(outside, "victim.txt");
+  const spellings = [
+    victim,
+    `\\\\?\\${victim}`,
+    victim.replaceAll("\\", "/"),
+    "../outside.txt",
+    "C:foo",
+    "Z:/dr-no-such/x",
+    "//dr-no-such-host/share/x"
+  ];
+  for (const raw of spellings) assert.throws(() => managedPath(root, raw), InstallerError, raw);
   try {
     const link = path.join(root, "escape");
     const type = process.platform === "win32" ? "junction" : "dir";
