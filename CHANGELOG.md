@@ -9,12 +9,30 @@
   when the document profile is or becomes `oai-native`.
 - `references/run-workspace.md` (the run-root layout and the `--run-root`
   extractor commands) is now read before extraction.
+- Markdown: an image link whose destination uses a character reference,
+  such as `[figure](plot&#46;png)`, is now recorded as media. The recorded
+  reference keeps the original spelling. A destination that decodes to a
+  fragment (`p&num;.png` is the file `p`) is no longer recorded as an image.
+- Markdown: in raw HTML, an attribute name inside another attribute's value
+  (`<div title="class=example" class="mermaid">`,
+  `<img title="src=x.png" src="y.png">`) no longer hides a diagram or
+  records the wrong image. When a tag repeats an attribute, the last value
+  is used, as in the HTML extractor.
+- Markdown: a numeric character reference of more than 4300 digits in a
+  raw-HTML attribute no longer stops extraction with an error.
 
 ### Compatibility
 
 - A user who edited or deleted the installed `README.md` gets
   `modified managed files` on upgrade. Run `uninstall --force` and then
   install again; a plain install over a modified target is also refused.
+- A run folder made with 0.2.4 from a Markdown source whose media list
+  changed fails reproduction (`reproduction.mismatch`) until the source is
+  re-extracted and the evidence rebuilt, because the verifier compares the
+  whole manifest, including its media list. That happens when an image link
+  destination uses a character reference that changes the file extension or
+  the fragment (`plot&#46;png`, `p&num;.png`), or when raw HTML repeats an
+  attribute or has an attribute name inside another attribute's value.
 
 ## 0.2.4 - 2026-11-08
 
