@@ -1,11 +1,12 @@
 import sys
+import time
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 
-from chunk_common import check_dispositions, manifest_media
+from chunk_common import Block, MediaCollector, check_dispositions, manifest_media
 
 MEDIA = [{"id": "media-0001"}, {"id": "media-0002"}]
 READ = {"id": "media-0001", "disposition": "read", "tool": "vision", "summary": "a chart"}
@@ -52,3 +53,41 @@ def test_dispositions_against_a_manifest_without_media_are_unknown():
 def test_manifest_media_is_empty_when_absent():
     assert manifest_media({"chunks": []}) == []
     assert manifest_media({"media": MEDIA}) == MEDIA
+
+
+@pytest.mark.parametrize(
+    ("texts", "positions", "expected"),
+    [
+        (["a", "b", "c"], [1], {1: [1]}),
+        (["a", "b", "c"], [3, 9], {2: [3, 9]}),
+        (["a", "", "", "d", ""], [1, 2, 3], {3: [1, 2, 3]}),
+        (["a", "", "c"], [0, 1, 2], {0: [0], 2: [1, 2]}),
+        (["a", "b", ""], [2], {1: [2]}),
+    ],
+)
+def test_apply_attaches_each_reference_to_the_next_textual_block_or_the_last(
+    texts, positions, expected
+):
+    blocks = [Block(text, {}) for text in texts]
+    collector = MediaCollector()
+    for position in positions:
+        collector.add(position, "image", "markdown", ref=str(position))
+    collector.apply(blocks)
+    attached = {
+        index: [int(entry["ref"]) for entry in block.locator["media"]]
+        for index, block in enumerate(blocks)
+        if "media" in block.locator
+    }
+    assert attached == expected
+
+
+def test_apply_stays_fast_for_sixty_thousand_blocks_and_references():
+    count = 60_000
+    blocks = [Block("t", {}) for _ in range(count)]
+    collector = MediaCollector()
+    for position in range(count):
+        collector.add(position, "image", "markdown", ref=str(position))
+    started = time.perf_counter()
+    collector.apply(blocks)
+    assert time.perf_counter() - started < 2
+    assert all(len(block.locator["media"]) == 1 for block in blocks)

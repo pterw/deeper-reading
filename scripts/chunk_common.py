@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from bisect import bisect_left
 from dataclasses import dataclass, field
 import hashlib
 import json
@@ -86,7 +87,8 @@ class MediaCollector:
         if not textual:
             return
         for position, entry in self._items:
-            target = next((index for index in textual if index >= position), textual[-1])
+            slot = bisect_left(textual, position)
+            target = textual[slot] if slot < len(textual) else textual[-1]
             blocks[target].locator.setdefault('media', []).append(dict(entry))
 
 
