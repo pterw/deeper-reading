@@ -36,9 +36,10 @@ gate is crossed:
 | `references/prerequisites.md` | Activation and contract establishment | yes |
 
 Add one row for every reference selected by the actual source, format, failure,
-and verification path. A missing or late row keeps
-`required_references_read` false. The table is human-auditable evidence; it
-does not add a machine schema or event type.
+and verification path. The table is human-auditable evidence; it does not add
+a machine schema or event type. The verifier reads only the
+`required_references_read` flag in `run.json`, not the rows: see
+[what the verifier checks](definition-of-done.md#what-the-verifier-checks-and-what-it-only-checks-for-existence).
 
 ## Package-owned process sequence
 

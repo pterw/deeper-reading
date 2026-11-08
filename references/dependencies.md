@@ -45,10 +45,10 @@ Never infer syntax from earlier conversations or from similarly named helpers.
 HTML, Markdown and DOCX use the Python standard library. PDF text extraction
 requires an optional backend: `pypdf`, `PyMuPDF`, `pdfplumber`, or an existing
 `pdftotext` executable, in that detection order. A bundled command does not
-mean a bundled PDF parser. `requirements-optional.txt` declares `pypdf` for
-users who choose to install a Python backend (`python -m pip install -r
-requirements-optional.txt`). An already installed pdftotext needs no additional
-Python package. No dependency is installed automatically.
+mean a bundled PDF parser. Users who choose a Python backend can install one
+with `python -m pip install pypdf`; `PyMuPDF` and `pdfplumber` are the other
+Python backends. An already installed pdftotext needs no additional Python
+package. No dependency is installed automatically.
 
 The implemented PDF adapters expose text only. Library support for geometry
 does not establish layout QA; none of these extraction paths proves OCR.

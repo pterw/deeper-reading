@@ -23,6 +23,19 @@ A run is DONE only when every required predicate below has fresh evidence.
 | Final verification is fresh | `verification-before-completion` is invoked after the last material change; `evidence/verification-log.txt` records the fresh proving commands/actions and their results. |
 | Machine verifier passes | `scripts/verify_run.py <run-root>/run.json` exits 0 and writes canonical `<run-root>/dod.json` on the current evidence. The verifier may run before `done` is appended; it enforces node resolution and unresolved failures then, and is re-run after `done` is appended. |
 
+## What the verifier checks and what it only checks for existence
+
+`scripts/verify_run.py` does not read every proof in the table above. It checks these for existence only: the file named in `run.json` `evidence` must exist, and nothing more of the file is parsed.
+
+- `evidence/skill-preflight.md`: the verifier reads the five `preflight` flags in `run.json`, including the `required_references_read` aggregate. It does not read the file or check each phase-receipt row, so the agent must still record every row.
+- `plan.md` (at the run root): content is recorded by the agent and not parsed.
+- `evidence/source-manifest.md`: content is recorded by the agent and not parsed.
+- `evidence/failure-ledger.md`: content is recorded by the agent and not parsed.
+- `evidence/verification-log.txt`: the proving commands and results are recorded by the agent and not parsed.
+- `evidence/format-qa.md`: content is recorded by the agent and not parsed.
+
+Missing content in these files is still a NOT DONE run, even though the verifier cannot see it.
+
 ## Anti-skimming completion gate
 
 Chunking is not the deliverable. It is the mechanism that makes exhaustive traversal machine-checkable.

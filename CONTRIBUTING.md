@@ -29,21 +29,13 @@ Thank you for helping improve **`deeper-reading`**!
 
 ## Testing & Quality Gate
 
-Before submitting any pull request or committing changes:
-
-### 1. Run the Full Test Suite
-```bash
-python -m pytest
-```
-All tests must pass. Installer changes also require `npm test` and
-`npm run test:pack-smoke`. Cross-runtime transaction tests need Node.js;
-CI enforces the named skip budgets in `tests/check_skip_budget.py`.
-
-### 2. Verify the Installer
-```bash
-python installer/install.py doctor --target generic-agents --json
-```
-Ensure all bundled extractors report `ready` and the standalone document profile resolves cleanly.
+Before submitting any pull request or committing changes, run the commands in
+the `gates` block under
+[AGENTS.md "Gates"](https://github.com/pterw/deeper-reading/blob/main/AGENTS.md#gates),
+as [AGENTS.md "Done means"](https://github.com/pterw/deeper-reading/blob/main/AGENTS.md#done-means)
+requires. That file owns the commands, so they are not copied here. Install the
+tools first with `python -m pip install pytest ruff==0.16.10 -r requirements-optional.txt`
+(CI runs `python -m ruff check .`, so lint before you push).
 
 ---
 
@@ -52,5 +44,10 @@ Ensure all bundled extractors report `ready` and the standalone document profile
 If contributing support for an additional document format:
 1. Implement the extractor in `scripts/extract_<format>.py` adhering to the `Block`, `pack_blocks`, and `build_manifest` schema from `scripts/chunk_common.py`.
 2. Ensure it supports both `--out <path>` and `--run-root <path>`.
-3. Add deterministic test coverage in `tests/test_extractors.py`.
-4. Document the format's structural invariants in a dedicated `references/<format>.md`.
+3. Register it in `EXTRACTOR_SCRIPTS` in `scripts/verify_run.py`, so the verifier can re-extract the source.
+4. Document the format's structural invariants in a reference under `references/`, named for the format (`references/html.md`, `references/pdf.md`, `references/lengthy-markdown.md`).
+5. Add the format's route to `skills/exhaustive-document-traversal/SKILL.md`, linking that reference.
+6. Add deterministic test coverage in `tests/test_extractors.py`, and update `tests/test_phase_gated_loading.py` for the new route and reference.
+
+Other changes have a matching list of files to update: see the
+[AGENTS.md "Maintenance Matrix"](https://github.com/pterw/deeper-reading/blob/main/AGENTS.md#maintenance-matrix).

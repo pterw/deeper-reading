@@ -43,6 +43,14 @@
   2) and remove nothing.
 - Node installer: `install` with an unready document profile now reports
   `state: blocked` with exit 2 and changes nothing, as the Python installer does.
+- Docs: `references/evidence.md` now carries a worked first run (a one-chunk
+  source, its commands, a `run.json` and a draft verdict) that a test drives
+  through the real scripts to `passed: true`. The `run.json`, event and draft
+  verdict shapes and the preflight receipts layout are documented, and
+  `definition-of-done.md` says which proofs the verifier only checks for
+  existence.
+- Installers: `LICENSE` is now installed with the skill. Upgrading an existing
+  install adds it as a managed file.
 
 ### Compatibility
 
