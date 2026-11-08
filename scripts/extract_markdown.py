@@ -184,23 +184,34 @@ def _svg_starts(text: str) -> list[int]:
     return starts
 
 
+def _trailing_backslashes(text: str, end: int) -> int:
+    start = end
+    while start > 0 and text[start - 1] == '\\':
+        start -= 1
+    return end - start
+
+
 def _mask_code_spans(text: str) -> str:
     """Blank code spans: a complete backtick run closes on the next run of equal length."""
     runs = [match.span() for match in _BACKTICK_RUN_RE.finditer(text)]
-    next_same: list[int | None] = [None] * len(runs)
+    # An odd number of backslashes escapes the run's first backtick, so an opener is one shorter;
+    # a closer inside a code span is never escaped, so its length stays whole.
+    opener_start = [
+        start + (_trailing_backslashes(text, start) % 2) for start, _ in runs
+    ]
+    closer_of: list[int | None] = [None] * len(runs)
     latest: dict[int, int] = {}
     for index in range(len(runs) - 1, -1, -1):
-        length = runs[index][1] - runs[index][0]
-        next_same[index] = latest.get(length)
-        latest[length] = index
+        closer_of[index] = latest.get(runs[index][1] - opener_start[index])
+        latest[runs[index][1] - runs[index][0]] = index
     pieces: list[str] = []
     position = index = 0
     while index < len(runs):
-        closer = next_same[index]
+        closer = closer_of[index]
         if closer is None:
             index += 1
             continue
-        start, end = runs[index][0], runs[closer][1]
+        start, end = opener_start[index], runs[closer][1]
         pieces.append(text[position:start])
         pieces.append(' ' * (end - start))
         position = end
