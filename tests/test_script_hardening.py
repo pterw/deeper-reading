@@ -116,6 +116,8 @@ def test_verifier_rejects_dod_symlink(tmp_path):
     result = run_script('verify_run.py', ledger)
     assert result.returncode == 1
     assert outside.read_text() == 'keep'
+    assert (tmp_path / 'dod.json').is_symlink()
+    assert (tmp_path / 'dod.json').resolve() == outside.resolve()
 
 @pytest.mark.parametrize('source', [{'format':[]}, {'format':'pdf','authority':{}}, None])
 def test_malformed_source_is_a_finding(source):

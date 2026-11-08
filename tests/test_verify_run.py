@@ -5,6 +5,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -248,6 +249,73 @@ def test_cli_rejects_non_object_run_json_without_traceback(tmp_path):
     assert dod["passed"] is False
 
 
+def _stale_dod_run(tmp_path):
+    run = valid_run(tmp_path)
+    run.pop("_ledger_path", None)
+    ledger = tmp_path / "run.json"
+    ledger.write_text(json.dumps(run), encoding="utf-8")
+    stale = tmp_path / "dod.json"
+    stale.write_text(json.dumps({"passed": True}), encoding="utf-8")
+    return ledger, stale
+
+
+def test_failed_dod_write_leaves_no_stale_passing_dod(tmp_path, monkeypatch):
+    ledger, stale = _stale_dod_run(tmp_path)
+    module = load_module()
+
+    def broken_write(*args, **kwargs):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(module, "write_text_atomic", broken_write)
+    monkeypatch.setattr(sys, "argv", ["verify_run.py", str(ledger)])
+    with pytest.raises(OSError, match="disk full"):
+        module.main()
+    assert not stale.exists()
+
+
+def test_mismatched_write_dod_leaves_no_stale_passing_dod(tmp_path):
+    ledger, stale = _stale_dod_run(tmp_path)
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger), "--write-dod", str(tmp_path / "other.json")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "dod.json must be written to" in result.stdout
+    assert not stale.exists()
+
+
+def test_failing_ledger_replaces_stale_passing_dod(tmp_path):
+    ledger = tmp_path / "run.json"
+    ledger.write_text("[]", encoding="utf-8")
+    (tmp_path / "dod.json").write_text(json.dumps({"passed": True}), encoding="utf-8")
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    dod = json.loads((tmp_path / "dod.json").read_text(encoding="utf-8"))
+    assert dod["passed"] is False
+
+
+def test_dod_directory_fails_without_removing_it(tmp_path):
+    ledger = tmp_path / "run.json"
+    ledger.write_text("{}", encoding="utf-8")
+    (tmp_path / "dod.json").mkdir()
+    result = subprocess.run(
+        [sys.executable, str(MODULE_PATH), str(ledger)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 1
+    assert "FAIL:" in result.stderr
+    assert (tmp_path / "dod.json").is_dir()
+
+
 def _upgrade_fixture_ledger_to_v2(run):
     sys.path.insert(0, str(ROOT / "scripts"))
     from evidence_atoms import atom_id
@@ -480,3 +548,94 @@ def test_reproduction_compares_source_uri(tmp_path, monkeypatch):
     findings = []
     module._reproduce_extraction_manifest(Path(run["source"]["local_path"]), manifest, findings)
     assert [f.code for f in findings] == ["reproduction.mismatch"]
+
+
+BIG = 20_000
+BIG_CHUNKS = 40_000  # list-membership pre-fix time must clearly exceed the bound
+LINEAR_BOUND_SECONDS = 3.0
+
+
+def _codes_for(module, run):
+    return [f.code for f in module._validate_findings(run)]
+
+
+def test_many_plan_nodes_resolve_in_linear_time():
+    module = load_module()
+    nodes = [f"n{i}" for i in range(BIG)]
+    events = [{"type": "node_passed", "node": n} for n in nodes]
+    events += [{"type": "verification_started"}, {"type": "verification_passed"}, {"type": "done"}]
+    run = {"plan": {"nodes": nodes}, "events": events}
+    started = time.perf_counter()
+    codes = _codes_for(module, run)
+    assert time.perf_counter() - started < LINEAR_BOUND_SECONDS
+    assert "done.node.unresolved" not in codes
+
+
+@pytest.mark.parametrize(
+    ("nodes", "events", "unresolved_nodes"),
+    [
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "node_passed", "node": ["unhashable"]},
+                {"type": "done"},
+            ],
+            ["b"],
+        ),
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "done"},
+                {"type": "node_passed", "node": "b"},
+            ],
+            ["b"],
+        ),
+        (
+            ["a", "b"],
+            [
+                {"type": "node_passed", "node": "a"},
+                {"type": "node_superseded", "node": "b"},
+                {"type": "done"},
+            ],
+            [],
+        ),
+        (
+            [1],
+            [{"type": "node_passed", "node": "1"}, {"type": "done"}],
+            [],
+        ),
+    ],
+    ids=["unhashable-event-node", "passed-after-done", "superseded-resolves", "non-str-plan-node"],
+)
+def test_node_resolution_uses_events_before_done(nodes, events, unresolved_nodes):
+    module = load_module()
+    findings = module._validate_findings({"plan": {"nodes": nodes}, "events": events})
+    unresolved = [f for f in findings if f.code == "done.node.unresolved"]
+    assert [f.detail for f in unresolved] == unresolved_nodes
+
+
+def test_many_chunk_verified_events_check_in_linear_time(monkeypatch):
+    module = load_module()
+    ids = [f"c{i}" for i in range(BIG_CHUNKS)]
+    monkeypatch.setattr(module, "_validate_chunk_evidence", lambda run, base, findings: (ids, ids))
+    events = [{"type": "chunk_verified", "chunk_id": c} for c in ids]
+    run = {"chunking": {}, "events": events}
+    started = time.perf_counter()
+    codes = _codes_for(module, run)
+    assert time.perf_counter() - started < LINEAR_BOUND_SECONDS
+    assert not [c for c in codes if c.startswith("events.chunk_verified.")]
+
+
+def test_chunk_verified_missing_and_unknown_keep_manifest_then_event_order(monkeypatch):
+    module = load_module()
+    monkeypatch.setattr(module, "_validate_chunk_evidence", lambda run, base, findings: (["a", "b"], ["a", "b"]))
+    events = [{"type": "chunk_verified", "chunk_id": c} for c in ("z", "a", "y")]
+    findings = module._validate_findings({"chunking": {}, "events": events})
+    coverage = [(f.code, f.detail) for f in findings if f.code.startswith("events.chunk_verified.")]
+    assert coverage[:3] == [
+        ("events.chunk_verified.missing", "b"),
+        ("events.chunk_verified.unknown", "z"),
+        ("events.chunk_verified.unknown", "y"),
+    ]
