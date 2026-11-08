@@ -14,7 +14,7 @@ def _bundle(root: Path):
 
 def test_standalone_ready_when_bundled_extractors_exist(tmp_path):
     _bundle(tmp_path)
-    status = document_profile_status("standalone", package_root=tmp_path)
+    status = document_profile_status("standalone", skill_root=tmp_path)
     assert status.state == "ready"
     assert len(status.evidence) == 4
 
@@ -22,7 +22,7 @@ def test_standalone_ready_when_bundled_extractors_exist(tmp_path):
 def test_standalone_fails_closed_when_bundled_extractor_missing(tmp_path):
     _bundle(tmp_path)
     (tmp_path / "scripts" / "extract_pdf.py").unlink()
-    status = document_profile_status("standalone", package_root=tmp_path)
+    status = document_profile_status("standalone", skill_root=tmp_path)
     assert status.state == "missing"
     assert any("extract_pdf.py" in item for item in status.evidence)
 
@@ -39,12 +39,12 @@ def test_oai_native_is_optional_and_requires_live_skill_roots(tmp_path):
 
 
 def test_unknown_profile_is_unsupported(tmp_path):
-    status = document_profile_status("unknown", package_root=tmp_path)
+    status = document_profile_status("unknown", skill_root=tmp_path)
     assert status.state == "unsupported"
 
 
 def test_standalone_ready_for_the_real_package_root():
-    assert document_profile_status("standalone", package_root=ROOT).state == "ready"
+    assert document_profile_status("standalone", skill_root=ROOT).state == "ready"
 
 
 def test_oai_native_fails_closed_when_internal_root_missing(tmp_path):

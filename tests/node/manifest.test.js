@@ -41,6 +41,8 @@ import {
   managedPath,
   payloadFiles,
   payloadHashes,
+  physicalPath,
+  skillRoot,
   validateManifest
 } from "../../installer/node/manifest.js";
 
@@ -55,6 +57,84 @@ test("manifest validates the canonical package and enumerates forward-slash path
   assert.ok(hashes["LICENSE"], "LICENSE ships so both installers copy the MIT notice");
   assert.ok(files.some((file) => path.basename(file) === "LICENSE"));
   assert.equal(Object.keys(hashes).some((name) => name.includes("\\")), false);
+});
+
+function rootedPackage(t, root) {
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-skillroot-"));
+  t.after(() => rmSync(sandbox, { recursive: true, force: true }));
+  const pkg = path.join(sandbox, "pkg");
+  const skill = path.join(pkg, "skills", "demo");
+  mkdirSync(path.join(skill, "skills"), { recursive: true });
+  writeFileSync(path.join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n", "utf8");
+  writeFileSync(path.join(skill, "skills", "a.txt"), "a", "utf8");
+  const manifest = {
+    skill: { name: "demo", entrypoint: "SKILL.md", ...(root === undefined ? {} : { root }) },
+    payload: ["SKILL.md", "skills"],
+    document_profiles: { standalone: {}, "oai-native": {} }
+  };
+  return { sandbox, pkg, manifest };
+}
+
+test("skill.root points the payload at the skill folder", (t) => {
+  const { pkg, manifest } = rootedPackage(t, "skills/demo");
+  assert.deepEqual(validateManifest(manifest, pkg), []);
+  assert.deepEqual(Object.keys(payloadHashes(pkg, manifest)), ["SKILL.md", "skills/a.txt"]);
+  assert.equal(path.basename(path.dirname(payloadFiles(pkg, manifest)[0])), "demo");
+  assert.equal(skillRoot(manifest, pkg), physicalPath(path.join(pkg, "skills", "demo")));
+});
+
+test("skill.root of '.' validates the same as no field", (t) => {
+  const { pkg, manifest } = rootedPackage(t, undefined);
+  writeFileSync(path.join(pkg, "SKILL.md"), "---\nname: demo\n---\n", "utf8");
+  mkdirSync(path.join(pkg, "skills"), { recursive: true });
+  const dot = { ...manifest, skill: { ...manifest.skill, root: "." } };
+  assert.deepEqual(validateManifest(manifest, pkg), []);
+  assert.deepEqual(validateManifest(dot, pkg), []);
+  assert.equal(skillRoot(dot, pkg), skillRoot(manifest, pkg));
+});
+
+const BAD_ROOTS = [
+  [5, "skill.root must be a string"],
+  [null, "skill.root must be a string"],
+  ["/abs/skills", "skill.root must be a relative path"],
+  ["", "skill.root must be a relative path"],
+  ["skills\\demo", "skill.root must be a relative path"],
+  ["C:skills", "skill.root must be a relative path"],
+  ["skills/../skills/demo", "skill.root must not contain .."]
+];
+
+for (const root of ["skills/none", "skills/demo/SKILL.md"]) {
+  test(`skill.root ${JSON.stringify(root)} without a SKILL.md reports the missing entrypoint`, (t) => {
+    const { pkg, manifest } = rootedPackage(t, root);
+    const errors = validateManifest(manifest, pkg);
+    assert.deepEqual(errors, ["Missing canonical SKILL.md at package root"]);
+  });
+}
+
+for (const [root, expected] of BAD_ROOTS) {
+  test(`skill.root ${JSON.stringify(root)} is refused with one error`, (t) => {
+    const { pkg, manifest } = rootedPackage(t, root);
+    assert.deepEqual(validateManifest(manifest, pkg), [expected]);
+  });
+}
+
+test("skill.root that is absolute and has no SKILL.md reports only the first rule", (t) => {
+  const { pkg, manifest } = rootedPackage(t, path.join(os.tmpdir(), "dr-no-such-root"));
+  assert.deepEqual(validateManifest(manifest, pkg), ["skill.root must be a relative path"]);
+});
+
+test("skill.root that resolves outside the package through a link is refused", (t) => {
+  const { sandbox, pkg, manifest } = rootedPackage(t, "escape");
+  const outside = path.join(sandbox, "outside");
+  mkdirSync(outside);
+  writeFileSync(path.join(outside, "SKILL.md"), "---\nname: demo\n---\n", "utf8");
+  try {
+    symlinkSync(outside, path.join(pkg, "escape"), process.platform === "win32" ? "junction" : "dir");
+  } catch (error) {
+    if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return t.skip("links unavailable");
+    throw error;
+  }
+  assert.deepEqual(validateManifest(manifest, pkg), ["skill.root is outside the package root"]);
 });
 
 test("managedPath rejects lexical and symlink escapes", (t) => {

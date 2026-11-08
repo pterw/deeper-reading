@@ -15,9 +15,20 @@ test("standalone package readiness depends on bundled extractors, not Python", (
   mkdirSync(path.join(root, "scripts"));
   for (const name of BUNDLED_EXTRACTORS)
     writeFileSync(path.join(root, "scripts", name), "# extractor\n", "utf8");
-  assert.equal(documentProfileStatus("standalone", { packageRoot: root }).state, "ready");
+  assert.equal(documentProfileStatus("standalone", { skillRoot: root }).state, "ready");
   rmSync(path.join(root, "scripts", BUNDLED_EXTRACTORS[0]));
-  assert.equal(documentProfileStatus("standalone", { packageRoot: root }).state, "missing");
+  assert.equal(documentProfileStatus("standalone", { skillRoot: root }).state, "missing");
+});
+
+test("standalone readiness probes the extractors under the given skill root", (t) => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-prereq-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const skillRoot = path.join(root, "skills", "deeper-reading");
+  mkdirSync(path.join(skillRoot, "scripts"), { recursive: true });
+  for (const name of BUNDLED_EXTRACTORS)
+    writeFileSync(path.join(skillRoot, "scripts", name), "# extractor\n", "utf8");
+  assert.equal(documentProfileStatus("standalone", { skillRoot }).state, "ready");
+  assert.equal(documentProfileStatus("standalone", { skillRoot: root }).state, "missing");
 });
 
 test("Python status accepts 3.10 through 3.13 and blocks absence", () => {

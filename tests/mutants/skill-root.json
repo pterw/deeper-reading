@@ -1,0 +1,76 @@
+{
+  "tests": "tests/mutants/bridge",
+  "pattern": "bridge_skill_root.py",
+  "mutants": [
+    {
+      "name": "py-absolute-skill-root-allowed",
+      "edits": [
+        {
+          "file": "installer/manifest.py",
+          "old": "raw.startswith('/') or ",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "py-dotdot-segment-allowed",
+      "edits": [
+        {
+          "file": "installer/manifest.py",
+          "old": "if '..' in raw.split('/'):",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "py-containment-not-checked",
+      "edits": [
+        {
+          "file": "installer/manifest.py",
+          "old": "folder.relative_to(root)",
+          "new": "folder.resolve()"
+        }
+      ]
+    },
+    {
+      "name": "js-absolute-skill-root-allowed",
+      "edits": [
+        {
+          "file": "installer/node/manifest.js",
+          "old": "|| raw.startsWith(\"/\")",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "py-no-skill-md-allowed",
+      "edits": [
+        {
+          "file": "installer/manifest.py",
+          "old": "if not (folder / 'SKILL.md').is_file():",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "js-dotdot-segment-allowed",
+      "edits": [
+        {
+          "file": "installer/node/manifest.js",
+          "old": "parts.includes(\"..\")",
+          "new": "false"
+        }
+      ]
+    },
+    {
+      "name": "js-containment-not-checked",
+      "edits": [
+        {
+          "file": "installer/node/manifest.js",
+          "old": "if (!isInside(root, resolved))",
+          "new": "if (false)"
+        }
+      ]
+    }
+  ]
+}

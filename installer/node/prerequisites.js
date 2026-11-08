@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { loadManifest, skillRoot } from "./manifest.js";
 
 export const BUNDLED_EXTRACTORS = [
   "extract_pdf.py",
@@ -16,15 +17,19 @@ const PYTHON_ACTION = [
 ];
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
+function defaultSkillRoot() {
+  return skillRoot(loadManifest(path.join(PACKAGE_ROOT, "MANIFEST.json")), PACKAGE_ROOT);
+}
+
 function status(state, evidence = [], action = []) {
   return { state, evidence, action };
 }
 
 export function documentProfileStatus(profile, options = {}) {
   const normalized = profile.toLowerCase();
-  const packageRoot = path.resolve(options.packageRoot || PACKAGE_ROOT);
   if (normalized === "standalone") {
-    const required = BUNDLED_EXTRACTORS.map((name) => path.join(packageRoot, "scripts", name));
+    const root = path.resolve(options.skillRoot || defaultSkillRoot());
+    const required = BUNDLED_EXTRACTORS.map((name) => path.join(root, "scripts", name));
     const missing = required.filter((candidate) => !existsSync(candidate));
     return missing.length
       ? status(

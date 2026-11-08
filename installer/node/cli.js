@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TARGET_NAMES, detectTarget, getAdapter } from "./adapters.js";
 import { documentProfileStatus, pythonRuntimeStatus } from "./prerequisites.js";
-import { InstallerError, loadManifest, validateManifest } from "./manifest.js";
+import { InstallerError, loadManifest, skillRoot, validateManifest } from "./manifest.js";
 import { installSkill, uninstallSkill, verifyInstallation } from "./core.js";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -206,7 +206,7 @@ function resolveContext(command, options, cwd, env) {
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
   if (command !== "doctor") guardOwnership(targetRoot, projectDir, env, command);
   const documentStatus = documentProfileStatus(options.documentProfile, {
-    packageRoot: PACKAGE_ROOT
+    skillRoot: skillRoot(manifest, PACKAGE_ROOT)
   });
   const installerStatus = {
     state: "ready",

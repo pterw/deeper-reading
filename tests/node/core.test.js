@@ -209,6 +209,50 @@ test("failure after replacement restores the prior installation", (t) => {
   assert.equal(verifyInstallation(targetRoot).passed, true);
 });
 
+// A synthetic package whose skill folder is `root` below the package root ("." keeps it at the top).
+function syntheticPackage(directory, root, extraPayload = []) {
+  const skill = path.join(directory, ...root.split("/").filter((part) => part !== "."));
+  mkdirSync(path.join(skill, "references"), { recursive: true });
+  mkdirSync(path.join(skill, "skills"), { recursive: true });
+  writeFileSync(path.join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n", "utf8");
+  writeFileSync(path.join(skill, "VERSION"), `7.8.9-${root === "." ? "flat" : "rooted"}\n`, "utf8");
+  writeFileSync(path.join(skill, "references", "a.md"), "a\n", "utf8");
+  writeFileSync(path.join(skill, "skills", "s.md"), "s\n", "utf8");
+  for (const name of extraPayload) writeFileSync(path.join(skill, name), "extra\n", "utf8");
+  const manifest = {
+    skill: { name: "demo", entrypoint: "SKILL.md", ...(root === "." ? {} : { root }) },
+    payload: ["SKILL.md", "VERSION", "references", "skills", ...extraPayload],
+    document_profiles: { standalone: {}, "oai-native": {} }
+  };
+  return { packageRoot: directory, manifest };
+}
+
+test("a rooted package installs, hashes and verifies, with the receipt version from its VERSION", (t) => {
+  const { sandbox, targetRoot, options } = fixture(t);
+  const pkg = syntheticPackage(path.join(sandbox, "rooted"), "skills/demo");
+  installSkill({ ...options, ...pkg });
+  const receipt = readReceipt(targetRoot);
+  assert.equal(receipt.version, "7.8.9-rooted");
+  assert.deepEqual(Object.keys(receipt.payload_hashes).sort(), [
+    "SKILL.md", "VERSION", "references/a.md", "skills/s.md"
+  ]);
+  assert.equal(existsSync(path.join(targetRoot, "skills", "demo")), false);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
+test("upgrading from a root-level package to a rooted one leaves no stale files", (t) => {
+  const { sandbox, targetRoot, options } = fixture(t);
+  const flat = syntheticPackage(path.join(sandbox, "flat"), ".", ["legacy.txt"]);
+  installSkill({ ...options, ...flat });
+  const flatKeys = Object.keys(readReceipt(targetRoot).payload_hashes).filter((key) => key !== "legacy.txt");
+  assert.equal(existsSync(path.join(targetRoot, "legacy.txt")), true);
+  const rooted = syntheticPackage(path.join(sandbox, "rooted"), "skills/demo");
+  installSkill({ ...options, ...rooted });
+  assert.equal(existsSync(path.join(targetRoot, "legacy.txt")), false);
+  assert.deepEqual(Object.keys(readReceipt(targetRoot).payload_hashes).sort(), flatKeys.sort());
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
 function sleepSync(ms) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }

@@ -60,6 +60,25 @@ def test_distribution_archive_has_one_canonical_skill_root(tmp_path):
     assert prefix + 'deeper-reading/SKILL.md' not in names
 
 
+def _rooted_source(tmp_path, *, skill_at):
+    root = tmp_path / 'source'
+    (root / skill_at).mkdir(parents=True)
+    (root / skill_at / 'SKILL.md').write_text('skill')
+    (root / 'MANIFEST.json').write_text('{"skill": {"root": "inner/skill"}}')
+    return root
+
+
+def test_distribution_skill_guard_follows_manifest_skill_root(tmp_path):
+    root = _rooted_source(tmp_path, skill_at='inner/skill')
+    assert build_distribution(root, tmp_path / 'bundle.zip').is_file()
+
+
+def test_distribution_refuses_when_skill_is_missing_at_manifest_skill_root(tmp_path):
+    root = _rooted_source(tmp_path, skill_at='.')
+    with pytest.raises(ValueError):
+        build_distribution(root, tmp_path / 'bundle.zip')
+
+
 def test_distribution_excludes_caches_and_generated_receipts(tmp_path):
     archive = tmp_path / 'bundle.zip'
     build_distribution(ROOT, archive)

@@ -79,15 +79,43 @@ function frontmatterName(skillPath) {
   return name ? name.slice(5).trim().replace(/^["']|["']$/g, "") : null;
 }
 
+// The folder holding SKILL.md and the payload: `skill.root` (a POSIX path
+// relative to the package root, default ".") resolved to a physical path.
+export function skillRoot(manifest, packageRoot) {
+  const root = physicalPath(packageRoot);
+  const raw = manifest?.skill?.root;
+  if (raw === undefined) return root;
+  if (typeof raw !== "string") throw new InstallerError("skill.root must be a string");
+  if (raw === "" || raw.includes("\\") || raw.startsWith("/") || WINDOWS_DRIVE.test(raw))
+    throw new InstallerError("skill.root must be a relative path");
+  const parts = raw.split("/");
+  if (parts.includes("..")) throw new InstallerError("skill.root must not contain ..");
+  const resolved = physicalPath(path.join(root, ...parts));
+  if (!isInside(root, resolved)) throw new InstallerError("skill.root is outside the package root");
+  return resolved;
+}
+
 export function validateManifest(manifest, packageRoot) {
   const errors = [];
-  const root = physicalPath(packageRoot);
+  let root = null;
+  try {
+    root = skillRoot(manifest, packageRoot);
+  } catch (error) {
+    if (!(error instanceof InstallerError)) throw error;
+    errors.push(error.message);
+  }
   if (manifest?.skill?.entrypoint !== "SKILL.md")
     errors.push("Canonical entrypoint must be SKILL.md");
-  const skillPath = path.join(root, "SKILL.md");
-  if (!existsSync(skillPath)) errors.push("Missing canonical SKILL.md at package root");
-  else if (frontmatterName(skillPath) !== manifest?.skill?.name)
-    errors.push("Manifest skill name does not match SKILL.md name");
+  let skillFound = false;
+  if (root !== null) {
+    const skillPath = path.join(root, "SKILL.md");
+    if (!existsSync(skillPath)) errors.push("Missing canonical SKILL.md at package root");
+    else {
+      skillFound = true;
+      if (frontmatterName(skillPath) !== manifest?.skill?.name)
+        errors.push("Manifest skill name does not match SKILL.md name");
+    }
+  }
   const payload = manifest?.payload;
   if (!Array.isArray(payload) || payload.length === 0)
     errors.push("Payload must be a non-empty list");
@@ -99,9 +127,10 @@ export function validateManifest(manifest, packageRoot) {
     }
     if (seen.has(raw)) errors.push(`Duplicate payload entry: ${raw}`);
     seen.add(raw);
+    if (root === null) continue;
     try {
       const resolved = managedPath(root, raw);
-      if (!existsSync(resolved)) errors.push(`Payload entry does not exist: ${raw}`);
+      if (skillFound && !existsSync(resolved)) errors.push(`Payload entry does not exist: ${raw}`);
     } catch (error) {
       errors.push(error.message);
     }
@@ -126,8 +155,7 @@ function walk(directory) {
   return files;
 }
 
-export function payloadFiles(packageRoot, manifest) {
-  const root = physicalPath(packageRoot);
+function filesUnder(root, manifest) {
   const files = [];
   for (const raw of manifest.payload) {
     const candidate = managedPath(root, raw);
@@ -137,14 +165,18 @@ export function payloadFiles(packageRoot, manifest) {
   return [...new Set(files)].sort((a, b) => a.localeCompare(b));
 }
 
+export function payloadFiles(packageRoot, manifest) {
+  return filesUnder(skillRoot(manifest, packageRoot), manifest);
+}
+
 export function sha256File(filePath) {
   accessSync(filePath, constants.R_OK);
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
 }
 
 export function payloadHashes(packageRoot, manifest) {
-  const root = physicalPath(packageRoot);
-  return Object.fromEntries(payloadFiles(root, manifest).map((file) => [
+  const root = skillRoot(manifest, packageRoot);
+  return Object.fromEntries(filesUnder(root, manifest).map((file) => [
     path.relative(root, file).split(path.sep).join("/"),
     sha256File(file)
   ]));

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -33,6 +34,34 @@ def _frontmatter_name(skill_path: Path) -> str | None:
     return None
 
 
+def _skill_root_error(data: dict[str, Any], root: Path) -> str | None:
+    """Return the first problem with ``skill.root``, or None when it is usable."""
+    raw = (data.get('skill') or {}).get('root', '.')
+    if not isinstance(raw, str):
+        return 'skill.root must be a string'
+    if not raw or '\\' in raw or raw.startswith('/') or re.match(r'[A-Za-z]:', raw):
+        return 'skill.root must be a relative path'
+    if '..' in raw.split('/'):
+        return 'skill.root must not contain ..'
+    try:
+        folder = (root / raw).resolve()
+        folder.relative_to(root)
+    except (OSError, ValueError):
+        return 'skill.root is outside the package root'
+    if not (folder / 'SKILL.md').is_file():
+        return 'Missing canonical SKILL.md at package root'
+    return None
+
+
+def skill_root(manifest_data: dict[str, Any], package_root: Path) -> Path:
+    """Resolve the folder holding SKILL.md and the payload; raise ValueError if the field is bad."""
+    root = Path(package_root).resolve()
+    error = _skill_root_error(manifest_data, root)
+    if error:
+        raise ValueError(error)
+    return (root / (manifest_data.get('skill') or {}).get('root', '.')).resolve()
+
+
 def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
     root = Path(package_root).resolve()
     data = manifest.data
@@ -44,11 +73,13 @@ def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
     if entry != 'SKILL.md':
         errors.append('Canonical entrypoint must be SKILL.md')
 
-    skill_path = root / 'SKILL.md'
-    if not skill_path.is_file():
-        errors.append('Missing canonical SKILL.md at package root')
+    root_error = _skill_root_error(data, root)
+    if root_error:
+        errors.append(root_error)
+        skill_dir = None
     else:
-        fm_name = _frontmatter_name(skill_path)
+        skill_dir = skill_root(data, root)
+        fm_name = _frontmatter_name(skill_dir / 'SKILL.md')
         if fm_name != name:
             errors.append(f'Manifest skill name {name!r} does not match SKILL.md name {fm_name!r}')
 
@@ -57,6 +88,7 @@ def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
         errors.append('Payload must be a non-empty list')
         payload = []
 
+    base = skill_dir or root
     seen: set[str] = set()
     for raw in payload:
         if not isinstance(raw, str) or not raw:
@@ -70,13 +102,13 @@ def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
         if rel.is_absolute() or '..' in rel.parts:
             errors.append(f'Payload path traversal/outside package root: {raw}')
             continue
-        resolved = (root / rel).resolve()
+        resolved = (base / rel).resolve()
         try:
-            resolved.relative_to(root)
+            resolved.relative_to(base)
         except ValueError:
             errors.append(f'Payload path outside package root: {raw}')
             continue
-        if not resolved.exists():
+        if skill_dir and not resolved.exists():
             errors.append(f'Payload entry does not exist: {raw}')
 
     prerequisites = data.get('prerequisites', {})

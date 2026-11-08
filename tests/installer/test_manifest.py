@@ -1,5 +1,8 @@
 import json
 from pathlib import Path
+import re
+
+import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -48,6 +51,78 @@ def test_manifest_parser_rejects_path_traversal(tmp_path: Path):
     (root / 'SKILL.md').write_text('---\nname: deeper-reading\ndescription: Use when testing.\n---\n', encoding='utf-8')
     errors = validate_manifest(load_manifest(path), root)
     assert any('traversal' in error.lower() or 'outside' in error.lower() for error in errors)
+
+
+def _synthetic_package(tmp_path: Path, skill: dict, skill_dir: str = '.'):
+    from installer.manifest import Manifest
+
+    pkg = tmp_path / 'pkg'
+    folder = pkg / skill_dir
+    (folder / 'skills').mkdir(parents=True)
+    (folder / 'SKILL.md').write_text('---\nname: deeper-reading\ndescription: Use when testing.\n---\n', encoding='utf-8')
+    data = {
+        'schema_version': 1,
+        'skill': {'name': 'deeper-reading', 'entrypoint': 'SKILL.md', **skill},
+        'payload': ['SKILL.md', 'skills'],
+        'prerequisites': {},
+        'document_profiles': {'standalone': {}, 'oai-native': {}},
+        'targets': ['generic-agents'],
+    }
+    return Manifest(data, pkg / 'MANIFEST.json'), pkg
+
+
+def test_skill_root_places_skill_and_payload_under_that_folder(tmp_path: Path):
+    from installer.manifest import skill_root, validate_manifest
+
+    manifest, pkg = _synthetic_package(tmp_path, {'root': 'skills/deeper-reading'}, 'skills/deeper-reading')
+    assert validate_manifest(manifest, pkg) == []
+    assert skill_root(manifest.data, pkg) == (pkg / 'skills' / 'deeper-reading').resolve()
+
+
+def test_skill_root_defaults_to_package_root(tmp_path: Path):
+    from installer.manifest import skill_root, validate_manifest
+
+    absent, pkg = _synthetic_package(tmp_path, {})
+    assert validate_manifest(absent, pkg) == []
+    assert skill_root(absent.data, pkg) == pkg.resolve()
+    absent.data['skill']['root'] = '.'
+    assert validate_manifest(absent, pkg) == []
+    assert skill_root(absent.data, pkg) == pkg.resolve()
+
+
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [
+        (5, 'skill.root must be a string'),
+        ('/elsewhere', 'skill.root must be a relative path'),
+        ('', 'skill.root must be a relative path'),
+        ('skills\\deeper-reading', 'skill.root must be a relative path'),
+        ('C:skills', 'skill.root must be a relative path'),
+        ('../outside', 'skill.root must not contain ..'),
+        ('skills/../skills', 'skill.root must not contain ..'),
+        ('link', 'skill.root is outside the package root'),
+        ('empty', 'Missing canonical SKILL.md at package root'),
+        ('SKILL.md', 'Missing canonical SKILL.md at package root'),
+        # Breaks two rules (absolute, and no SKILL.md there): only the first is reported.
+        ('/missing', 'skill.root must be a relative path'),
+    ],
+)
+def test_skill_root_refuses_each_bad_form_with_one_error(tmp_path: Path, value, expected):
+    from installer.manifest import skill_root, validate_manifest
+
+    manifest, pkg = _synthetic_package(tmp_path, {'root': value}, 'real')
+    (pkg / 'empty').mkdir()
+    outside = tmp_path / 'outside'
+    outside.mkdir()
+    (outside / 'SKILL.md').write_text('---\nname: deeper-reading\n---\n', encoding='utf-8')
+    if value == 'link':
+        try:
+            (pkg / 'link').symlink_to(outside, target_is_directory=True)
+        except OSError:
+            pytest.skip('directory symlinks unavailable')
+    assert validate_manifest(manifest, pkg) == [expected]
+    with pytest.raises(ValueError, match=re.escape(expected)):
+        skill_root(manifest.data, pkg)
 
 
 def test_npm_control_plane_is_not_installed_as_skill_payload():
