@@ -14,6 +14,7 @@ EXHAUSTIVE = "exhaustive-document-traversal"
 PLANNING = "planning-document-traversal"
 EXECUTING = "executing-document-traversal"
 VERIFYING = "verifying-exhaustive-traversal"
+DEBUGGING = "debugging-document-workflows"
 
 
 def text(rel: str) -> str:
@@ -47,6 +48,7 @@ INSTRUCTIONS = [
     ("paragraph styles named `Heading1` through `Heading6`", "references/docx.md", EXHAUSTIVE),
     ("exactly one ordered `chunk_verified` event per canonical emitted chunk", RUNTIME, EXHAUSTIVE),
     ("Text backends cannot justify an `ocr-verified` QA claim", RUNTIME, EXHAUSTIVE),
+    ("**do not attempt a fourth fix**", "references/failure-recovery.md", DEBUGGING),
     ("Do not require an external document skill merely to perform basic exhaustive text extraction", DEPENDENCIES, EXHAUSTIVE),
 ]
 

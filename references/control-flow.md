@@ -38,41 +38,19 @@ Finding the requested fact does not terminate traversal.
 
 ## 4. Failure diagnosis gate
 
-At the first failed node:
-
 ```text
-node_failed
-  -> STOP
-  -> debugging-document-workflows
-  -> failure_diagnosed
+node_failed -> STOP -> debugging-document-workflows -> failure_diagnosed
 ```
 
-No repair, re-chunk, sibling, fallback, later chunk, or downstream node is valid before `failure_diagnosed`.
-
-After diagnosis, exactly one evidence-backed transition may occur:
-
-- `node_rechunked` when bounded size/scope is the root cause;
-- `node_recovered` after a semantics-preserving repair;
-- documented sibling/fallback traversal;
-- `architecture_stop` when the current path is no longer viable.
-
-Preserve already-verified upstream work.
+No repair, re-chunk, sibling, fallback, later chunk, or downstream node is valid before `failure_diagnosed`. Transitions after diagnosis are in [failure-recovery](failure-recovery.md).
 
 ## 5. Architecture-stop / exhausted recovery gate
 
-Once `architecture_stop` occurs, no fourth/continued repair is allowed. The only redesign path is:
-
 ```text
-architecture_stop
-  -> paths_exhausted
-  -> disclosure
-  -> recovering-document-workflows
-  -> alternative_designed
-  -> plan_revised
-  -> execution resumes from smallest unresolved node
+architecture_stop -> recovering-document-workflows
 ```
 
-`disclosure` records the failed node, root cause, attempted recovery branches, upstream work still valid, unverified remainder, and any source/fidelity/task-semantic consequences.
+No fourth or continued repair is allowed after `architecture_stop`. The redesign path is in [failure-recovery](failure-recovery.md).
 
 ## 6. Success gate
 

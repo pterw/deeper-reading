@@ -73,7 +73,7 @@ Browser/web access, shell networking, direct downloads, and connectors are separ
 
 If one fails:
 1. stop that operation;
-2. invoke systematic debugging;
+2. stop; load `debugging-document-workflows`; record `failure_diagnosed`;
 3. isolate whether the failure is source discovery, browser fetch, shell DNS, download size, authentication, or another boundary;
 4. retry only the smallest diagnosed unit or use a documented semantics-preserving ingress path.
 

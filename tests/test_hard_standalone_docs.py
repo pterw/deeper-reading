@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 
 def read(rel):
@@ -16,17 +18,17 @@ def test_prerequisites_are_package_native():
     assert "package-owned" in text
     assert "traversal_plan_ready" in text
 
-def test_control_flow_uses_native_failure_and_recovery_states():
-    text = read("references/control-flow.md")
+def test_failure_recovery_owns_the_native_failure_and_recovery_states():
+    text = read("references/failure-recovery.md")
     for token in ("failure_diagnosed", "architecture_stop", "paths_exhausted", "alternative_designed", "plan_revised"):
         assert token in text
-    assert "systematic-debugging" not in text
-    assert "brainstorming" not in text
 
-def test_failure_recovery_is_package_owned():
-    text = read("references/failure-recovery.md")
-    assert "failure_diagnosed" in text
-    assert "alternative_designed" in text
+
+@pytest.mark.parametrize("needle", ["systematic-debugging", "invoke systematic debugging", "brainstorm alternatives"])
+def test_no_prose_hands_a_failure_to_a_foreign_skill(needle):
+    files = [ROOT / "SKILL.md", *ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("references/*.md")]
+    assert len(files) > 2
+    assert [f.name for f in files if needle in f.read_text(encoding="utf-8")] == []
 
 
 def test_root_docs_do_not_overclaim_evidence_semantics():
