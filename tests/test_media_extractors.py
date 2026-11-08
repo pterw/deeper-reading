@@ -149,7 +149,7 @@ MEDIA_ROWS = [
         [("image", "img", "1.png", None), ("svg", "svg", None, None), ("image", "img", "3.png", None)],
         id="html-two-references-in-one-block-keep-source-order",
     ),
-    pytest.param("html", '<h1>T</h1><p><svg><svg></svg><img src="x.png"></svg></p>', [("svg", "svg", None, None)], id="html-img-inside-nested-svg-only-svg-recorded"),
+    pytest.param("html", '<h1>T</h1><p>x <svg><svg></svg><img src="x.png"></svg></p>', [("svg", "svg", None, None), ("image", "img", "x.png", None)], id="html-img-inside-svg-recorded-after-nested-svg"),
     pytest.param("html", '<h1>T</h1><p>x</p><embed type="image/png" src="x">', [("image", "embed", "x", None)], id="html-embed-image-type-without-extension"),
     pytest.param("html", '<h1>T</h1><div class="mermaidx">graph TD</div>', [], id="html-class-mermaidx-not-a-diagram"),
     pytest.param(
@@ -157,6 +157,42 @@ MEDIA_ROWS = [
         '<h1>T</h1><p>x<svg></p><p><img src="after.png"></p>',
         [("svg", "svg", None, None), ("image", "img", "after.png", None)],
         id="html-unclosed-svg-does-not-hide-later-media",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg><circle r="1"/> text <img src="a.png"></p>',
+        [("svg", "svg", None, None), ("image", "img", "a.png", None)],
+        id="html-unclosed-svg-does-not-hide-img-in-same-paragraph",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg><svg><g/></svg></svg> y <svg></svg></p>',
+        [("svg", "svg", None, None), ("svg", "svg", None, None)],
+        id="html-nested-svg-inside-closed-svg-recorded-once",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg></p><p>y <svg></svg></p>',
+        [("svg", "svg", None, None), ("svg", "svg", None, None)],
+        id="html-unclosed-svg-block-end-lets-later-svg-record",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg><object data="o.png"></object></p>',
+        [("svg", "svg", None, None), ("image", "object", "o.png", None)],
+        id="html-object-inside-unclosed-svg-recorded",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg><embed src="e.png"></p>',
+        [("svg", "svg", None, None), ("image", "embed", "e.png", None)],
+        id="html-embed-inside-unclosed-svg-recorded",
+    ),
+    pytest.param(
+        "html",
+        '<h1>T</h1><p>x <svg><div class="mermaid">graph TD</div></p>',
+        [("svg", "svg", None, None), ("diagram", "diagram", None, None)],
+        id="html-mermaid-div-inside-unclosed-svg-recorded",
     ),
     pytest.param("docx", dx_parts(dx_p("See ", dx_pic("rId1", descr="a  pic")), {"rId1": "media/a.png"}), [("image", "drawing", "media/a.png", "a pic")], id="docx-inline-picture"),
     pytest.param(

@@ -58,10 +58,10 @@ class StructuralHTMLParser(HTMLParser):
         here = len(self.blocks)
         if self.diagram_tag is not None:
             self.diagram_depth += tag == self.diagram_tag
-        if self.svg_depth:
-            self.svg_depth += tag == 'svg'
-            return
         if tag == 'svg':
+            if self.svg_depth:
+                self.svg_depth += 1
+                return
             self.svg_depth = 1
             self.media.add(here, 'svg', 'svg')
             return
