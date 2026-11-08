@@ -152,7 +152,7 @@ def _without_atom_ids(ledger: dict) -> dict:
     return value
 
 
-def test_deepseek_first_run_rebinds_70_chunks_and_192_assertions(tmp_path):
+def test_deepseek_first_run_rebinds_to_the_known_good_ledger(tmp_path):
     manifest = FIXTURE / "chunk-manifest.json"
     draft = FIXTURE / "draft-evidence.json"
     out = tmp_path / "chunk-evidence-v2.json"
@@ -165,25 +165,9 @@ def test_deepseek_first_run_rebinds_70_chunks_and_192_assertions(tmp_path):
     assert result.returncode == 0, result.stdout + result.stderr
     ledger = json.loads(out.read_text(encoding="utf-8"))
     assert ledger["schema_version"] == 2
-    assert len(ledger["entries"]) == 70
-    assert sum(len(e.get("assertions", [])) for e in ledger["entries"]) == 192
 
     known = json.loads((FIXTURE / "chunk-evidence-v1.json").read_text(encoding="utf-8"))
     assert _without_atom_ids(ledger) == known
-
-
-def test_deepseek_prototype_is_fixture_only_not_runtime():
-    prototype = FIXTURE / "prototype"
-    assert {p.name for p in prototype.glob("*.py")} == {
-        "build_evidence.py", "build_run.py", "dump_chunks.py",
-        "assertions_a.py", "assertions_b.py", "assertions_c.py",
-    }
-    for path in (ROOT / "scripts").glob("*.py"):
-        text = path.read_text(encoding="utf-8")
-        assert "tests.fixtures" not in text
-        assert "deepseek-first-run/prototype" not in text
-    manifest = json.loads((ROOT / "MANIFEST.json").read_text(encoding="utf-8"))
-    assert "tests" not in manifest["payload"]
 
 
 MEDIA_REFS = [

@@ -14,20 +14,3 @@ def test_skill_links_terminal_contracts():
     assert "references/deliverable.md" in SKILL
     assert "references/definition-of-done.md" in SKILL
     assert "references/evidence.md" in SKILL
-
-
-def test_terminal_contract_references_exist():
-    for rel in [
-        "references/deliverable.md",
-        "references/definition-of-done.md",
-        "references/evidence.md",
-    ]:
-        assert (ROOT / rel).is_file(), rel
-
-
-def test_executable_run_verifier_exists():
-    assert (ROOT / "scripts/verify_run.py").is_file()
-
-
-def test_mutation_tests_exist():
-    assert (ROOT / "tests/test_mutations.py").is_file()

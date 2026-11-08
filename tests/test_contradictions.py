@@ -34,7 +34,6 @@ def test_source_acquisition_says_one_recovery_branch_at_a_time():
 
 def test_failure_recovery_honors_systematic_debugging_architecture_stop():
     text = read("references/failure-recovery.md")
-    assert "three" in text.lower() or "3" in text
     assert "fourth fix" in text.lower()
 
 

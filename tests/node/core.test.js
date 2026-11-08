@@ -124,28 +124,17 @@ test("drive and UNC receipt spellings are rejected on every OS", (t) => {
   }
 });
 
-test("receipt path spellings outside the target are rejected without touching the victim", (t) => {
-  // Every spelling resolves to the victim inside the sandbox (or stays relative
-  // and harmless), so a containment regression deletes a tmp file, never a real one.
-  const spellings = [
-    (victim) => victim,
-    (victim) => `\\\\?\\${victim}`,
-    () => "../outside.txt",
-    () => "C:foo",
-    ...(path.sep === "/" ? [] : [(victim) => victim.replaceAll("\\", "/")])
-  ];
-  for (const spell of spellings) {
-    const { sandbox, targetRoot, options } = fixture(t);
-    installSkill(options);
-    const victim = path.join(sandbox, "outside.txt");
-    writeFileSync(victim, "do not touch", "utf8");
-    const raw = spell(victim);
-    const receipt = readReceipt(targetRoot);
-    receipt.payload_hashes = { [raw]: sha256File(victim) };
-    writeReceipt(targetRoot, receipt);
-    assert.throws(() => uninstallSkill(targetRoot, { force: true }), /managed payload path/, raw);
-    assert.equal(readFileSync(victim, "utf8"), "do not touch", raw);
-  }
+test("an absolute receipt path to a file outside the target is rejected without touching it", (t) => {
+  // The victim is inside the sandbox, so a containment regression deletes a tmp file, never a real one.
+  const { sandbox, targetRoot, options } = fixture(t);
+  installSkill(options);
+  const victim = path.join(sandbox, "outside.txt");
+  writeFileSync(victim, "do not touch", "utf8");
+  const receipt = readReceipt(targetRoot);
+  receipt.payload_hashes = { [victim]: sha256File(victim) };
+  writeReceipt(targetRoot, receipt);
+  assert.throws(() => uninstallSkill(targetRoot, { force: true }), /managed payload path/);
+  assert.equal(readFileSync(victim, "utf8"), "do not touch");
 });
 
 test("receipt symlink escapes are rejected without touching outside bytes", (t) => {

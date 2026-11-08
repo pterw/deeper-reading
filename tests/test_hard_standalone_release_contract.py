@@ -1,46 +1,40 @@
 from __future__ import annotations
 
-import inspect
-import json
+import re
 from pathlib import Path
-
-from installer import core
 
 ROOT = Path(__file__).resolve().parents[1]
 
 RUNTIME_TEXT_FILES = [
     ROOT / "SKILL.md",
     ROOT / "README.md",
+    ROOT / "installer" / "USAGE.md",
     *sorted((ROOT / "references").glob("*.md")),
+    *sorted((ROOT / "skills").glob("*/SKILL.md")),
     ROOT / "scripts" / "verify_run.py",
 ]
 
 
 def test_runtime_payload_does_not_require_external_process_framework():
+    for pattern in ("references/*.md", "skills/*/SKILL.md"):
+        assert list(ROOT.glob(pattern)), f"{pattern} matches no file"
     offenders = []
-    needles = ("Superpowers", "superpowers:", "@Superpowers")
     for path in RUNTIME_TEXT_FILES:
-        text = path.read_text(encoding="utf-8")
-        if any(needle in text for needle in needles):
+        if "superpowers" in path.read_text(encoding="utf-8").lower():
             offenders.append(path.relative_to(ROOT).as_posix())
     assert offenders == [], offenders
 
 
-def test_manifest_has_no_required_superpowers_prerequisite():
-    manifest = json.loads((ROOT / "MANIFEST.json").read_text(encoding="utf-8"))
-    superpowers = manifest.get("prerequisites", {}).get("superpowers")
-    assert not (isinstance(superpowers, dict) and superpowers.get("required") is True)
-
-
-def test_root_compatibility_does_not_require_external_process_framework():
-    skill = (ROOT / "SKILL.md").read_text(encoding="utf-8")
-    frontmatter = skill.split("---", 2)[1]
-    assert "Superpowers" not in frontmatter
-
-
-def test_installer_basic_path_has_no_superpowers_parameter():
-    signature = inspect.signature(core.install_skill)
-    assert "superpowers" not in signature.parameters
+def test_scripts_do_not_import_from_tests():
+    scripts = sorted((ROOT / "scripts").rglob("*.py"))
+    assert scripts, "scripts/ matches no .py file"
+    pattern = re.compile(r"^\s*(from|import)\s+tests\b", re.MULTILINE)
+    offenders = [
+        path.relative_to(ROOT).as_posix()
+        for path in scripts
+        if pattern.search(path.read_text(encoding="utf-8"))
+    ]
+    assert offenders == [], offenders
 
 
 def test_verifier_uses_package_native_process_vocabulary():

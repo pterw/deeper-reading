@@ -4,6 +4,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from installer import install
+
 ROOT = Path(__file__).resolve().parents[2]
 CLI = ROOT/'installer'/'install.py'
 
@@ -38,3 +40,8 @@ def test_install_dry_run_never_creates_skill_directory(tmp_path):
     data = json.loads(proc.stdout)
     assert data['state'] == 'dry-run'
     assert not (tmp_path/'home'/'.agents').exists()
+
+
+def test_install_defaults_to_the_standalone_document_profile():
+    args = install.build_parser().parse_args(['install', '--dry-run'])
+    assert args.document_profile == 'standalone'

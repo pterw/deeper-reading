@@ -80,12 +80,11 @@ def test_distribution_includes_npm_metadata_and_node_installer(tmp_path):
 
 
 def test_distribution_excludes_npm_tarballs(tmp_path):
-    candidate = ROOT / 'deeper-reading-test-only.tgz'
-    candidate.write_bytes(b'not a release artifact')
-    try:
-        archive = tmp_path / 'bundle.zip'
-        build_distribution(ROOT, archive)
-        with ZipFile(archive) as zf:
-            assert not any(name.endswith('.tgz') for name in zf.namelist())
-    finally:
-        candidate.unlink(missing_ok=True)
+    root = tmp_path / 'source'
+    root.mkdir()
+    (root / 'SKILL.md').write_text('skill')
+    (root / 'scripts').mkdir()
+    (root / 'scripts' / 'deeper-reading-test-only.tgz').write_bytes(b'not a release artifact')
+    archive = build_distribution(root, tmp_path / 'bundle.zip')
+    with ZipFile(archive) as zf:
+        assert zf.namelist() == ['deeper-reading/SKILL.md']

@@ -2,6 +2,8 @@ from pathlib import Path
 
 from installer.prerequisites import BUNDLED_EXTRACTORS, document_profile_status
 
+ROOT = Path(__file__).resolve().parents[2]
+
 
 def _bundle(root: Path):
     scripts = root / "scripts"
@@ -39,3 +41,14 @@ def test_oai_native_is_optional_and_requires_live_skill_roots(tmp_path):
 def test_unknown_profile_is_unsupported(tmp_path):
     status = document_profile_status("unknown", package_root=tmp_path)
     assert status.state == "unsupported"
+
+
+def test_standalone_ready_for_the_real_package_root():
+    assert document_profile_status("standalone", package_root=ROOT).state == "ready"
+
+
+def test_oai_native_fails_closed_when_internal_root_missing(tmp_path):
+    status = document_profile_status(
+        "oai-native", native_pdf=tmp_path / "missing-pdf", native_docx=tmp_path / "missing-docx"
+    )
+    assert status.state == "missing"

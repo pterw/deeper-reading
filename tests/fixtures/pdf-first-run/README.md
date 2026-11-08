@@ -21,4 +21,4 @@ SHA-256:
 | `source/sample.pdf` | `6d9ed293afe5fd6779bafef0f54c812e68737570c2afadca3dab67b2581eacca` |
 | `source/sample-encrypted.pdf` | `a09bcf5e8b8299701984bb20cb235e4ec2a77f54e1c6bc76184e22ce99c3162a` |
 
-`provenance.json` holds the machine-checked copies of these expectations.
+These digests are documentation only; no test checks them.

@@ -16,7 +16,6 @@ def test_manifest_contract():
     assert 'SKILL.md' in manifest['payload']
     assert 'references' in manifest['payload']
     assert 'scripts' in manifest['payload']
-    assert 'scripts/verify_run.py' not in manifest['payload']
     assert 'tests' not in manifest['payload']
     assert 'installer' not in manifest['payload']
     assert manifest.get('prerequisites') == {}

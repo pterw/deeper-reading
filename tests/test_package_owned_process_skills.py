@@ -24,5 +24,3 @@ def test_package_owned_process_skill_contract(name, required):
     lowered = text.lower()
     for phrase in required:
         assert phrase.lower() in lowered, (name, phrase)
-    assert "superpowers:" not in lowered
-    assert "@superpowers" not in lowered
