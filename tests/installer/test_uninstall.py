@@ -1,6 +1,8 @@
 import hashlib
 import json
+import os
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -91,6 +93,42 @@ def test_uninstall_rejects_symlink_resolved_escape(tmp_path):
     receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
     receipt['payload_hashes'] = {
         'escape/outside.txt': hashlib.sha256(b'do not touch').hexdigest(),
+    }
+    receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
+
+    with pytest.raises(InstallError, match='managed payload path'):
+        uninstall_skill(target, force=True)
+
+    assert victim.read_text(encoding='utf-8') == 'do not touch'
+
+
+def _link(at: Path, to: Path):
+    if sys.platform == 'win32':
+        import _winapi
+
+        _winapi.CreateJunction(str(to), str(at))
+    else:
+        os.symlink(to, at, target_is_directory=True)
+
+
+def test_uninstall_rejects_escape_through_a_long_link_chain(tmp_path):
+    # Two chains of 25 links: a path through both is past the 40 links Linux follows for one lookup.
+    # Python resolves links itself, so it must still see where the path ends; Ubuntu CI is the real check.
+    target = make_install(tmp_path)
+    victim = tmp_path / 'outside.txt'
+    victim.write_text('do not touch', encoding='utf-8')
+    for prefix in ('a', 'b'):
+        (target/f'real{prefix}').mkdir()
+        _link(target/f'{prefix}25', target/f'real{prefix}')
+        for i in range(24, -1, -1):
+            _link(target/f'{prefix}{i}', target/f'{prefix}{i + 1}')
+    _link(target/'reala'/'b0', target/'b0')
+    _link(target/'realb'/'escape', tmp_path)
+
+    receipt_path = target / '.install-receipt.json'
+    receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
+    receipt['payload_hashes'] = {
+        'a0/b0/escape/outside.txt': hashlib.sha256(b'do not touch').hexdigest(),
     }
     receipt_path.write_text(json.dumps(receipt), encoding='utf-8')
 

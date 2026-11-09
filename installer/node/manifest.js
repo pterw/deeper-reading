@@ -4,7 +4,6 @@ import {
   constants,
   existsSync,
   lstatSync,
-  readlinkSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -22,22 +21,37 @@ export class InstallerError extends Error {
 const EXCLUDED_DIRECTORIES = new Set(["__pycache__", ".pytest_cache"]);
 const WINDOWS_DRIVE = /^[A-Za-z]:/;
 
-export function physicalPath(candidate, links = 0) {
-  const absolute = path.resolve(candidate);
-  if (links > 40) throw new InstallerError(`too many symbolic links: ${absolute}`);
+// POSIX answers ENOTDIR for a name beneath a file; Windows answers ENOENT. Both mean the name is not there.
+const ABSENT = ["ENOENT", "ENOTDIR"];
+
+function isLink(candidate) {
   try {
-    if (lstatSync(absolute).isSymbolicLink()) {
-      // Resolve dangling aliases too: the target can temporarily be absent
-      // between backup and replacement while its sibling lock remains held.
-      return physicalPath(path.resolve(path.dirname(absolute), readlinkSync(absolute)), links + 1);
-    }
-    return realpathSync.native(absolute);
+    return lstatSync(candidate).isSymbolicLink();
   } catch (error) {
-    // POSIX answers ENOTDIR for a path beneath a file and ELOOP for a loop; Windows answers ENOENT.
-    if (!["ENOENT", "ENOTDIR", "ELOOP"].includes(error.code)) throw error;
-    const parent = path.dirname(absolute);
-    if (parent === absolute) return absolute;
-    return path.join(physicalPath(parent, links), path.basename(absolute));
+    if (ABSENT.includes(error.code)) return false;
+    throw error;
+  }
+}
+
+// Where a path really leads, for a path that need not exist yet: the filesystem's answer for the deepest part
+// that exists, then the names beneath it, which cannot be links. A link that leads nowhere is refused, not guessed at.
+export function physicalPath(candidate) {
+  const absolute = path.resolve(candidate);
+  const missing = [];
+  for (let prefix = absolute; ; prefix = path.dirname(prefix)) {
+    try {
+      return path.join(realpathSync.native(prefix), ...missing);
+    } catch (error) {
+      if (error.code === "ELOOP") throw new InstallerError(`too many symbolic links: ${absolute}`);
+      if (!ABSENT.includes(error.code)) throw error;
+    }
+    if (isLink(prefix)) {
+      throw new InstallerError(
+        `${absolute} passes through a link that leads nowhere: ${prefix}; create the folder it points to, or remove the link`
+      );
+    }
+    if (path.dirname(prefix) === prefix) return absolute;
+    missing.unshift(path.basename(prefix));
   }
 }
 
