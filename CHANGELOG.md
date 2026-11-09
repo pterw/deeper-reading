@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.6 - 2026-11-09
 
 - Installer (Node): the install folder and the project check now resolve links
   by asking the operating system, so a relative link reached through another
@@ -36,9 +36,10 @@
   and says how to recover. For `claude` and `codex` it gives the
   `npx skills remove` command. Other targets get the delete route. Nothing is
   changed. `verify` keeps its existing failure, with no code.
-- `README.md` says the project's own installers are the supported route, with
-  npm the primary one, what `npx skills add` does to an npm install, and how
-  to recover. `installer/USAGE.md` lists the ownership checks and their codes.
+- `installer/USAGE.md` says the project's own installers are the supported
+  route, with npm the primary one, what `npx skills add` does to an npm
+  install, and how to recover. It also lists the ownership checks and their
+  codes.
 - Layout: the skill now lives in `skills/deeper-reading/` in the repository.
   `SKILL.md`, `VERSION`, `references/`, `scripts/` and the workflow modules
   moved there. `MANIFEST.json` names the folder in a new optional field,
@@ -78,7 +79,7 @@
   `.deeper-reading.backup-<id>` folder beside the skill folder, and the error
   (exit 2, as before) ends with `the previous install is in <path>`. To restore
   it, delete the leftover skill folder or move it out of the skills folder, and
-  rename the backup folder to `deeper-reading`. This was already so in 0.2.5. A
+  rename the backup folder to `deeper-reading`. 0.2.5 has the same defect. A
   failure that rolls back cleanly is unchanged and leaves no backup.
 - Layout: the six workflow modules are now plain files at
   `modules/<name>.md`, for example `modules/exhaustive-document-traversal.md`,
@@ -110,8 +111,12 @@
   characters.
 - CI: the lint job now runs `agentskills validate skills/deeper-reading`,
   with `skills-ref` pinned to 0.1.1.
-- Docs: `README.md`, `CONTRIBUTING.md`, `AGENTS.md` and `installer/USAGE.md`
-  name `modules/<name>.md` in place of the old `skills/` module paths.
+- Docs: `CONTRIBUTING.md`, `AGENTS.md` and `installer/USAGE.md` name
+  `modules/<name>.md` in place of the old `skills/` module paths.
+- Docs: `README.md` is rewritten for a reader deciding whether to use the
+  skill, and it is the page npm shows. `docs/examples/` holds a real run to
+  check with the verifier, and `AUDIT.md` and `MUTATION_REPORT.md` moved to
+  `docs/history/0.2.0/`.
 
 ### Compatibility
 
