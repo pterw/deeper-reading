@@ -23,12 +23,13 @@ const STEP_KEYS = {
   receipt: ['do', 'path', 'delete', 'set'],
   run: ['do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives']
 };
-const EXPECT_KEYS = ['exit', 'state', 'code', 'passed', 'message_has', 'message_lacks'];
+const EXPECT_KEYS = ['exit', 'state', 'code', 'code_one_of', 'passed', 'message_has', 'message_lacks'];
 
-// A junction on Windows; the argument is ignored elsewhere, which makes a directory symlink.
+// A junction on Windows; the argument is ignored elsewhere, which makes a directory symlink. A relative
+// target is written as it stands, as git stores it; a junction cannot be relative, so that is a directory symlink.
 function link(at, to) {
   mkdirSync(path.dirname(at), {recursive: true});
-  symlinkSync(to, at, 'junction');
+  symlinkSync(to, at, path.isAbsolute(to) ? 'junction' : 'dir');
 }
 
 // Throws on a step kind, a step key or an expect key the reader does not implement.
@@ -61,7 +62,7 @@ function replay(caseId, steps, work) {
   for (const step of steps) {
     checkStep(step);
     if (step.do === 'mkdir') mkdirSync(where(step.path), {recursive: true});
-    else if (step.do === 'link') link(where(step.at), where(step.to));
+    else if (step.do === 'link') link(where(step.at), step.to.startsWith('{') ? where(step.to) : step.to);
     else if (step.do === 'rmdir') rmdirSync(where(step.path));
     else if (step.do === 'file') {
       mkdirSync(path.dirname(where(step.path)), {recursive: true});
@@ -88,7 +89,9 @@ function runStep(caseId, step, work, where, fill) {
   assert.equal(result.status, expect.exit, `${label} exit: ${result.stdout}${result.stderr}`);
   if (expect.state === null) assert.equal('state' in payload, false, `${label} has no state: ${result.stdout}`);
   else assert.equal(payload.state, expect.state, label);
-  assert.equal(payload.code, expect.code, `${label} code`);
+  // `code_one_of`: the platforms name this refusal differently.
+  if (expect.code_one_of) assert.ok(expect.code_one_of.includes(payload.code), `${label} code ${payload.code}`);
+  else assert.equal(payload.code, expect.code, `${label} code`);
   if ('passed' in expect) assert.equal(payload.passed, expect.passed, `${label} passed`);
   for (const text of expect.message_has || []) assert.ok(payload.error.includes(text), `${label}: ${payload.error}`);
   for (const text of expect.message_lacks || []) assert.ok(!payload.error.includes(text), `${label}: ${payload.error}`);

@@ -103,12 +103,12 @@
       ]
     },
     {
-      "name": "node-dangling-link-not-followed",
+      "name": "node-dangling-link-not-refused",
       "edits": [
         {
-          "file": "installer/node/cli.js",
-          "old": "      if (target !== null && hops < 40) {",
-          "new": "      if (false) {"
+          "file": "installer/node/manifest.js",
+          "old": "    if (isLink(prefix)) {",
+          "new": "    if (false) {"
         }
       ]
     },

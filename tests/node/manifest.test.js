@@ -32,6 +32,7 @@ test("npm metadata has no mutation lifecycle", () => {
 import {
   mkdtempSync,
   mkdirSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync
@@ -214,6 +215,93 @@ test("skill.root that needs a 41st link and leads outside the package is refused
   const manifest = { skill: { name: "demo", entrypoint: "SKILL.md", root: rel } };
   const errors = validateManifest(manifest, pkg);
   assert.match(errors[0], /^(too many symbolic links|skill\.root is outside the package root)/);
+});
+
+// A deep folder, so no `..` in a link text can climb out of the sandbox.
+function deepSandbox(t) {
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-physical-"));
+  t.after(() => rmSync(sandbox, { recursive: true, force: true }));
+  const base = path.join(realpathSync.native(sandbox), "d1", "d2", "d3", "d4", "d5", "d6");
+  mkdirSync(base, { recursive: true });
+  return base;
+}
+
+const JUNCTION = process.platform === "win32" ? "junction" : "dir";
+
+// Each layout builds its links under base and returns the path that exists there.
+const RESOLVING = {
+  "a junction or link": (base) => {
+    mkdirSync(path.join(base, "real"));
+    symlinkSync(path.join(base, "real"), path.join(base, "J"), JUNCTION);
+    return "J";
+  },
+  "a relative link reached through a link": (base) => {
+    mkdirSync(path.join(base, "deep", "shared", "dr"), { recursive: true });
+    mkdirSync(path.join(base, "deep", "real"));
+    symlinkSync("deep/real", path.join(base, "skills"), "dir");
+    symlinkSync("../shared/dr", path.join(base, "deep", "real", "dr"), "dir");
+    return "skills/dr";
+  }
+};
+
+const REFUSED = {
+  "a dangling link as the leaf": (base) => {
+    symlinkSync("gone", path.join(base, "d"), "dir");
+    return "d";
+  },
+  "a name beneath a dangling link": (base) => {
+    symlinkSync("gone", path.join(base, "d"), "dir");
+    return "d/name";
+  },
+  "a cycle": (base) => {
+    symlinkSync("b", path.join(base, "a"), "dir");
+    symlinkSync("a", path.join(base, "b"), "dir");
+    return "a";
+  }
+};
+
+for (const [name, build] of Object.entries(RESOLVING)) {
+  test(`physicalPath answers what the filesystem answers for ${name}, and a missing leaf beneath it`, (t) => {
+    const base = deepSandbox(t);
+    let relative;
+    try {
+      relative = build(base);
+    } catch (error) {
+      return linksUnavailable(t, error);
+    }
+    const existing = path.join(base, relative);
+    const real = realpathSync.native(existing);
+    assert.equal(physicalPath(existing), real);
+    assert.equal(physicalPath(path.join(existing, "new")), path.join(real, "new"));
+  });
+}
+
+for (const [name, build] of Object.entries(REFUSED)) {
+  test(`physicalPath refuses ${name}`, (t) => {
+    const base = deepSandbox(t);
+    let relative;
+    try {
+      relative = build(base);
+    } catch (error) {
+      return linksUnavailable(t, error);
+    }
+    assert.throws(() => physicalPath(path.join(base, relative)), InstallerError);
+  });
+}
+
+// `missing/..` in a link text steps back from a name that is not there, then reaches a link out.
+test("managedPath refuses viaMissing/victim, a link that steps back from a missing name to a link out", (t) => {
+  const base = deepSandbox(t);
+  const root = path.join(base, "root");
+  mkdirSync(root);
+  mkdirSync(path.join(base, "outside"));
+  try {
+    symlinkSync(path.join(base, "outside"), path.join(root, "evil"), JUNCTION);
+    symlinkSync("missing/../evil", path.join(root, "viaMissing"), "dir");
+  } catch (error) {
+    return linksUnavailable(t, error);
+  }
+  assert.throws(() => managedPath(root, "viaMissing/victim"), InstallerError);
 });
 
 test("managedPath rejects lexical and symlink escapes", (t) => {

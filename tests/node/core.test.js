@@ -151,6 +151,14 @@ const ESCAPES = {
   "a long link chain": {
     build: linkChainEscape,
     refused: (error) => error instanceof InstallerError
+  },
+  "a link that steps back from a missing name": {
+    build: (base, outside) => {
+      symlinkSync(outside, path.join(base, "evil"), process.platform === "win32" ? "junction" : "dir");
+      symlinkSync("missing/../evil", path.join(base, "viaMissing"), "dir");
+      return "viaMissing";
+    },
+    refused: (error) => error instanceof InstallerError
   }
 };
 
