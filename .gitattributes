@@ -1,2 +1,5 @@
 # Preserve PDF offsets and fixture hashes across Windows/Linux checkouts.
 *.pdf binary
+
+# The example run binds its source by SHA-256, so no checkout may rewrite line endings.
+docs/examples/** -text

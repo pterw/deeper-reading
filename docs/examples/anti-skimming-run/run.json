@@ -1,0 +1,367 @@
+{
+  "source": {
+    "uri": "file:///C:/ssw/dr-live-deepseek2/source/anti-skimming-plan.md",
+    "local_path": "source/anti-skimming-plan.md",
+    "sha256": "b4d4182e1c88f8856da49184ed3e29899cec597098d8b0ef6bd4c23416647840",
+    "format": "markdown",
+    "authority": "primary",
+    "identity_verified": true
+  },
+  "fidelity": {
+    "preserved": true,
+    "substitutions": []
+  },
+  "preflight": {
+    "skill_read": true,
+    "required_references_read": true,
+    "helper_help_read": true,
+    "runtime_profile_resolved": true,
+    "traversal_plan_ready": true
+  },
+  "plan": {
+    "path": "plan.md",
+    "nodes": [
+      "acquire",
+      "extract",
+      "markdown-000001-af8cb22b12cb",
+      "markdown-000002-0935af6dec34",
+      "markdown-000003-eb0f14e0fb17",
+      "markdown-000004-0286dad1e76c",
+      "markdown-000005-bf26ca19205a",
+      "markdown-000006-5cb86521229b",
+      "markdown-000007-051a230150ab",
+      "markdown-000008-6bd529adc97b",
+      "markdown-000009-e023bf8d6abf",
+      "markdown-000010-1eb2044d5beb",
+      "markdown-000011-6b4f3ccd0089",
+      "markdown-000012-1f46e1271824",
+      "markdown-000013-c661ccc2bf61",
+      "markdown-000014-d535414423b8",
+      "deliverable",
+      "report",
+      "verify"
+    ]
+  },
+  "events": [
+    {
+      "type": "plan_written",
+      "evidence": "plan.md"
+    },
+    {
+      "type": "execution_started"
+    },
+    {
+      "type": "node_started",
+      "node": "acquire"
+    },
+    {
+      "type": "node_passed",
+      "node": "acquire",
+      "evidence": "evidence/source-manifest.md"
+    },
+    {
+      "type": "node_started",
+      "node": "extract"
+    },
+    {
+      "type": "node_passed",
+      "node": "extract",
+      "evidence": "evidence/chunk-manifest.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000001-af8cb22b12cb"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000001-af8cb22b12cb",
+      "chunk_sha256": "af8cb22b12cba93d28384d7f6927e8606398670ca75023fe0f37e4e77cd068e9",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000001-af8cb22b12cb",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000002-0935af6dec34"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000002-0935af6dec34",
+      "chunk_sha256": "0935af6dec344e2db864b885c8861b934c2d4dd644bb370aef927a170bc0b9d0",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000002-0935af6dec34",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000003-eb0f14e0fb17"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000003-eb0f14e0fb17",
+      "chunk_sha256": "eb0f14e0fb17a9945616abdd0a7e7d8b93f7e9397ccf184be1d8097f31dab4ef",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000003-eb0f14e0fb17",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000004-0286dad1e76c"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000004-0286dad1e76c",
+      "chunk_sha256": "0286dad1e76ce0b23a68643ba4563747203452ae9fe46168674aafc78d2c179d",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000004-0286dad1e76c",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000005-bf26ca19205a"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000005-bf26ca19205a",
+      "chunk_sha256": "bf26ca19205a332e347ba28073dd373fd885ac3117741441341b024308f847c5",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000005-bf26ca19205a",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000006-5cb86521229b"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000006-5cb86521229b",
+      "chunk_sha256": "5cb86521229b12644d03e69c265e31d9784999e02b8257a6cfabda74d41317e2",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000006-5cb86521229b",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000007-051a230150ab"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000007-051a230150ab",
+      "chunk_sha256": "051a230150ab88b6de05f93c8bbde09790fe7be1033d201c44bcb6df1c9c0067",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000007-051a230150ab",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000008-6bd529adc97b"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000008-6bd529adc97b",
+      "chunk_sha256": "6bd529adc97bf53ff0d5fe679f897442d011df0907d0d6d831a345fa6df4e02a",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000008-6bd529adc97b",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000009-e023bf8d6abf"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000009-e023bf8d6abf",
+      "chunk_sha256": "e023bf8d6abfd5b84d40713cbd7344662ed371c9f03d87f050644cd3f4f738b5",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000009-e023bf8d6abf",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000010-1eb2044d5beb"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000010-1eb2044d5beb",
+      "chunk_sha256": "1eb2044d5bebf1b3574c224ff2953b80fb1d5930e066ee9dcdd27dca673192f7",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000010-1eb2044d5beb",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000011-6b4f3ccd0089"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000011-6b4f3ccd0089",
+      "chunk_sha256": "6b4f3ccd00899dff23f24d84a5f8664a2db1ff19af64038630a90bbb7b00d114",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000011-6b4f3ccd0089",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000012-1f46e1271824"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000012-1f46e1271824",
+      "chunk_sha256": "1f46e1271824c1c3387109662a20900417692fd3c79afd48467857f1f922af42",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000012-1f46e1271824",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000013-c661ccc2bf61"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000013-c661ccc2bf61",
+      "chunk_sha256": "c661ccc2bf618de9f39ea752ed51b4ba28a1bea6e52e48172b61baca500dd1ce",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000013-c661ccc2bf61",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "markdown-000014-d535414423b8"
+    },
+    {
+      "type": "chunk_verified",
+      "chunk_id": "markdown-000014-d535414423b8",
+      "chunk_sha256": "d535414423b84e7a912790b2a56af1887315ff59d3ee64a7a6094bcb91dc7feb",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_passed",
+      "node": "markdown-000014-d535414423b8",
+      "evidence": "evidence/chunk-evidence.json"
+    },
+    {
+      "type": "node_started",
+      "node": "deliverable"
+    },
+    {
+      "type": "node_passed",
+      "node": "deliverable",
+      "evidence": "deliverables/requested-analysis.md"
+    },
+    {
+      "type": "node_started",
+      "node": "report"
+    },
+    {
+      "type": "node_passed",
+      "node": "report",
+      "evidence": "deliverables/TRAVERSAL_REPORT.md"
+    },
+    {
+      "type": "node_started",
+      "node": "verify"
+    },
+    {
+      "type": "node_failed",
+      "node": "verify",
+      "evidence": "evidence/verification-log.txt"
+    },
+    {
+      "type": "failure_diagnosed",
+      "node": "verify",
+      "evidence": "evidence/failure-ledger.md"
+    },
+    {
+      "type": "node_recovered",
+      "node": "verify",
+      "evidence": "evidence/verification-log.txt"
+    },
+    {
+      "type": "node_passed",
+      "node": "verify",
+      "evidence": "evidence/verification-log.txt"
+    },
+    {
+      "type": "verification_started"
+    },
+    {
+      "type": "verification_passed",
+      "evidence": "evidence/verification-log.txt"
+    },
+    {
+      "type": "done"
+    }
+  ],
+  "chunking": {
+    "manifest": "evidence/chunk-manifest.json",
+    "manifest_sha256": "cce36f0f9a3e7850acba0ceb55bccdd7c3d3c4ba2f668a1c248b9a04c6c3e8cc",
+    "evidence_ledger": "evidence/chunk-evidence.json",
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md"
+  },
+  "qa": {
+    "required": [
+      "markdown-structure"
+    ],
+    "passed": [
+      "markdown-structure"
+    ]
+  },
+  "deliverable": {
+    "requested": "Analysis of what must be true for the plan to count as finished: every acceptance check, rule and constraint with its exact quote and source chunk, plus every late statement that changes or narrows an earlier one.",
+    "provided": true,
+    "paths": [
+      "deliverables/requested-analysis.md"
+    ],
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md",
+    "notes": "Quotes are exact byte spans bound in evidence/chunk-evidence.json."
+  },
+  "evidence": {
+    "plan_status": "plan.md",
+    "skill_preflight": "evidence/skill-preflight.md",
+    "source_manifest": "evidence/source-manifest.md",
+    "chunk_ledger": "evidence/chunk-evidence.json",
+    "failure_ledger": "evidence/failure-ledger.md",
+    "verification_log": "evidence/verification-log.txt",
+    "format_qa": "evidence/format-qa.md",
+    "traversal_report": "deliverables/TRAVERSAL_REPORT.md"
+  }
+}

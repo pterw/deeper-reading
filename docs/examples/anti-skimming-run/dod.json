@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "violations": [],
+  "codes": [],
+  "predicates": {
+    "source_identity_verified": true,
+    "skill_preflight_complete": true,
+    "plan_present": true,
+    "plan_resolved": true,
+    "output_containment_valid": true,
+    "source_coverage_complete": true,
+    "failure_protocol_respected": true,
+    "source_fidelity_preserved": true,
+    "format_qa_complete": true,
+    "requested_deliverable_produced": true,
+    "evidence_complete": true,
+    "no_unresolved_required_failures": true,
+    "fresh_final_verification": true,
+    "machine_checks_passed": true,
+    "deliverable_provided": true
+  }
+}

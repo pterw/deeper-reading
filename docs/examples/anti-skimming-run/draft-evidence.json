@@ -1,0 +1,455 @@
+{
+  "entries": [
+    {
+      "ordinal": 1,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "REQUIRED SUB-SKILL: Use `superpowers:executing-plans` task-by-task. Skill changes follow `superpowers:writing-skills` + TDD.",
+          "chunk_byte_start": 80,
+          "chunk_byte_end": 204
+        },
+        {
+          "text": "Make exhaustive, evidenced document traversal the primary enforceable invariant by shipping portable extractors and deriving source-coverage DoD from the extractor-emitted chunk universe.",
+          "chunk_byte_start": 215,
+          "chunk_byte_end": 402
+        },
+        {
+          "text": "Each extractor emits the complete ordered text-chunk universe with content hashes and contiguous normalized UTF-8 byte spans.",
+          "chunk_byte_start": 508,
+          "chunk_byte_end": 633
+        },
+        {
+          "text": "A single machine ledger, `chunk-evidence.json`, records exactly one verification verdict for every emitted chunk.",
+          "chunk_byte_start": 634,
+          "chunk_byte_end": 747
+        },
+        {
+          "text": "`verify_run.py` derives required coverage from the manifest, rejects any missing/extra/duplicate chunk evidence, and refuses Done before the complete manifest is evidenced.",
+          "chunk_byte_start": 748,
+          "chunk_byte_end": 920
+        },
+        {
+          "text": "Format-specific visual/structural QA remains a separate predicate and is never replaced by text extraction.",
+          "chunk_byte_start": 921,
+          "chunk_byte_end": 1028
+        },
+        {
+          "text": "`103 passed` before this remediation.",
+          "chunk_byte_start": 1054,
+          "chunk_byte_end": 1091
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 2,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Canonical root remains `SKILL.md`.",
+          "chunk_byte_start": 24,
+          "chunk_byte_end": 58
+        },
+        {
+          "text": "Freeze remains held until frozen-byte verification passes.",
+          "chunk_byte_start": 61,
+          "chunk_byte_end": 119
+        },
+        {
+          "text": "Portable extraction scripts must not depend on `/home/oai/skills/...`.",
+          "chunk_byte_start": 122,
+          "chunk_byte_end": 192
+        },
+        {
+          "text": "Installer remains stdlib-only; extraction helpers may use optional local parsing backends but must fail clearly when no supported backend exists.",
+          "chunk_byte_start": 195,
+          "chunk_byte_end": 340
+        },
+        {
+          "text": "HTML, DOCX, and Markdown extraction must work with Python standard library only.",
+          "chunk_byte_start": 343,
+          "chunk_byte_end": 423
+        },
+        {
+          "text": "PDF extraction supports environment-detected backends; no internal OAI path is required.",
+          "chunk_byte_start": 426,
+          "chunk_byte_end": 514
+        },
+        {
+          "text": "Every emitted chunk gets stable id, ordinal, locator, content hash, normalized extracted-text byte span, and text.",
+          "chunk_byte_start": 517,
+          "chunk_byte_end": 631
+        },
+        {
+          "text": "Chunk spans must cover the emitted normalized text stream contiguously with no gaps or overlaps.",
+          "chunk_byte_start": 634,
+          "chunk_byte_end": 730
+        },
+        {
+          "text": "Atomic Markdown fences/tables are never split; oversize atomic blocks remain one chunk and are marked oversize.",
+          "chunk_byte_start": 733,
+          "chunk_byte_end": 844
+        },
+        {
+          "text": "One machine evidence record per chunk: `facts`, `constraints`, or explicit `non_match`; empty/ambiguous verdicts fail.",
+          "chunk_byte_start": 847,
+          "chunk_byte_end": 965
+        },
+        {
+          "text": "`coverage.required` and `coverage.completed` may exist for reporting but must exactly mirror manifest/evidence, never define them.",
+          "chunk_byte_start": 968,
+          "chunk_byte_end": 1098
+        },
+        {
+          "text": "PDF/DOCX visual/layout truth remains governed by format QA; exhaustive text traversal does not claim visual completeness.",
+          "chunk_byte_start": 1101,
+          "chunk_byte_end": 1222
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 3,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Add tests requiring `extract_pdf.py`, `extract_docx.py`, `extract_html.py`, `extract_markdown.py`, shared chunking code, and `references/lengthy-markdown.md`.",
+          "chunk_byte_start": 46,
+          "chunk_byte_end": 204
+        },
+        {
+          "text": "Require `MANIFEST.json` runtime payload to include the complete `scripts/` directory.",
+          "chunk_byte_start": 207,
+          "chunk_byte_end": 292
+        },
+        {
+          "text": "Run targeted tests and observe failure before production changes.",
+          "chunk_byte_start": 295,
+          "chunk_byte_end": 360
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 4,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Test schema/version/source identity/chunk ids/ordinals/content hashes/contiguous normalized byte spans.",
+          "chunk_byte_start": 44,
+          "chunk_byte_end": 147
+        },
+        {
+          "text": "Test deterministic repeated extraction.",
+          "chunk_byte_start": 150,
+          "chunk_byte_end": 189
+        },
+        {
+          "text": "Test empty document behavior and oversize atomic blocks.",
+          "chunk_byte_start": 192,
+          "chunk_byte_end": 248
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 5,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Implement block/section parser recognizing `#`, `##`, `###`, fenced code, tables, and ordinary blocks.",
+          "chunk_byte_start": 61,
+          "chunk_byte_end": 163
+        },
+        {
+          "text": "Keep fenced code and tables atomic.",
+          "chunk_byte_start": 166,
+          "chunk_byte_end": 201
+        },
+        {
+          "text": "Chunk sections to bounded bytes without splitting atomic blocks.",
+          "chunk_byte_start": 204,
+          "chunk_byte_end": 268
+        },
+        {
+          "text": "Emit canonical JSON manifest.",
+          "chunk_byte_start": 271,
+          "chunk_byte_end": 300
+        },
+        {
+          "text": "Run Markdown extractor tests to GREEN.",
+          "chunk_byte_start": 303,
+          "chunk_byte_end": 341
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 6,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "HTML: stdlib DOM parser, heading-aware blocks, preserve pre/code/table text as atomic blocks.",
+          "chunk_byte_start": 47,
+          "chunk_byte_end": 140
+        },
+        {
+          "text": "DOCX: stdlib ZIP/XML extraction across document/header/footer/footnotes/endnotes/comments story parts with structural locators.",
+          "chunk_byte_start": 143,
+          "chunk_byte_end": 270
+        },
+        {
+          "text": "PDF: backend auto-detection (`pypdf`, PyMuPDF, pdfplumber, or `pdftotext`) with page locators; no OAI paths.",
+          "chunk_byte_start": 273,
+          "chunk_byte_end": 381
+        },
+        {
+          "text": "Run each extractor test independently before widening.",
+          "chunk_byte_start": 384,
+          "chunk_byte_end": 438
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 7,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Extend run schema with `chunking.manifest` and `chunking.evidence_ledger`.",
+          "chunk_byte_start": 43,
+          "chunk_byte_end": 117
+        },
+        {
+          "text": "RED cases: missing evidence for chunk N, forged smaller `coverage.required`, duplicate chunk evidence, evidence for nonexistent chunk, skipped ordinal, content-hash mismatch, manifest source mismatch, premature Done after partial traversal, empty verdict, and stale completion list.",
+          "chunk_byte_start": 120,
+          "chunk_byte_end": 402
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 8,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Load manifest and evidence fresh relative to `run.json`.",
+          "chunk_byte_start": 45,
+          "chunk_byte_end": 101
+        },
+        {
+          "text": "Validate manifest internal integrity and source identity.",
+          "chunk_byte_start": 104,
+          "chunk_byte_end": 161
+        },
+        {
+          "text": "Require exact set equality: manifest chunk ids == evidence chunk ids == coverage.required == coverage.completed for Done.",
+          "chunk_byte_start": 164,
+          "chunk_byte_end": 285
+        },
+        {
+          "text": "Require one and only one evidence record per chunk with nonempty supported verdict.",
+          "chunk_byte_start": 288,
+          "chunk_byte_end": 371
+        },
+        {
+          "text": "Make `source_coverage_complete` derive from these checks.",
+          "chunk_byte_start": 374,
+          "chunk_byte_end": 431
+        },
+        {
+          "text": "Produce per-chunk violations that identify the missing/invalid chunk.",
+          "chunk_byte_start": 434,
+          "chunk_byte_end": 503
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 9,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Add `references/lengthy-markdown.md`.",
+          "chunk_byte_start": 57,
+          "chunk_byte_end": 94
+        },
+        {
+          "text": "Update root `SKILL.md`, DoD, evidence, deliverable, control-flow, HTML/PDF/DOCX/runtime-profile/dependency references.",
+          "chunk_byte_start": 97,
+          "chunk_byte_end": 215
+        },
+        {
+          "text": "State primary mission explicitly: exhaustive verified traversal; chunking is the enforcement mechanism, not the deliverable.",
+          "chunk_byte_start": 218,
+          "chunk_byte_end": 342
+        },
+        {
+          "text": "Preserve native render-first PDF/DOCX visual QA and distinguish it from portable text traversal.",
+          "chunk_byte_start": 345,
+          "chunk_byte_end": 441
+        },
+        {
+          "text": "Remove/replace stale language that allows selected-chunk summaries or needle-in-a-haystack early exit.",
+          "chunk_byte_start": 444,
+          "chunk_byte_end": 546
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 10,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Begin from a passing full-manifest run.",
+          "chunk_byte_start": 31,
+          "chunk_byte_end": 70
+        },
+        {
+          "text": "Mutate: delete one ledger entry; truncate manifest; forge coverage; reorder/duplicate ids; replace fact/non-match with empty record; Done after first N chunks; change chunk content hash; change source hash.",
+          "chunk_byte_start": 73,
+          "chunk_byte_end": 279
+        },
+        {
+          "text": "Every illegal mutation must be rejected for the intended predicate.",
+          "chunk_byte_start": 282,
+          "chunk_byte_end": 349
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 11,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Exercise at least one real public HTML or PDF through extractor -> manifest -> complete evidence ledger -> `verify_run.py` PASS.",
+          "chunk_byte_start": 34,
+          "chunk_byte_end": 162
+        },
+        {
+          "text": "Mutate one emitted chunk to missing evidence -> verifier FAIL.",
+          "chunk_byte_start": 165,
+          "chunk_byte_end": 227
+        },
+        {
+          "text": "Record exact scope; do not claim visual PDF completeness from text extraction.",
+          "chunk_byte_start": 230,
+          "chunk_byte_end": 308
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 12,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "Re-read changed Markdown and scripts for contradictions.",
+          "chunk_byte_start": 40,
+          "chunk_byte_end": 96
+        },
+        {
+          "text": "Run full test suite.",
+          "chunk_byte_start": 99,
+          "chunk_byte_end": 119
+        },
+        {
+          "text": "Build distribution using tested builder.",
+          "chunk_byte_start": 122,
+          "chunk_byte_end": 162
+        },
+        {
+          "text": "Extract frozen ZIP and rerun full suite from archive bytes.",
+          "chunk_byte_start": 165,
+          "chunk_byte_end": 224
+        },
+        {
+          "text": "Run real-source anti-skimming smoke from archived bytes.",
+          "chunk_byte_start": 227,
+          "chunk_byte_end": 283
+        },
+        {
+          "text": "Invoke `verification-before-completion`, hash archive, then freeze.",
+          "chunk_byte_start": 286,
+          "chunk_byte_end": 353
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "ordinal": 13,
+      "outcome": "non_match",
+      "reason": "Heading only ('## Definition of Done'); the Definition of Done body is emitted as chunk 14, which carries the acceptance predicates."
+    },
+    {
+      "ordinal": 14,
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "text": "portable_extractors_shipped",
+          "chunk_byte_start": 8,
+          "chunk_byte_end": 35
+        },
+        {
+          "text": "extractor_manifest_deterministic",
+          "chunk_byte_start": 40,
+          "chunk_byte_end": 72
+        },
+        {
+          "text": "every_manifest_chunk_has_exactly_one_verified_evidence_record",
+          "chunk_byte_start": 77,
+          "chunk_byte_end": 138
+        },
+        {
+          "text": "no_manifest_chunk_can_be_omitted_by_forging_coverage",
+          "chunk_byte_start": 143,
+          "chunk_byte_end": 195
+        },
+        {
+          "text": "premature_done_is_rejected",
+          "chunk_byte_start": 200,
+          "chunk_byte_end": 226
+        },
+        {
+          "text": "markdown_fences_and_tables_are_atomic",
+          "chunk_byte_start": 231,
+          "chunk_byte_end": 268
+        },
+        {
+          "text": "native_visual_qa_semantics_preserved",
+          "chunk_byte_start": 273,
+          "chunk_byte_end": 309
+        },
+        {
+          "text": "portable_payload_contains_extractors",
+          "chunk_byte_start": 314,
+          "chunk_byte_end": 350
+        },
+        {
+          "text": "mutation_suite_green",
+          "chunk_byte_start": 355,
+          "chunk_byte_end": 375
+        },
+        {
+          "text": "real_source_full_traversal_smoke_green",
+          "chunk_byte_start": 380,
+          "chunk_byte_end": 418
+        },
+        {
+          "text": "existing_installer_workflow_tests_green",
+          "chunk_byte_start": 423,
+          "chunk_byte_end": 462
+        },
+        {
+          "text": "frozen_archive_retests_green",
+          "chunk_byte_start": 467,
+          "chunk_byte_end": 495
+        }
+      ],
+      "constraints": []
+    }
+  ]
+}
