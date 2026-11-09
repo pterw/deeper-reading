@@ -23,6 +23,12 @@ class OwnershipGuardSuites(unittest.TestCase):
     def test_python_ownership_table(self):
         self.run_suite([sys.executable, '-m', 'pytest', '-q', 'tests/installer/test_ownership.py'])
 
+    def test_python_owner_recheck(self):
+        self.run_suite([sys.executable, '-m', 'pytest', '-q', 'tests/installer/test_owner_recheck.py'])
+
+    def test_node_owner_recheck(self):
+        self.run_suite(['node', '--test', 'tests/node/owner-recheck.test.js'])
+
     def test_node_ownership_table(self):
         self.run_suite(['node', '--test', 'tests/node/ownership.test.js'])
 

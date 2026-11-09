@@ -92,7 +92,7 @@ The skill is installed at `<base>/skills/deeper-reading`, where `<base>` depends
 | `installer.receipt.owner_invalid` | The receipt's `target` is missing or unknown, or its `scope` is not `user` or `project`. Delete the skill folder `deeper-reading`; if it is a link, remove the link itself and not its contents; never delete only the shared `.agents` folder; then run `install`. |
 | `installer.receipt.missing` | `install` or `uninstall` found the folder without a receipt, for example after `npx skills add`. The message gives the recovery; see the README. `verify` fails there without this code. |
 
-A linked skills folder is the usual cause of `installer.owner.mismatch`. If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to one folder, so the target that did not install it is refused. The message names the owning target and the working command: `--target <owner>`. `generic-agents` and `codex` share a root by design and are not refused for it. `--project-dir` is ignored for user scope.
+For `install` and `uninstall` (not `verify` or `--dry-run`), the check repeats inside the target lock, so if another target takes the folder after the first check, the operation is refused with the same code. A linked skills folder is the usual cause of `installer.owner.mismatch`. If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to one folder, so the target that did not install it is refused. The message names the owning target and the working command: `--target <owner>`, plus `--scope <owner scope>` when the scope differs. `generic-agents` and `codex` share a root by design and are not refused for it. `--project-dir` is ignored for user scope.
 
 ## Verify
 

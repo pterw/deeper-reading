@@ -84,13 +84,10 @@ def _check_owner(
             f"installation receipt in {target_root} names no known owner; the only recovery is deleting the folder: {DELETE_ROUTE}",
             "installer.receipt.owner_invalid",
         )
-    if owner_scope == "project" and scope == "user":
-        owner_root = None
-    else:
-        owner_root = ADAPTERS[owner]().resolve_skill_root(owner_scope, _project_dir(owner_scope, project_dir))
-    if owner_root != target_root:
+    if owner_scope != scope or ADAPTERS[owner]().resolve_skill_root(scope, _project_dir(scope, project_dir)) != target_root:
         raise InstallError(
-            f"{target_root} is owned by target {owner} ({owner_scope} scope), not {target_name}; "
+            f"{target_root} belongs to target {owner} (scope {owner_scope}); "
+            f"this request was for target {target_name}, scope {scope}; "
             f"use `--target {owner} --scope {owner_scope}` for it",
             "installer.owner.mismatch",
         )
@@ -201,6 +198,7 @@ def command_install(args) -> int:
             document_status=doc,
             discovery_verifier=None if args.dry_run else adapter.discovery_verify,
             dry_run=args.dry_run,
+            owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root, installing=True),
         )
     except InstallError as exc:
         _emit(_failure(exc, target_name, target_root), args.json)
@@ -215,7 +213,13 @@ def command_uninstall(args) -> int:
     target_root = _target_root(adapter, args.scope, args.project_dir)
     try:
         _check_owner(target_name, args.scope, args.project_dir, target_root)
-        result = uninstall_skill(target_root, force=args.force, target_name=target_name, scope=args.scope)
+        result = uninstall_skill(
+            target_root,
+            force=args.force,
+            target_name=target_name,
+            scope=args.scope,
+            owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root),
+        )
     except InstallError as exc:
         _emit(_failure(exc, target_name, target_root), args.json)
         return 2

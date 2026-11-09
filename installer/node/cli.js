@@ -164,7 +164,7 @@ function guardContained(targetRoot, projectDir) {
   }
 }
 
-function guardOwnership(targetRoot, projectDir, env, command) {
+function guardOwnership(targetRoot, scope, projectDir, env, command) {
   const receipt = readOwnerReceipt(targetRoot);
   if (receipt === null) {
     if (command === "install") guardContained(targetRoot, projectDir);
@@ -177,9 +177,8 @@ function guardOwnership(targetRoot, projectDir, env, command) {
       "installer.receipt.owner_invalid"
     );
   }
-  const ownerRoot = receipt.scope === "project" && projectDir === null ? null
-    : getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(receipt.scope, projectDir);
-  if (ownerRoot !== targetRoot) {
+  if (receipt.scope !== scope ||
+      getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(scope, projectDir) !== targetRoot) {
     throw new InstallerError(
       `${targetRoot} belongs to target ${owner} (scope ${receipt.scope}); ` +
         `run this command with --target ${owner} --scope ${receipt.scope}`,
@@ -204,7 +203,7 @@ function resolveContext(command, options, cwd, env) {
     ? path.resolve(options.projectDir || cwd)
     : null;
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
-  if (command !== "doctor") guardOwnership(targetRoot, projectDir, env, command);
+  if (command !== "doctor") guardOwnership(targetRoot, options.scope, projectDir, env, command);
   const documentStatus = documentProfileStatus(options.documentProfile, {
     skillRoot: skillRoot(manifest, PACKAGE_ROOT)
   });
@@ -221,7 +220,8 @@ function resolveContext(command, options, cwd, env) {
     documentStatus,
     installerStatus,
     scope: options.scope,
-    documentProfile: options.documentProfile
+    documentProfile: options.documentProfile,
+    ownerCheck: () => guardOwnership(targetRoot, options.scope, projectDir, env, command)
   };
 }
 
@@ -236,6 +236,7 @@ function coreOptions(context, options) {
     documentProfile: context.documentProfile,
     documentStatus: context.documentStatus,
     discoveryVerifier: (skillName) => context.adapter.discoveryVerify(skillName),
+    ownerCheck: context.ownerCheck,
     dryRun: options.dryRun
   };
 }
@@ -331,7 +332,7 @@ function runVerify(context, env) {
 
 function runUninstall(context, options) {
   const result = uninstallSkill(context.targetRoot, {
-    force: options.force, targetName: context.targetName, scope: context.scope
+    force: options.force, targetName: context.targetName, scope: context.scope, ownerCheck: context.ownerCheck
   });
   return {
     code: 0,

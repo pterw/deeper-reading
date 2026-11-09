@@ -269,7 +269,10 @@ export function buildInstallPlan(options) {
 
 export function installSkill(options) {
   if (options.dryRun) return buildInstallPlan(options);
-  return withTargetLock(options.targetRoot, (targetRoot) => installLocked({ ...options, targetRoot }));
+  return withTargetLock(options.targetRoot, (targetRoot) => {
+    options.ownerCheck?.();
+    return installLocked({ ...options, targetRoot });
+  });
 }
 
 function installLocked(options) {
@@ -457,7 +460,10 @@ export function verifyInstallation(targetRoot) {
 }
 
 export function uninstallSkill(targetRoot, options = {}) {
-  return withTargetLock(targetRoot, (target) => uninstallLocked(target, options));
+  return withTargetLock(targetRoot, (target) => {
+    if (options.ownerCheck) options.ownerCheck();
+    return uninstallLocked(target, options);
+  });
 }
 
 function uninstallLocked(targetRoot, options) {
