@@ -82,9 +82,9 @@ test("skill.root points the payload at the skill folder", (t) => {
   const { pkg, manifest } = rootedPackage(t, "skills/demo");
   assert.deepEqual(validateManifest(manifest, pkg), []);
   assert.deepEqual(Object.keys(payloadHashes(pkg, manifest)), ["modules/a.txt", "SKILL.md"]);
-  const demo = path.join(pkg, "skills", "demo");
+  const demo = physicalPath(path.join(pkg, "skills", "demo"));
   assert.ok(payloadFiles(pkg, manifest).every((file) => file.startsWith(demo + path.sep)));
-  assert.equal(skillRoot(manifest, pkg), physicalPath(path.join(pkg, "skills", "demo")));
+  assert.equal(skillRoot(manifest, pkg), demo);
 });
 
 test("a payload without modules is refused", (t) => {
