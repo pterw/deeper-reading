@@ -262,7 +262,10 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.func(args)
-    except InstallError as exc:
+    except RuntimeError as exc:
+        # Python before 3.13 raises a plain RuntimeError for a symlink loop; any other one keeps its traceback.
+        if not isinstance(exc, InstallError) and "Symlink loop" not in str(exc):
+            raise
         data = {"state": "failed", "error": str(exc), "command": args.command}
         if args.command == "verify":
             data["passed"] = False
