@@ -1,0 +1,76 @@
+# Verification Log
+
+Fresh final proving actions, in order. All commands run from
+`C:/ssw/dr-live-deepseek2` with the skill root at
+`.agents/skills/deeper-reading`.
+
+## 1. Source identity
+
+```
+python -c "import hashlib;print(hashlib.sha256(open('runs/anti-skimming/source/anti-skimming-plan.md','rb').read()).hexdigest())"
+```
+
+Result: `b4d4182e1c88f8856da49184ed3e29899cec597098d8b0ef6bd4c23416647840`, equal to
+`source.sha256` in `run.json` and to `source.sha256` in the manifest.
+
+## 2. Canonical extraction
+
+```
+python .agents/skills/deeper-reading/scripts/extract_markdown.py runs/anti-skimming/source/anti-skimming-plan.md --run-root runs/anti-skimming --source-uri "file:///C:/ssw/dr-live-deepseek2/source/anti-skimming-plan.md"
+```
+
+Result: exit 0, `Wrote 14 chunks to ...\evidence\chunk-manifest.json`.
+
+## 3. Evidence binding
+
+```
+python .agents/skills/deeper-reading/scripts/build_evidence.py runs/anti-skimming/evidence/chunk-manifest.json runs/anti-skimming/draft-evidence.json --out runs/anti-skimming/evidence/chunk-evidence.json
+```
+
+Result: exit 0, `Wrote 14 verdicts / 71 assertions / 0 constraints`.
+
+## 4. Traversal report
+
+```
+python .agents/skills/deeper-reading/scripts/traversal_report.py --run-root runs/anti-skimming
+```
+
+Result: exit 0, `Wrote traversal report to ...\deliverables\TRAVERSAL_REPORT.md`.
+
+## 5. Verifier, first attempt — FAILED
+
+```
+python .agents/skills/deeper-reading/scripts/verify_run.py runs/anti-skimming/run.json
+```
+
+Result: exit 1.
+
+```
+FAIL: evidence.verification_log does not exist: C:\ssw\dr-live-deepseek2\runs\anti-skimming\evidence\verification-log.txt
+```
+
+Diagnosed in `evidence/failure-ledger.md` as a missing agent-written evidence file, not a
+coverage or binding failure. Repaired by writing this log.
+
+## 6. Verifier, after repair
+
+```
+python .agents/skills/deeper-reading/scripts/verify_run.py runs/anti-skimming/run.json
+```
+
+Result: exit 0.
+
+```
+PASS: Definition of Done predicates satisfied
+```
+
+`dod.json` was written by the verifier at `runs/anti-skimming/dod.json` with
+`"passed": true`.
+
+## 7. Deliverable quote check
+
+```
+python -c "import json;led=json.load(open('runs/anti-skimming/evidence/chunk-evidence.json',encoding='utf-8'));doc=open('runs/anti-skimming/deliverables/requested-analysis.md',encoding='utf-8').read();print(sum(1 for e in led['entries'] for a in e.get('assertions',[]) if a['text'] not in doc))"
+```
+
+Result: `0` — every one of the 71 bound assertions appears verbatim in the deliverable.

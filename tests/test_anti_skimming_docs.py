@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from layout import ROOT, SKILL_ROOT
+from layout import SKILL_ROOT
 
 DOD = "references/definition-of-done.md"
 EVIDENCE = "references/evidence.md"
@@ -66,26 +66,6 @@ def test_required_instruction_is_stated_where_its_phase_loads_it(instruction, re
     assert instruction in text(rel)
     if module is not None:
         assert f"]({rel})" in text(f"modules/{module}.md")
-
-
-def test_readme_explains_chunk_contract_access_and_future_scope():
-    body = text("README.md", ROOT).lower()
-    assert "what is a chunk" in body
-    assert "chunk id" in body
-    assert "evidence/chunk-manifest.json" in body
-    assert "traversal_report.md" in body
-    assert "markdown" in body and "heading" in body
-    assert "pdf" in body and "page" in body
-    assert "docx" in body and "ooxml" in body
-    assert "html" in body and "heading" in body
-    assert "xlsx" in body and "csv" in body and "future" in body
-    assert "derived" in body and ("reconstruct" in body or "rebuild" in body)
-
-
-def test_readme_documents_receipt_ownership_and_evidence_schema():
-    readme = text("README.md", ROOT).lower()
-    assert "receipt-owned" in readme and "install root" in readme
-    assert "schema v2" in readme and "atom_id" in readme
 
 
 def test_control_flow_keeps_the_exhaustive_obligation_against_a_forged_manifest():

@@ -1,0 +1,557 @@
+{
+  "schema_version": 2,
+  "manifest_sha256": "cce36f0f9a3e7850acba0ceb55bccdd7c3d3c4ba2f668a1c248b9a04c6c3e8cc",
+  "source_sha256": "b4d4182e1c88f8856da49184ed3e29899cec597098d8b0ef6bd4c23416647840",
+  "entries": [
+    {
+      "chunk_id": "markdown-000001-af8cb22b12cb",
+      "ordinal": 1,
+      "chunk_sha256": "af8cb22b12cba93d28384d7f6927e8606398670ca75023fe0f37e4e77cd068e9",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:80:204:7f80a1bc45af",
+          "text": "REQUIRED SUB-SKILL: Use `superpowers:executing-plans` task-by-task. Skill changes follow `superpowers:writing-skills` + TDD.",
+          "chunk_byte_start": 80,
+          "chunk_byte_end": 204
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:215:402:94b61f8ce6e3",
+          "text": "Make exhaustive, evidenced document traversal the primary enforceable invariant by shipping portable extractors and deriving source-coverage DoD from the extractor-emitted chunk universe.",
+          "chunk_byte_start": 215,
+          "chunk_byte_end": 402
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:508:633:780e580d1284",
+          "text": "Each extractor emits the complete ordered text-chunk universe with content hashes and contiguous normalized UTF-8 byte spans.",
+          "chunk_byte_start": 508,
+          "chunk_byte_end": 633
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:634:747:a9bd77f47a47",
+          "text": "A single machine ledger, `chunk-evidence.json`, records exactly one verification verdict for every emitted chunk.",
+          "chunk_byte_start": 634,
+          "chunk_byte_end": 747
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:748:920:17beb57ab0a5",
+          "text": "`verify_run.py` derives required coverage from the manifest, rejects any missing/extra/duplicate chunk evidence, and refuses Done before the complete manifest is evidenced.",
+          "chunk_byte_start": 748,
+          "chunk_byte_end": 920
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:921:1028:042c93a0611a",
+          "text": "Format-specific visual/structural QA remains a separate predicate and is never replaced by text extraction.",
+          "chunk_byte_start": 921,
+          "chunk_byte_end": 1028
+        },
+        {
+          "atom_id": "markdown-000001-af8cb22b12cb:assertion:1054:1091:45c934cfc878",
+          "text": "`103 passed` before this remediation.",
+          "chunk_byte_start": 1054,
+          "chunk_byte_end": 1091
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000002-0935af6dec34",
+      "ordinal": 2,
+      "chunk_sha256": "0935af6dec344e2db864b885c8861b934c2d4dd644bb370aef927a170bc0b9d0",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:24:58:79b7a487b164",
+          "text": "Canonical root remains `SKILL.md`.",
+          "chunk_byte_start": 24,
+          "chunk_byte_end": 58
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:61:119:3d8b69c4194a",
+          "text": "Freeze remains held until frozen-byte verification passes.",
+          "chunk_byte_start": 61,
+          "chunk_byte_end": 119
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:122:192:9280fbefc641",
+          "text": "Portable extraction scripts must not depend on `/home/oai/skills/...`.",
+          "chunk_byte_start": 122,
+          "chunk_byte_end": 192
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:195:340:a6dcb8407a61",
+          "text": "Installer remains stdlib-only; extraction helpers may use optional local parsing backends but must fail clearly when no supported backend exists.",
+          "chunk_byte_start": 195,
+          "chunk_byte_end": 340
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:343:423:d4344221b49e",
+          "text": "HTML, DOCX, and Markdown extraction must work with Python standard library only.",
+          "chunk_byte_start": 343,
+          "chunk_byte_end": 423
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:426:514:49665c7a6a46",
+          "text": "PDF extraction supports environment-detected backends; no internal OAI path is required.",
+          "chunk_byte_start": 426,
+          "chunk_byte_end": 514
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:517:631:31ca6fa1b3b5",
+          "text": "Every emitted chunk gets stable id, ordinal, locator, content hash, normalized extracted-text byte span, and text.",
+          "chunk_byte_start": 517,
+          "chunk_byte_end": 631
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:634:730:96a052749a9a",
+          "text": "Chunk spans must cover the emitted normalized text stream contiguously with no gaps or overlaps.",
+          "chunk_byte_start": 634,
+          "chunk_byte_end": 730
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:733:844:b232aab401f4",
+          "text": "Atomic Markdown fences/tables are never split; oversize atomic blocks remain one chunk and are marked oversize.",
+          "chunk_byte_start": 733,
+          "chunk_byte_end": 844
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:847:965:71c44cfb8cc8",
+          "text": "One machine evidence record per chunk: `facts`, `constraints`, or explicit `non_match`; empty/ambiguous verdicts fail.",
+          "chunk_byte_start": 847,
+          "chunk_byte_end": 965
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:968:1098:8bdc8967d0f9",
+          "text": "`coverage.required` and `coverage.completed` may exist for reporting but must exactly mirror manifest/evidence, never define them.",
+          "chunk_byte_start": 968,
+          "chunk_byte_end": 1098
+        },
+        {
+          "atom_id": "markdown-000002-0935af6dec34:assertion:1101:1222:e9a43e21b30c",
+          "text": "PDF/DOCX visual/layout truth remains governed by format QA; exhaustive text traversal does not claim visual completeness.",
+          "chunk_byte_start": 1101,
+          "chunk_byte_end": 1222
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000003-eb0f14e0fb17",
+      "ordinal": 3,
+      "chunk_sha256": "eb0f14e0fb17a9945616abdd0a7e7d8b93f7e9397ccf184be1d8097f31dab4ef",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000003-eb0f14e0fb17:assertion:46:204:df7bc60f339b",
+          "text": "Add tests requiring `extract_pdf.py`, `extract_docx.py`, `extract_html.py`, `extract_markdown.py`, shared chunking code, and `references/lengthy-markdown.md`.",
+          "chunk_byte_start": 46,
+          "chunk_byte_end": 204
+        },
+        {
+          "atom_id": "markdown-000003-eb0f14e0fb17:assertion:207:292:38b0b00ec2ac",
+          "text": "Require `MANIFEST.json` runtime payload to include the complete `scripts/` directory.",
+          "chunk_byte_start": 207,
+          "chunk_byte_end": 292
+        },
+        {
+          "atom_id": "markdown-000003-eb0f14e0fb17:assertion:295:360:555c6e812d05",
+          "text": "Run targeted tests and observe failure before production changes.",
+          "chunk_byte_start": 295,
+          "chunk_byte_end": 360
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000004-0286dad1e76c",
+      "ordinal": 4,
+      "chunk_sha256": "0286dad1e76ce0b23a68643ba4563747203452ae9fe46168674aafc78d2c179d",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000004-0286dad1e76c:assertion:44:147:f520deaf3291",
+          "text": "Test schema/version/source identity/chunk ids/ordinals/content hashes/contiguous normalized byte spans.",
+          "chunk_byte_start": 44,
+          "chunk_byte_end": 147
+        },
+        {
+          "atom_id": "markdown-000004-0286dad1e76c:assertion:150:189:acc96d3124fc",
+          "text": "Test deterministic repeated extraction.",
+          "chunk_byte_start": 150,
+          "chunk_byte_end": 189
+        },
+        {
+          "atom_id": "markdown-000004-0286dad1e76c:assertion:192:248:62351df337d2",
+          "text": "Test empty document behavior and oversize atomic blocks.",
+          "chunk_byte_start": 192,
+          "chunk_byte_end": 248
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000005-bf26ca19205a",
+      "ordinal": 5,
+      "chunk_sha256": "bf26ca19205a332e347ba28073dd373fd885ac3117741441341b024308f847c5",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000005-bf26ca19205a:assertion:61:163:2eb2aee5da5c",
+          "text": "Implement block/section parser recognizing `#`, `##`, `###`, fenced code, tables, and ordinary blocks.",
+          "chunk_byte_start": 61,
+          "chunk_byte_end": 163
+        },
+        {
+          "atom_id": "markdown-000005-bf26ca19205a:assertion:166:201:d0e167215cab",
+          "text": "Keep fenced code and tables atomic.",
+          "chunk_byte_start": 166,
+          "chunk_byte_end": 201
+        },
+        {
+          "atom_id": "markdown-000005-bf26ca19205a:assertion:204:268:40861eee884d",
+          "text": "Chunk sections to bounded bytes without splitting atomic blocks.",
+          "chunk_byte_start": 204,
+          "chunk_byte_end": 268
+        },
+        {
+          "atom_id": "markdown-000005-bf26ca19205a:assertion:271:300:f53a3b9649e8",
+          "text": "Emit canonical JSON manifest.",
+          "chunk_byte_start": 271,
+          "chunk_byte_end": 300
+        },
+        {
+          "atom_id": "markdown-000005-bf26ca19205a:assertion:303:341:b994ef8cc34e",
+          "text": "Run Markdown extractor tests to GREEN.",
+          "chunk_byte_start": 303,
+          "chunk_byte_end": 341
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000006-5cb86521229b",
+      "ordinal": 6,
+      "chunk_sha256": "5cb86521229b12644d03e69c265e31d9784999e02b8257a6cfabda74d41317e2",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000006-5cb86521229b:assertion:47:140:ff867eaec274",
+          "text": "HTML: stdlib DOM parser, heading-aware blocks, preserve pre/code/table text as atomic blocks.",
+          "chunk_byte_start": 47,
+          "chunk_byte_end": 140
+        },
+        {
+          "atom_id": "markdown-000006-5cb86521229b:assertion:143:270:654c1769a81c",
+          "text": "DOCX: stdlib ZIP/XML extraction across document/header/footer/footnotes/endnotes/comments story parts with structural locators.",
+          "chunk_byte_start": 143,
+          "chunk_byte_end": 270
+        },
+        {
+          "atom_id": "markdown-000006-5cb86521229b:assertion:273:381:09690bb0c155",
+          "text": "PDF: backend auto-detection (`pypdf`, PyMuPDF, pdfplumber, or `pdftotext`) with page locators; no OAI paths.",
+          "chunk_byte_start": 273,
+          "chunk_byte_end": 381
+        },
+        {
+          "atom_id": "markdown-000006-5cb86521229b:assertion:384:438:31cb7fe2a0fa",
+          "text": "Run each extractor test independently before widening.",
+          "chunk_byte_start": 384,
+          "chunk_byte_end": 438
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000007-051a230150ab",
+      "ordinal": 7,
+      "chunk_sha256": "051a230150ab88b6de05f93c8bbde09790fe7be1033d201c44bcb6df1c9c0067",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000007-051a230150ab:assertion:43:117:64c40e24e7ed",
+          "text": "Extend run schema with `chunking.manifest` and `chunking.evidence_ledger`.",
+          "chunk_byte_start": 43,
+          "chunk_byte_end": 117
+        },
+        {
+          "atom_id": "markdown-000007-051a230150ab:assertion:120:402:2e50d3b535df",
+          "text": "RED cases: missing evidence for chunk N, forged smaller `coverage.required`, duplicate chunk evidence, evidence for nonexistent chunk, skipped ordinal, content-hash mismatch, manifest source mismatch, premature Done after partial traversal, empty verdict, and stale completion list.",
+          "chunk_byte_start": 120,
+          "chunk_byte_end": 402
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000008-6bd529adc97b",
+      "ordinal": 8,
+      "chunk_sha256": "6bd529adc97bf53ff0d5fe679f897442d011df0907d0d6d831a345fa6df4e02a",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:45:101:d269165b78f1",
+          "text": "Load manifest and evidence fresh relative to `run.json`.",
+          "chunk_byte_start": 45,
+          "chunk_byte_end": 101
+        },
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:104:161:296bacf17848",
+          "text": "Validate manifest internal integrity and source identity.",
+          "chunk_byte_start": 104,
+          "chunk_byte_end": 161
+        },
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:164:285:b537708107d7",
+          "text": "Require exact set equality: manifest chunk ids == evidence chunk ids == coverage.required == coverage.completed for Done.",
+          "chunk_byte_start": 164,
+          "chunk_byte_end": 285
+        },
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:288:371:f634bc7a3022",
+          "text": "Require one and only one evidence record per chunk with nonempty supported verdict.",
+          "chunk_byte_start": 288,
+          "chunk_byte_end": 371
+        },
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:374:431:14bdc4569190",
+          "text": "Make `source_coverage_complete` derive from these checks.",
+          "chunk_byte_start": 374,
+          "chunk_byte_end": 431
+        },
+        {
+          "atom_id": "markdown-000008-6bd529adc97b:assertion:434:503:7c6f3a47c758",
+          "text": "Produce per-chunk violations that identify the missing/invalid chunk.",
+          "chunk_byte_start": 434,
+          "chunk_byte_end": 503
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000009-e023bf8d6abf",
+      "ordinal": 9,
+      "chunk_sha256": "e023bf8d6abfd5b84d40713cbd7344662ed371c9f03d87f050644cd3f4f738b5",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000009-e023bf8d6abf:assertion:57:94:4b07b3c26e83",
+          "text": "Add `references/lengthy-markdown.md`.",
+          "chunk_byte_start": 57,
+          "chunk_byte_end": 94
+        },
+        {
+          "atom_id": "markdown-000009-e023bf8d6abf:assertion:97:215:679d023c119f",
+          "text": "Update root `SKILL.md`, DoD, evidence, deliverable, control-flow, HTML/PDF/DOCX/runtime-profile/dependency references.",
+          "chunk_byte_start": 97,
+          "chunk_byte_end": 215
+        },
+        {
+          "atom_id": "markdown-000009-e023bf8d6abf:assertion:218:342:9ecac13dc1af",
+          "text": "State primary mission explicitly: exhaustive verified traversal; chunking is the enforcement mechanism, not the deliverable.",
+          "chunk_byte_start": 218,
+          "chunk_byte_end": 342
+        },
+        {
+          "atom_id": "markdown-000009-e023bf8d6abf:assertion:345:441:3b16aacd293a",
+          "text": "Preserve native render-first PDF/DOCX visual QA and distinguish it from portable text traversal.",
+          "chunk_byte_start": 345,
+          "chunk_byte_end": 441
+        },
+        {
+          "atom_id": "markdown-000009-e023bf8d6abf:assertion:444:546:58632db7a118",
+          "text": "Remove/replace stale language that allows selected-chunk summaries or needle-in-a-haystack early exit.",
+          "chunk_byte_start": 444,
+          "chunk_byte_end": 546
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000010-1eb2044d5beb",
+      "ordinal": 10,
+      "chunk_sha256": "1eb2044d5bebf1b3574c224ff2953b80fb1d5930e066ee9dcdd27dca673192f7",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000010-1eb2044d5beb:assertion:31:70:712fd5e6f6ed",
+          "text": "Begin from a passing full-manifest run.",
+          "chunk_byte_start": 31,
+          "chunk_byte_end": 70
+        },
+        {
+          "atom_id": "markdown-000010-1eb2044d5beb:assertion:73:279:8b7e74bab3f2",
+          "text": "Mutate: delete one ledger entry; truncate manifest; forge coverage; reorder/duplicate ids; replace fact/non-match with empty record; Done after first N chunks; change chunk content hash; change source hash.",
+          "chunk_byte_start": 73,
+          "chunk_byte_end": 279
+        },
+        {
+          "atom_id": "markdown-000010-1eb2044d5beb:assertion:282:349:35bdff7bd47a",
+          "text": "Every illegal mutation must be rejected for the intended predicate.",
+          "chunk_byte_start": 282,
+          "chunk_byte_end": 349
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000011-6b4f3ccd0089",
+      "ordinal": 11,
+      "chunk_sha256": "6b4f3ccd00899dff23f24d84a5f8664a2db1ff19af64038630a90bbb7b00d114",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000011-6b4f3ccd0089:assertion:34:162:251f61366bac",
+          "text": "Exercise at least one real public HTML or PDF through extractor -> manifest -> complete evidence ledger -> `verify_run.py` PASS.",
+          "chunk_byte_start": 34,
+          "chunk_byte_end": 162
+        },
+        {
+          "atom_id": "markdown-000011-6b4f3ccd0089:assertion:165:227:75d65544ecde",
+          "text": "Mutate one emitted chunk to missing evidence -> verifier FAIL.",
+          "chunk_byte_start": 165,
+          "chunk_byte_end": 227
+        },
+        {
+          "atom_id": "markdown-000011-6b4f3ccd0089:assertion:230:308:ba61786afbae",
+          "text": "Record exact scope; do not claim visual PDF completeness from text extraction.",
+          "chunk_byte_start": 230,
+          "chunk_byte_end": 308
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000012-1f46e1271824",
+      "ordinal": 12,
+      "chunk_sha256": "1f46e1271824c1c3387109662a20900417692fd3c79afd48467857f1f922af42",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:40:96:70a8d89bb8bd",
+          "text": "Re-read changed Markdown and scripts for contradictions.",
+          "chunk_byte_start": 40,
+          "chunk_byte_end": 96
+        },
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:99:119:d466bbc8e863",
+          "text": "Run full test suite.",
+          "chunk_byte_start": 99,
+          "chunk_byte_end": 119
+        },
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:122:162:af44246c9df1",
+          "text": "Build distribution using tested builder.",
+          "chunk_byte_start": 122,
+          "chunk_byte_end": 162
+        },
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:165:224:cc724a995b4c",
+          "text": "Extract frozen ZIP and rerun full suite from archive bytes.",
+          "chunk_byte_start": 165,
+          "chunk_byte_end": 224
+        },
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:227:283:debbac5050b7",
+          "text": "Run real-source anti-skimming smoke from archived bytes.",
+          "chunk_byte_start": 227,
+          "chunk_byte_end": 283
+        },
+        {
+          "atom_id": "markdown-000012-1f46e1271824:assertion:286:353:a21efaa91b93",
+          "text": "Invoke `verification-before-completion`, hash archive, then freeze.",
+          "chunk_byte_start": 286,
+          "chunk_byte_end": 353
+        }
+      ],
+      "constraints": []
+    },
+    {
+      "chunk_id": "markdown-000013-c661ccc2bf61",
+      "ordinal": 13,
+      "chunk_sha256": "c661ccc2bf618de9f39ea752ed51b4ba28a1bea6e52e48172b61baca500dd1ce",
+      "outcome": "non_match",
+      "reason": "Heading only ('## Definition of Done'); the Definition of Done body is emitted as chunk 14, which carries the acceptance predicates."
+    },
+    {
+      "chunk_id": "markdown-000014-d535414423b8",
+      "ordinal": 14,
+      "chunk_sha256": "d535414423b84e7a912790b2a56af1887315ff59d3ee64a7a6094bcb91dc7feb",
+      "outcome": "evidence",
+      "assertions": [
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:8:35:a89c3e5f8725",
+          "text": "portable_extractors_shipped",
+          "chunk_byte_start": 8,
+          "chunk_byte_end": 35
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:40:72:341d08307e18",
+          "text": "extractor_manifest_deterministic",
+          "chunk_byte_start": 40,
+          "chunk_byte_end": 72
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:77:138:4e7ae568be86",
+          "text": "every_manifest_chunk_has_exactly_one_verified_evidence_record",
+          "chunk_byte_start": 77,
+          "chunk_byte_end": 138
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:143:195:717c8542f4e1",
+          "text": "no_manifest_chunk_can_be_omitted_by_forging_coverage",
+          "chunk_byte_start": 143,
+          "chunk_byte_end": 195
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:200:226:1e79c848e3fc",
+          "text": "premature_done_is_rejected",
+          "chunk_byte_start": 200,
+          "chunk_byte_end": 226
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:231:268:312562f469cf",
+          "text": "markdown_fences_and_tables_are_atomic",
+          "chunk_byte_start": 231,
+          "chunk_byte_end": 268
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:273:309:873acf5227a0",
+          "text": "native_visual_qa_semantics_preserved",
+          "chunk_byte_start": 273,
+          "chunk_byte_end": 309
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:314:350:2d440e84b535",
+          "text": "portable_payload_contains_extractors",
+          "chunk_byte_start": 314,
+          "chunk_byte_end": 350
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:355:375:bf4051db98dd",
+          "text": "mutation_suite_green",
+          "chunk_byte_start": 355,
+          "chunk_byte_end": 375
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:380:418:3afc8e589eec",
+          "text": "real_source_full_traversal_smoke_green",
+          "chunk_byte_start": 380,
+          "chunk_byte_end": 418
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:423:462:521167c289ca",
+          "text": "existing_installer_workflow_tests_green",
+          "chunk_byte_start": 423,
+          "chunk_byte_end": 462
+        },
+        {
+          "atom_id": "markdown-000014-d535414423b8:assertion:467:495:b49198e23d6c",
+          "text": "frozen_archive_retests_green",
+          "chunk_byte_start": 467,
+          "chunk_byte_end": 495
+        }
+      ],
+      "constraints": []
+    }
+  ]
+}

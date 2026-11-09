@@ -1,0 +1,460 @@
+{
+  "schema_version": 1,
+  "source": {
+    "path": "C:\\ssw\\dr-live-deepseek2\\runs\\anti-skimming\\source\\anti-skimming-plan.md",
+    "uri": "file:///C:/ssw/dr-live-deepseek2/source/anti-skimming-plan.md",
+    "format": "markdown",
+    "sha256": "b4d4182e1c88f8856da49184ed3e29899cec597098d8b0ef6bd4c23416647840",
+    "size_bytes": 6814
+  },
+  "chunking": {
+    "strategy": "markdown-heading-ast-blocks",
+    "max_bytes": 12000,
+    "chunk_count": 14
+  },
+  "extracted_text_bytes": 6695,
+  "extracted_text_sha256": "ce06e5ec12fbdf205555202c8552633993957e6e8134d258a3be68d37ef98691",
+  "chunks": [
+    {
+      "id": "markdown-000001-af8cb22b12cb",
+      "ordinal": 1,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 1,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan"
+        ]
+      },
+      "text_byte_start": 0,
+      "text_byte_end": 1092,
+      "content_sha256": "af8cb22b12cba93d28384d7f6927e8606398670ca75023fe0f37e4e77cd068e9",
+      "content": "# Anti-Skimming Portable Extraction Remediation Plan\n> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` task-by-task. Skill changes follow `superpowers:writing-skills` + TDD.\n**Goal:** Make exhaustive, evidenced document traversal the primary enforceable invariant by shipping portable extractors and deriving source-coverage DoD from the extractor-emitted chunk universe.\n**Architecture:** `scripts/` owns environment-agnostic extraction and a canonical chunk-manifest schema. Each extractor emits the complete ordered text-chunk universe with content hashes and contiguous normalized UTF-8 byte spans. A single machine ledger, `chunk-evidence.json`, records exactly one verification verdict for every emitted chunk. `verify_run.py` derives required coverage from the manifest, rejects any missing/extra/duplicate chunk evidence, and refuses Done before the complete manifest is evidenced. Format-specific visual/structural QA remains a separate predicate and is never replaced by text extraction.\n**Regression baseline:** `103 passed` before this remediation.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000002-0935af6dec34",
+      "ordinal": 2,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Global constraints"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Global constraints"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Global constraints"
+        ]
+      },
+      "text_byte_start": 1092,
+      "text_byte_end": 2315,
+      "content_sha256": "0935af6dec344e2db864b885c8861b934c2d4dd644bb370aef927a170bc0b9d0",
+      "content": "## Global constraints\n- Canonical root remains `SKILL.md`.\n- Freeze remains held until frozen-byte verification passes.\n- Portable extraction scripts must not depend on `/home/oai/skills/...`.\n- Installer remains stdlib-only; extraction helpers may use optional local parsing backends but must fail clearly when no supported backend exists.\n- HTML, DOCX, and Markdown extraction must work with Python standard library only.\n- PDF extraction supports environment-detected backends; no internal OAI path is required.\n- Every emitted chunk gets stable id, ordinal, locator, content hash, normalized extracted-text byte span, and text.\n- Chunk spans must cover the emitted normalized text stream contiguously with no gaps or overlaps.\n- Atomic Markdown fences/tables are never split; oversize atomic blocks remain one chunk and are marked oversize.\n- One machine evidence record per chunk: `facts`, `constraints`, or explicit `non_match`; empty/ambiguous verdicts fail.\n- `coverage.required` and `coverage.completed` may exist for reporting but must exactly mirror manifest/evidence, never define them.\n- PDF/DOCX visual/layout truth remains governed by format QA; exhaustive text traversal does not claim visual completeness.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000003-eb0f14e0fb17",
+      "ordinal": 3,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 1 — RED portable payload contract"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 1 — RED portable payload contract"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 1 — RED portable payload contract"
+        ]
+      },
+      "text_byte_start": 2315,
+      "text_byte_end": 2676,
+      "content_sha256": "eb0f14e0fb17a9945616abdd0a7e7d8b93f7e9397ccf184be1d8097f31dab4ef",
+      "content": "## Task 1 — RED portable payload contract\n- Add tests requiring `extract_pdf.py`, `extract_docx.py`, `extract_html.py`, `extract_markdown.py`, shared chunking code, and `references/lengthy-markdown.md`.\n- Require `MANIFEST.json` runtime payload to include the complete `scripts/` directory.\n- Run targeted tests and observe failure before production changes.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000004-0286dad1e76c",
+      "ordinal": 4,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 2 — RED chunk-manifest contract"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 2 — RED chunk-manifest contract"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 2 — RED chunk-manifest contract"
+        ]
+      },
+      "text_byte_start": 2676,
+      "text_byte_end": 2925,
+      "content_sha256": "0286dad1e76ce0b23a68643ba4563747203452ae9fe46168674aafc78d2c179d",
+      "content": "## Task 2 — RED chunk-manifest contract\n- Test schema/version/source identity/chunk ids/ordinals/content hashes/contiguous normalized byte spans.\n- Test deterministic repeated extraction.\n- Test empty document behavior and oversize atomic blocks.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000005-bf26ca19205a",
+      "ordinal": 5,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 3 — GREEN shared chunk core + Markdown extractor"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 3 — GREEN shared chunk core + Markdown extractor"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 3 — GREEN shared chunk core + Markdown extractor"
+        ]
+      },
+      "text_byte_start": 2925,
+      "text_byte_end": 3267,
+      "content_sha256": "bf26ca19205a332e347ba28073dd373fd885ac3117741441341b024308f847c5",
+      "content": "## Task 3 — GREEN shared chunk core + Markdown extractor\n- Implement block/section parser recognizing `#`, `##`, `###`, fenced code, tables, and ordinary blocks.\n- Keep fenced code and tables atomic.\n- Chunk sections to bounded bytes without splitting atomic blocks.\n- Emit canonical JSON manifest.\n- Run Markdown extractor tests to GREEN.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000006-5cb86521229b",
+      "ordinal": 6,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 4 — GREEN HTML/DOCX/PDF extractors"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 4 — GREEN HTML/DOCX/PDF extractors"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 4 — GREEN HTML/DOCX/PDF extractors"
+        ]
+      },
+      "text_byte_start": 3267,
+      "text_byte_end": 3706,
+      "content_sha256": "5cb86521229b12644d03e69c265e31d9784999e02b8257a6cfabda74d41317e2",
+      "content": "## Task 4 — GREEN HTML/DOCX/PDF extractors\n- HTML: stdlib DOM parser, heading-aware blocks, preserve pre/code/table text as atomic blocks.\n- DOCX: stdlib ZIP/XML extraction across document/header/footer/footnotes/endnotes/comments story parts with structural locators.\n- PDF: backend auto-detection (`pypdf`, PyMuPDF, pdfplumber, or `pdftotext`) with page locators; no OAI paths.\n- Run each extractor test independently before widening.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000007-051a230150ab",
+      "ordinal": 7,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 5 — RED anti-skimming verifier"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 5 — RED anti-skimming verifier"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 5 — RED anti-skimming verifier"
+        ]
+      },
+      "text_byte_start": 3706,
+      "text_byte_end": 4109,
+      "content_sha256": "051a230150ab88b6de05f93c8bbde09790fe7be1033d201c44bcb6df1c9c0067",
+      "content": "## Task 5 — RED anti-skimming verifier\n- Extend run schema with `chunking.manifest` and `chunking.evidence_ledger`.\n- RED cases: missing evidence for chunk N, forged smaller `coverage.required`, duplicate chunk evidence, evidence for nonexistent chunk, skipped ordinal, content-hash mismatch, manifest source mismatch, premature Done after partial traversal, empty verdict, and stale completion list.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000008-6bd529adc97b",
+      "ordinal": 8,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 6 — GREEN anti-skimming verifier"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 6 — GREEN anti-skimming verifier"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 6 — GREEN anti-skimming verifier"
+        ]
+      },
+      "text_byte_start": 4109,
+      "text_byte_end": 4613,
+      "content_sha256": "6bd529adc97bf53ff0d5fe679f897442d011df0907d0d6d831a345fa6df4e02a",
+      "content": "## Task 6 — GREEN anti-skimming verifier\n- Load manifest and evidence fresh relative to `run.json`.\n- Validate manifest internal integrity and source identity.\n- Require exact set equality: manifest chunk ids == evidence chunk ids == coverage.required == coverage.completed for Done.\n- Require one and only one evidence record per chunk with nonempty supported verdict.\n- Make `source_coverage_complete` derive from these checks.\n- Produce per-chunk violations that identify the missing/invalid chunk.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000009-e023bf8d6abf",
+      "ordinal": 9,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 7 — Update references without semantic drift"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 7 — Update references without semantic drift"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 7 — Update references without semantic drift"
+        ]
+      },
+      "text_byte_start": 4613,
+      "text_byte_end": 5160,
+      "content_sha256": "e023bf8d6abfd5b84d40713cbd7344662ed371c9f03d87f050644cd3f4f738b5",
+      "content": "## Task 7 — Update references without semantic drift\n- Add `references/lengthy-markdown.md`.\n- Update root `SKILL.md`, DoD, evidence, deliverable, control-flow, HTML/PDF/DOCX/runtime-profile/dependency references.\n- State primary mission explicitly: exhaustive verified traversal; chunking is the enforcement mechanism, not the deliverable.\n- Preserve native render-first PDF/DOCX visual QA and distinguish it from portable text traversal.\n- Remove/replace stale language that allows selected-chunk summaries or needle-in-a-haystack early exit.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000010-1eb2044d5beb",
+      "ordinal": 10,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 8 — Mutation tests"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 8 — Mutation tests"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 8 — Mutation tests"
+        ]
+      },
+      "text_byte_start": 5160,
+      "text_byte_end": 5510,
+      "content_sha256": "1eb2044d5bebf1b3574c224ff2953b80fb1d5930e066ee9dcdd27dca673192f7",
+      "content": "## Task 8 — Mutation tests\n- Begin from a passing full-manifest run.\n- Mutate: delete one ledger entry; truncate manifest; forge coverage; reorder/duplicate ids; replace fact/non-match with empty record; Done after first N chunks; change chunk content hash; change source hash.\n- Every illegal mutation must be rejected for the intended predicate.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000011-6b4f3ccd0089",
+      "ordinal": 11,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 9 — Real-source smoke"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 9 — Real-source smoke"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 9 — Real-source smoke"
+        ]
+      },
+      "text_byte_start": 5510,
+      "text_byte_end": 5819,
+      "content_sha256": "6b4f3ccd00899dff23f24d84a5f8664a2db1ff19af64038630a90bbb7b00d114",
+      "content": "## Task 9 — Real-source smoke\n- Exercise at least one real public HTML or PDF through extractor -> manifest -> complete evidence ledger -> `verify_run.py` PASS.\n- Mutate one emitted chunk to missing evidence -> verifier FAIL.\n- Record exact scope; do not claim visual PDF completeness from text extraction.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000012-1f46e1271824",
+      "ordinal": 12,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 10 — Audit, package, verify"
+            ]
+          },
+          {
+            "kind": "text",
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Task 10 — Audit, package, verify"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Task 10 — Audit, package, verify"
+        ]
+      },
+      "text_byte_start": 5819,
+      "text_byte_end": 6173,
+      "content_sha256": "1f46e1271824c1c3387109662a20900417692fd3c79afd48467857f1f922af42",
+      "content": "## Task 10 — Audit, package, verify\n- Re-read changed Markdown and scripts for contradictions.\n- Run full test suite.\n- Build distribution using tested builder.\n- Extract frozen ZIP and rerun full suite from archive bytes.\n- Run real-source anti-skimming smoke from archived bytes.\n- Invoke `verification-before-completion`, hash archive, then freeze.\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000013-c661ccc2bf61",
+      "ordinal": 13,
+      "locator": {
+        "blocks": [
+          {
+            "kind": "heading",
+            "level": 2,
+            "heading_path": [
+              "Anti-Skimming Portable Extraction Remediation Plan",
+              "Definition of Done"
+            ]
+          }
+        ],
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Definition of Done"
+        ]
+      },
+      "text_byte_start": 6173,
+      "text_byte_end": 6195,
+      "content_sha256": "c661ccc2bf618de9f39ea752ed51b4ba28a1bea6e52e48172b61baca500dd1ce",
+      "content": "## Definition of Done\n",
+      "oversize_atomic": false
+    },
+    {
+      "id": "markdown-000014-d535414423b8",
+      "ordinal": 14,
+      "locator": {
+        "kind": "fenced_code",
+        "heading_path": [
+          "Anti-Skimming Portable Extraction Remediation Plan",
+          "Definition of Done"
+        ],
+        "atomic_kind": "fenced_code"
+      },
+      "text_byte_start": 6195,
+      "text_byte_end": 6695,
+      "content_sha256": "d535414423b84e7a912790b2a56af1887315ff59d3ee64a7a6094bcb91dc7feb",
+      "content": "```text\nportable_extractors_shipped\nAND extractor_manifest_deterministic\nAND every_manifest_chunk_has_exactly_one_verified_evidence_record\nAND no_manifest_chunk_can_be_omitted_by_forging_coverage\nAND premature_done_is_rejected\nAND markdown_fences_and_tables_are_atomic\nAND native_visual_qa_semantics_preserved\nAND portable_payload_contains_extractors\nAND mutation_suite_green\nAND real_source_full_traversal_smoke_green\nAND existing_installer_workflow_tests_green\nAND frozen_archive_retests_green\n```\n",
+      "oversize_atomic": false
+    }
+  ]
+}

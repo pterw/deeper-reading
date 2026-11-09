@@ -4,7 +4,7 @@ import subprocess
 import sys
 import pytest
 
-from layout import SKILL_ROOT
+from layout import ROOT, SKILL_ROOT
 SCRIPTS = SKILL_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from verify_run import build_dod, validate_run
@@ -127,3 +127,18 @@ def test_dod_exposes_output_containment_predicate(tmp_path):
     errors = validate_run(run)
     dod = build_dod(run, errors)
     assert dod["predicates"]["output_containment_valid"] is False
+
+
+def test_committed_example_run_passes_the_verifier(tmp_path):
+    run_root = tmp_path / "run"
+    shutil.copytree(ROOT / "docs" / "examples" / "anti-skimming-run", run_root)
+    result = subprocess.run(
+        [sys.executable, str(SCRIPTS / "verify_run.py"), str(run_root / "run.json")],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    dod = json.loads((run_root / "dod.json").read_text(encoding="utf-8"))
+    assert dod["passed"] is True

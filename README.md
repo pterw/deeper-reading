@@ -1,205 +1,90 @@
 # deeper-reading
 
-Exhaustive document traversal and source-bound evidence for agent workflows.
-
 [![CI](https://img.shields.io/github/actions/workflow/status/pterw/deeper-reading/ci.yml?branch=main)](https://github.com/pterw/deeper-reading/actions)
 [![npm](https://img.shields.io/npm/v/deeper-reading)](https://www.npmjs.com/package/deeper-reading)
 [![Release](https://img.shields.io/github/v/release/pterw/deeper-reading)](https://github.com/pterw/deeper-reading/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](https://github.com/pterw/deeper-reading/blob/main/LICENSE)
+[![Node](https://img.shields.io/node/v/deeper-reading)](https://www.npmjs.com/package/deeper-reading)
+[![Python 3.10 to 3.13](https://img.shields.io/badge/python-3.10%20to%203.13-blue)](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md)
 
-`deeper-reading` is an Agent Skill for work where missing a late caveat, appendix,
-or override would change the answer. It requires a traversal plan, a verdict for
-every canonical chunk, and fresh verification before the agent declares Done.
+An agent that reads a long document tends to skim it, stop at the first plausible match, or say it is done before it has read everything. `deeper-reading` is an Agent Skill: a folder of instructions and scripts that your coding agent loads on request. It splits the document into numbered chunks, requires a verdict for every chunk, and blocks Done until a verifier confirms that all of them are covered.
 
-The verifier checks source identity, reproduced extraction, exact evidence spans,
-coverage, event order, and declared completion conditions. Those checks do **not**
-prove that a model understood the source or that an extracted claim is true.
+## What you get
+
+Each run produces a run root: the folder that holds one document's plan, evidence and deliverables. It contains four things you can inspect:
+
+- **A verdict for every chunk**: a chunk is a numbered piece of the extracted text. Each one gets either an exact quote or an explicit `non_match` reason, so no chunk can be skipped without a recorded verdict.
+- **Exact quotes bound to bytes**: each quote points to a byte span in the extracted text, and the verifier re-extracts your original file to check it.
+- **A traversal report**: `TRAVERSAL_REPORT.md` lists the verdicts grouped by chunk.
+- **A completion record**: `dod.json` (Definition of Done) comes from a verifier that blocks Done until every check passes.
+
+The skill reads Markdown, HTML, DOCX and PDF. PDF support covers text only.
+
+## An example
+
+This excerpt comes from a real run. The task was to read a 14-chunk Markdown plan. The agent had to list what must be true for the plan to count as finished, and to find late statements that narrow earlier ones. Each such entry in `requested-analysis.md` names both statements, quotes them, and gives the chunk ID. Entry 10 reads:
+
+```text
+10. **The freeze gate becomes an ordered sequence.**
+    Earlier (chunk `markdown-000002-0935af6dec34`): "Freeze remains held until frozen-byte verification passes."
+    Later (chunk `markdown-000012-1f46e1271824`): "Invoke `verification-before-completion`, hash archive, then freeze."
+    The later rule fixes the order: verify, hash the archive, then freeze.
+```
+
+The verifier then wrote this line to `dod.json`, the record of whether every check passed:
+
+```json
+"passed": true
+```
+
+Passing means every chunk has a verdict and every quote in the evidence ledger matches the source bytes. The verifier does not check the wording of `requested-analysis.md`, and it does not mean the analysis is right. See [the full example run](https://github.com/pterw/deeper-reading/blob/main/docs/examples/README.md) for the whole run root and how to check it yourself.
+
+## What it does not do
+
+The verifier proves coverage and byte fidelity and nothing more. Four limits apply:
+
+- **No proof of truth or understanding**: a quote can be exact and still be misread. You review the answer.
+- **PDF is text only**: there is no OCR (optical character recognition), layout analysis or image reading.
+- **Images are listed, not understood**: for Markdown, HTML and DOCX, the skill lists every image, SVG and diagram it finds, and the agent records a disposition for each: read with a vision tool, or not read with a reason. The verifier checks that each has a disposition, not that the agent understood it. PDF images are not listed.
+- **It costs more**: it takes more time and tokens than reading the document once. Use it when missing a late caveat would change the answer.
 
 ## Install
 
-The npm installer needs **Node.js 20+**. Running the installed document scripts
-needs **Python 3.10–3.13**. PDF extraction also needs a supported text backend;
-HTML, Markdown and DOCX extraction use the Python standard library.
+You need Node.js 20 or later to run the installer. The installed scripts need Python 3.10 to 3.13. PDF files also need a text backend such as `pypdf`; HTML, Markdown and DOCX use the Python standard library.
+
+Install the skill for your user account, then verify the installation:
 
 ```sh
-npx deeper-reading doctor --target auto --json
-npx deeper-reading install --target auto --scope user --dry-run --json
-npx deeper-reading install --target auto --scope user --json
+npx deeper-reading install --target auto --scope user
+npx deeper-reading verify --target auto --scope user
 ```
 
-To keep the command available, install the package globally and drop the `npx`
-prefix:
+Installing the npm package does not install the skill. Only the `install` command writes to a skill folder; no npm hook does.
+
+Run `doctor` first if you want to check readiness without changing anything:
 
 ```sh
-npm install -g deeper-reading
-deeper-reading doctor --target auto --json
-deeper-reading install --target auto --scope user --dry-run --json
-deeper-reading install --target auto --scope user --json
+npx deeper-reading doctor --target auto
 ```
 
-Run `verify` and `uninstall` the same way; see [After installing](#after-installing)
-and the command table below.
+The `--target` option names the agent that will load the skill: `generic-agents`, `copilot`, `gemini`, `codex` or `claude`. The `auto` value picks the first of Copilot, Gemini, Codex and Claude whose command is on your `PATH`, and falls back to `generic-agents`. It checks which commands are installed, not which agent you are using now, so pass `--target` if you have more than one.
 
-Installing the npm package alone does not install the Agent Skill. Only the
-explicit `install` command writes to a skill directory; there are no npm install
-hooks that do so. To try the current checkout instead of a published package:
+Use `--scope project --project-dir PATH` to install into one project instead of your user account. Add `--dry-run` to `install` to preview the files.
 
-```sh
-node installer/node/cli.js doctor --target generic-agents --json
-node installer/node/cli.js install --target generic-agents --scope project --project-dir . --json
-```
+[Installer usage](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md) covers skill folders, uninstalling, recovery from `npx skills add`, and the Python installer.
 
-The Python installer is also supported. It is not on PyPI or npm: it needs a
-checkout of this repository or the `deeper-reading-<version>.zip` asset on the
-[GitHub Release](https://github.com/pterw/deeper-reading/releases). Unzip the
-archive and run these commands from the extracted `deeper-reading/` folder:
+## Use it
 
-```sh
-python installer/install.py doctor --target generic-agents --json
-python installer/install.py install --target generic-agents --scope user --json
-```
+Start a task by naming the skill, for example: "Use deeper-reading to read this report end to end and list every exception to the refund policy." Some agents also load it when you ask for an exhaustive read of every section, but naming it is the reliable way. The agent then follows the phases in `SKILL.md`: establish the source, plan, extract, read every chunk, handle failures, write your deliverable, and run a fresh verification.
 
-Choose `generic-agents`, `copilot`, `gemini`, `codex`, or `claude`. `auto` checks
-for available commands in Copilot → Gemini → Codex → Claude order, then uses
-`generic-agents`; it does not identify which host is currently running you.
-Use `--scope project --project-dir PATH` for a specific project.
-
-| Command | Purpose |
-| --- | --- |
-| `doctor` | Inspect package and runtime readiness without installing. |
-| `install` | Copy the manifest-owned payload; `--dry-run` previews it. |
-| `verify` | Recheck installed files, receipt and declared readiness. |
-| `uninstall` | Remove receipt-owned files while preserving unowned files. |
-
-Use each command's `--help` for its accepted options. `--force` on uninstall
-allows removing modified owned files; it never bypasses containment in the
-resolved install root. Installation verification checks recorded discovery
-state, not a fresh semantic assessment of the host.
-
-### After installing
-
-1. Run `verify` with the same `--target` and `--scope` you installed with, for
-   example `npx deeper-reading verify --target auto --scope user --json`.
-2. The skill lands in a per-target skills directory; see
-   [Skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots)
-   for the path of each target and scope.
-3. Start a task by naming the skill, for example "Use deeper-reading to read
-   this report end to end", so the host loads it.
-4. To remove it, run `uninstall` with the same target, scope and project directory. Only
-   receipt-owned files are removed.
-
-### Supported route and mixing installers
-
-This project's own installers are the supported way to install the skill, and
-the npm installer is the primary one. `npx skills add` is a different tool and is
-not supported for this skill. Running it over an npm install replaces the skill
-folder and drops its `.install-receipt.json`. An interactive run asks before it
-overwrites; a run with `-y`, or one that uses the agents it detects, does not
-ask. After that, `install` and `uninstall` refuse the folder with
-`installer.receipt.missing` and change nothing, and `verify` fails, because they
-will not touch files they cannot prove they own. Going the other
-way is safe: if `npx skills add` came first, a later `install` refuses the
-unmanaged folder and leaves it as it is.
-
-To recover from `npx skills add`, remove its copy, then run `install` again.
-For the `claude` target the agent name is `claude-code`; for `codex` it is
-`codex`. Pass `-g` for user scope; for project scope omit it and run the command
-from the project directory. If you added the skill for one agent:
-
-```sh
-npx skills remove deeper-reading -g -a claude-code -y
-npx skills remove deeper-reading -g -a codex -y
-```
-
-Those are alternatives: use the line for your agent. `codex` and `generic-agents`
-share `.agents/skills`, so one folder may belong to more than one agent. If you
-added it for both claude-code and codex, list each agent in a single `remove`:
-
-```sh
-npx skills remove deeper-reading -g -a claude-code codex -y
-```
-
-For any other target, or if you prefer, delete by
-hand: delete the skill folder `deeper-reading` for each agent; if it is a link,
-remove the link itself and not its contents; never delete only the shared
-`.agents` folder; then run `install` for each agent.
-
-If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to
-one folder. The second target is refused with `installer.owner.mismatch`, and
-the message names the owner and the working command (`--target <owner>`). See
-[Skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots).
-
-Both installers share a per-target lock across install, upgrade and uninstall,
-including rollback and cleanup. Contention fails clearly; retry after the active
-operation finishes. Older installers do not honor the lock. See
-[installer usage](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md) for paths, interrupted-lock recovery,
-discovery formats and compatibility requirements.
-
-## Supported formats and limits
-
-| Format | Extraction | Locators and boundaries | Requires separate QA |
-| --- | --- | --- | --- |
-| Markdown | Standard library | H1–H6 heading paths; fenced code and tables stay atomic | Rendered meaning, linked material, images and diagrams |
-| HTML | Standard-library HTML parser | Heading/structural context; tables and preformatted text stay atomic | CSS, scripts, generated content, figures, images and diagrams |
-| DOCX | Standard-library ZIP + OOXML parsing | Document/story parts, Heading1–Heading6, paragraphs and tables | Layout, revision meaning, field evaluation, visual fidelity, images and diagrams |
-| PDF | Optional text backend | Ordered page locators; empty pages remain represented | OCR, graphics, equations and visual layout |
-
-For Markdown, HTML and DOCX, the manifest lists every image, SVG and diagram
-reference it finds. Each one needs a disposition in the evidence ledger: read
-with a host vision tool, or not read with a reason. The verifier checks that
-every one has a disposition. It does not prove the media was understood. See
-[evidence](skills/deeper-reading/references/evidence.md).
-
-PDF backends are detected in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then
-`pdftotext`. To choose the declared optional Python backend, run
-`python -m pip install pypdf` in your environment. An existing pdftotext
-executable also works. No backend is installed automatically.
-
-The shipped PDF adapters return text only. A library having layout features
-does not mean this extraction path proves layout. See [PDF guidance](skills/deeper-reading/references/pdf.md)
-and [dependency resolution](skills/deeper-reading/references/dependencies.md).
-
-## What is a chunk?
-
-A chunk is a deterministic unit of extracted text, recorded in
-`evidence/chunk-manifest.json`. Each has a chunk ID, ordinal, locator, UTF-8 byte
-span and content hash. The offsets identify canonical extracted text, not byte
-positions in a PDF or DOCX container. Oversized atomic code/table blocks remain
-intact and are marked explicitly.
-
-A manifest with 12 chunks requires 12 verdicts: either exact extractive evidence
-or an explicit `non_match` reason. Finding a useful answer in chunk 4 does not
-remove chunks 5–12. The verifier re-extracts the original bound file and compares
-the resulting manifest, so a smaller self-consistent manifest is insufficient.
-
-Evidence schema v1 remains accepted. `build_evidence.py` produces schema v2:
-exact quotes with deterministic `atom_id` values. Repeated quotes need explicit
-byte spans. An atom identifies an extractive span; it does not certify truth.
-
-## Run the workflow
-
-The installed `SKILL.md` routes the agent through the package-owned phases:
-
-```text
-establish source and fidelity contract → plan → extract → traverse every chunk
-→ resolve failures → produce requested deliverable → fresh verification
-```
-
-References load at their required phase rather than all at activation. The agent
-records phase receipts in `evidence/skill-preflight.md`; final verification still
-requires the aggregate preflight contract. A failed node must be diagnosed before
-execution continues. Recovery preserves already verified work and follows the
-[documented failure protocol](skills/deeper-reading/references/failure-recovery.md).
-
-From the skill folder (the installed `deeper-reading` folder, or `skills/deeper-reading` in a checkout), inspect helper `--help` before use. For example:
+The agent does this with helper scripts from the skill folder. Extraction and chunk inspection look like this, run from the installed `deeper-reading` folder (see [skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots)):
 
 ```sh
 python scripts/extract_markdown.py source.md --run-root runs/review
 python scripts/inspect_chunks.py runs/review/evidence/chunk-manifest.json --summary
-python scripts/inspect_chunks.py runs/review/evidence/chunk-manifest.json --from 1 --to 3
 ```
 
-Author an exact evidence/non-match verdict for every chunk, then bind and render:
+After the agent writes a verdict for every chunk, it binds the evidence, renders the report and runs the verifier. The verifier exits 0 only when every check passes:
 
 ```sh
 python scripts/build_evidence.py runs/review/evidence/chunk-manifest.json draft.json --out runs/review/evidence/chunk-evidence.json
@@ -207,92 +92,32 @@ python scripts/traversal_report.py --run-root runs/review
 python scripts/verify_run.py runs/review/run.json
 ```
 
-These commands are individual tools, not an automatic end-to-end run generator.
-The agent must also create the plan, run ledger, event records, required QA
-evidence and requested deliverables described in [the evidence contract](skills/deeper-reading/references/evidence.md).
-Extraction or report generation alone does not establish completion.
+These scripts are separate tools, not an automatic end-to-end run. The agent also writes the plan, the run ledger, the QA notes and your deliverable. The [evidence contract](https://github.com/pterw/deeper-reading/blob/main/skills/deeper-reading/references/evidence.md) and the [failure recovery protocol](https://github.com/pterw/deeper-reading/blob/main/skills/deeper-reading/references/failure-recovery.md) describe those parts.
 
-## Find the deliverables
+The scripts refuse to overwrite their input files and publish each output in one step, so a failure leaves no half-written file. The report and verifier scripts also refuse to write outside the run root.
 
-One document uses one run root. A typical layout is:
+Your results are in the run root. Read `deliverables/requested-analysis.md` for the answer, `deliverables/TRAVERSAL_REPORT.md` for the verdicts, and `dod.json` for the verifier result. The raw evidence is in `evidence/`, including `chunk-manifest.json` and `chunk-evidence.json`.
 
-```text
-run-root/
-├── run.json
-├── plan.md
-├── dod.json
-├── deliverables/
-│   ├── TRAVERSAL_REPORT.md
-│   └── requested-analysis.md
-└── evidence/
-    ├── chunk-manifest.json
-    ├── chunk-evidence.json
-    ├── skill-preflight.md
-    ├── source-manifest.md
-    ├── failure-ledger.md
-    ├── format-qa.md
-    └── verification-log.txt
-```
+A manifest with 12 chunks requires 12 verdicts. Finding the answer in chunk 4 does not remove chunks 5 to 12, and a smaller manifest does not pass, because the verifier re-extracts the source itself.
 
-Start with the requested analysis and `TRAVERSAL_REPORT.md`, grouped by canonical
-chunk. `dod.json` records `passed`, named `predicates`, human `violations`, and
-stable finding `codes`. `verify_run.py` writes that file and exits 0 only when its
-checks pass; failures exit nonzero. The report is derived from machine evidence
-and checked against the deterministic rendering.
+## Formats and limits
 
-The CLI guards against overwriting its inputs, writes complete output artifacts
-atomically, and checks run-root output containment.
+Extraction depends on the format. Every format needs separate QA for what text extraction cannot see.
 
-## PDF provenance and migration
+| Format | Extraction | Chunk boundaries | Needs separate QA |
+| --- | --- | --- | --- |
+| Markdown | Standard library | Heading paths H1 to H6; fenced code and tables stay whole | Rendered meaning, linked material, images, diagrams |
+| HTML | Standard-library parser | Heading context; tables and preformatted text stay whole | CSS, scripts, generated content, images, diagrams |
+| DOCX | Standard-library ZIP and OOXML (Office Open XML) parsing | Document parts, Heading1 to Heading6, paragraphs, tables | Layout, tracked-change display, field rendering, visual fidelity, images, diagrams |
+| PDF | Optional text backend | Ordered page locators; empty pages stay represented | OCR, graphics, equations, visual layout |
 
-Copy the PDF manifest's `extraction` object into the run ledger. It names the
-backend and installed version, `format: "pdf"`, and `capabilities: ["text"]`.
-Final verification compares this with independently reproduced extraction and
-surfaces it in `dod.json`. Unknown backends, mismatched provenance and unsupported
-OCR claims fail verification.
+PDF backends are tried in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then `pdftotext`. No backend is installed for you; run `python -m pip install pypdf` to add one. For provenance rules and migration of older PDF runs, see [PDF provenance and migration](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#pdf-provenance-and-migration).
 
-PDF manifests from before 0.2.3 require regeneration with their evidence: page
-boundaries and backend provenance are now explicit. Changing backend or version
-can change extraction. `--password` supports encrypted extraction, but final
-verification has no password input; see [PDF reference](skills/deeper-reading/references/pdf.md)
-for that limitation. The new fixture includes text, a table, an empty page and an
-encrypted variant, with [recorded source hashes](https://github.com/pterw/deeper-reading/blob/main/tests/fixtures/pdf-first-run/README.md).
+## Links
 
-`standalone` is the default profile and owns the traversal contract. `oai-native`
-is an optional enhancement when live host-native visual/document tools exist;
-it does not replace canonical text coverage or make missing capabilities pass.
+These pages cover what this page leaves out:
 
-## Development
-
-```sh
-python -m pytest -rs
-npm test
-npm run test:pack-smoke
-python installer/install.py doctor --target generic-agents --json
-```
-
-Tests cover extraction, forged evidence and manifests, failure sequencing,
-installer rollback, cross-language contention, discovery parsing and packed CLI
-lifecycle. PDF tests use committed fixtures instead of requiring reportlab.
-Optional backend and filesystem capability skips name their reason. CI exercises
-the pypdf path without skips; it allows at most one missing-pdftotext skip and,
-on Windows only, up to nine named symlink-capability skips. Unknown skip reasons
-fail CI. The CI environment installs the declared optional backend for these tests.
-The version matrix covers
-Python 3.10–3.13 and Node 20/22/24 on Windows and Linux; local success is not a
-claim that the remote matrix has run. See [CONTRIBUTING.md](https://github.com/pterw/deeper-reading/blob/main/CONTRIBUTING.md).
-
-The canonical skill is `skills/deeper-reading/SKILL.md`; workflow modules are the `modules/<name>.md` files in that folder, detailed
-contracts in `skills/deeper-reading/references/`, document tools in `skills/deeper-reading/scripts/`, and installation code
-in `installer/`. [Release notes](https://github.com/pterw/deeper-reading/blob/main/CHANGELOG.md) record compatibility changes.
-
-## Future scope
-
-XLSX and CSV need explicit row/cell chunk contracts before support can be claimed.
-Future consumers may rebuild derived search or graph views from verified evidence for navigation,
-but cannot replace traversal of the bound source. A new stdlib PDF reader remains
-exploratory work; the existing backend adapters are the supported path.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
+- [Installer usage](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md)
+- [Contributing](https://github.com/pterw/deeper-reading/blob/main/CONTRIBUTING.md)
+- [Changelog](https://github.com/pterw/deeper-reading/blob/main/CHANGELOG.md)
+- [MIT license](https://github.com/pterw/deeper-reading/blob/main/LICENSE)

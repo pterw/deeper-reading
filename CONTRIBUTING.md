@@ -38,6 +38,14 @@ tools first with `python -m pip install pytest ruff==0.16.10 -r requirements-opt
 (CI runs `python -m ruff check .`, so lint before you push).
 CI also runs `agentskills validate skills/deeper-reading`; the pin is in `.github/workflows/ci.yml`.
 
+Tests cover extraction, forged evidence and manifests, failure sequencing, installer rollback, cross-language contention, discovery parsing and the packed CLI lifecycle. PDF tests use committed fixtures instead of requiring reportlab. Optional backend and filesystem capability skips name their reason.
+
+CI installs the declared optional backend and exercises the pypdf path without skips. It allows at most one missing-pdftotext skip and, on Windows only, up to nine named symlink-capability skips. Unknown skip reasons fail CI. The matrix covers Python 3.10 to 3.13 and Node 20, 22 and 24 on Windows and Linux. A local pass is not a claim that the remote matrix has run.
+
+## Source layout
+
+The canonical skill is `skills/deeper-reading/SKILL.md`. Workflow modules are the `modules/<name>.md` files in that folder, detailed contracts are in `skills/deeper-reading/references/`, and document tools are in `skills/deeper-reading/scripts/`. Installation code is in `installer/`. The [changelog](https://github.com/pterw/deeper-reading/blob/main/CHANGELOG.md) records compatibility changes.
+
 ---
 
 ## Adding New Extractors or Formats

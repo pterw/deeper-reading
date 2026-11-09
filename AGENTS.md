@@ -25,7 +25,7 @@ code, docs and commit messages honest about that.
 | `README.md` | **Product docs** | Install, commands, artifacts, limits. Not for agent orchestration. |
 | `CONTRIBUTING.md` | **Contributor guide** | Invariants and the steps for adding a format. |
 | `CHANGELOG.md` | **Release history** | One entry per release, newest on top. Product changes only. |
-| `AUDIT.md`, `MUTATION_REPORT.md`, `installer/USAGE.md` | **Release evidence** | Pinned where a test names them; see "Prose is behaviour" below. |
+| `installer/USAGE.md` | **Release evidence** | Pinned where a test names them; see "Prose is behaviour" below. |
 | `docs/` (other) | **Records** | Smoke reports and baselines from earlier releases. Point-in-time; do not rewrite. |
 | `tools/`, `.github/` | **Development tooling** | CI and release workflows and the release-label check. Never shipped: outside the payload, the npm `files` list and the ZIP allowlist. |
 
