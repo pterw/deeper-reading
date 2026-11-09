@@ -18,9 +18,10 @@ and the chunk manifest.
 
 ## What this proves, and what it does not
 
-It proves coverage and byte fidelity: every chunk of the source was read and
-logged once, and every quote matches the source exactly. It does not prove the
-analysis is right.
+It proves coverage and byte fidelity: every chunk of the source has exactly one
+recorded verdict, and every quote in the evidence ledger matches the source
+exactly. It does not prove that the agent read or understood each chunk, or that
+the analysis is right.
 
 ## Notes on this run
 
