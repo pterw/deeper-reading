@@ -38,6 +38,7 @@ REQUIRED_IDS = {
         'user_scope_ignores_project_dir', 'project_link_out_first_install',
         'project_first_install_inside', 'project_dir_through_link', 'project_dir_not_created',
         'project_dangling_link_out', 'project_dangling_link_skills', 'project_link_out_no_receipt',
+        'scope_mismatch_coinciding_roots',
     },
     'installer-recovery-cases.json': {
         'install_claude_user', 'install_claude_project', 'install_codex_user',

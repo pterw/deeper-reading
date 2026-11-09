@@ -42,6 +42,12 @@
       {"do": "link", "at": "{project}/.claude/skills/deeper-reading", "to": "{home}/.claude/skills/deeper-reading"},
       {"do": "run", "cwd": "{project}", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.owner.mismatch"}, "unchanged": true, "survives": ["{home}/.claude/skills/deeper-reading/SKILL.md"]}
     ]},
+    {"id": "scope_mismatch_coinciding_roots", "steps": [
+      {"do": "run", "cwd": "{home}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "run", "cwd": "{home}", "args": ["verify", "--target", "claude", "--scope", "project", "--project-dir", "{home}"], "expect": {"exit": 2, "state": "failed", "code": "installer.owner.mismatch", "passed": false, "message_has": ["--target claude", "--scope user"]}, "unchanged": true, "survives": ["{home}/.claude/skills/deeper-reading/SKILL.md"]},
+      {"do": "run", "cwd": "{home}", "args": ["uninstall", "--target", "claude", "--scope", "project", "--project-dir", "{home}"], "expect": {"exit": 2, "state": "failed", "code": "installer.owner.mismatch", "message_has": ["--target claude", "--scope user"]}, "unchanged": true, "survives": ["{home}/.claude/skills/deeper-reading/SKILL.md"]},
+      {"do": "run", "cwd": "{home}", "args": ["install", "--target", "claude", "--scope", "project", "--project-dir", "{home}"], "expect": {"exit": 2, "state": "failed", "code": "installer.owner.mismatch", "message_has": ["--target claude", "--scope user"]}, "unchanged": true, "survives": ["{home}/.claude/skills/deeper-reading/SKILL.md"]}
+    ]},
     {"id": "shared_skills_folder", "steps": [
       {"do": "mkdir", "path": "{home}/.agents/skills"},
       {"do": "link", "at": "{home}/.claude/skills", "to": "{home}/.agents/skills"},

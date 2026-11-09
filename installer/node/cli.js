@@ -164,7 +164,7 @@ function guardContained(targetRoot, projectDir) {
   }
 }
 
-function guardOwnership(targetRoot, projectDir, env, command) {
+function guardOwnership(targetRoot, scope, projectDir, env, command) {
   const receipt = readOwnerReceipt(targetRoot);
   if (receipt === null) {
     if (command === "install") guardContained(targetRoot, projectDir);
@@ -177,9 +177,8 @@ function guardOwnership(targetRoot, projectDir, env, command) {
       "installer.receipt.owner_invalid"
     );
   }
-  const ownerRoot = receipt.scope === "project" && projectDir === null ? null
-    : getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(receipt.scope, projectDir);
-  if (ownerRoot !== targetRoot) {
+  if (receipt.scope !== scope ||
+      getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(scope, projectDir) !== targetRoot) {
     throw new InstallerError(
       `${targetRoot} belongs to target ${owner} (scope ${receipt.scope}); ` +
         `run this command with --target ${owner} --scope ${receipt.scope}`,
@@ -204,7 +203,7 @@ function resolveContext(command, options, cwd, env) {
     ? path.resolve(options.projectDir || cwd)
     : null;
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
-  if (command !== "doctor") guardOwnership(targetRoot, projectDir, env, command);
+  if (command !== "doctor") guardOwnership(targetRoot, options.scope, projectDir, env, command);
   const documentStatus = documentProfileStatus(options.documentProfile, {
     packageRoot: PACKAGE_ROOT
   });
