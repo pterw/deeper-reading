@@ -20,6 +20,6 @@ Before final verification, re-check
 5. Regenerate `TRAVERSAL_REPORT.md` from the canonical manifest and machine evidence and require reproducibility.
 6. Verify source fidelity, run-root containment, required format/visual QA, plan resolution, failure/recovery ordering, and requested deliverables.
 7. Record `verification_started`, then `verification_passed` only after all fresh checks succeed.
-8. Emit `done` only after `verification_passed`, with no later material event.
+8. Emit `done` only after `verification_passed`, with no later material event (the list is in `references/evidence.md`, after the event vocabulary).
 
 Old, partial, self-reported, or summary-level evidence is not completion proof.

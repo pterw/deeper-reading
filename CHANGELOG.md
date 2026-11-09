@@ -93,6 +93,17 @@
   `../../references/...`), and module commands use `<skill-root>`. The root
   `SKILL.md` says that `<skill-root>` and relative paths in a module mean the
   folder that holds `SKILL.md`.
+- Skill: `references/evidence.md` now names which events make a passed
+  verification stale (the verification node's own `node_passed` must come
+  before `verification_passed`) and says the `qa` names are the run's own.
+- Skill: a phase-receipt row written after its gate, or a module read before
+  its phase, is no longer a failure that blocks Done: note it and carry on.
+  Before, an agent that wrote a receipt late could never honestly finish the
+  run.
+- Skill: the per-chunk steps now say each verdict goes in the draft and
+  `build_evidence.py` builds `evidence/chunk-evidence.json` after the last
+  chunk, as the builder requires; and `references/evidence.md` names the two
+  `source.authority` values the verifier accepts.
 - The `description` in `SKILL.md` now says what the skill does (formats, a
   verdict for every chunk, a verifier that blocks Done) as well as when to use
   it. A test checks that it is one line, unquoted YAML and at most 1,024

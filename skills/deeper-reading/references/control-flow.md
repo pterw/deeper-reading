@@ -27,7 +27,7 @@ A node advances only after its output is inspected and its proof recorded. One s
 The bundled extractor manifest defines the canonical chunk universe. Traverse chunks in ordinal order. For every chunk:
 
 1. inspect exact content and locator;
-2. write exactly one machine verdict in `evidence/chunk-evidence.json`;
+2. write exactly one verdict for it in the draft; after the last chunk, `scripts/build_evidence.py` binds the whole draft into `evidence/chunk-evidence.json`;
 3. use atomic extractive assertions/constraints for `evidence`, or explicit reason for `non_match`;
 4. emit exactly one ordered `chunk_verified` event;
 5. only then advance.

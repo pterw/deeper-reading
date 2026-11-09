@@ -184,13 +184,17 @@ gate is crossed. Write it as a Markdown table with the columns `Reference path`,
 | references/evidence.md | before the evidence ledger is built | yes |
 
 The agent must not set the final `required_references_read` aggregate to true
-while a selected-path row is missing, incomplete, or recorded after its gate.
+while a selected-path row is missing or incomplete. Write each row when you read
+the reference; a row written after its gate is fine with a note, since the
+aggregate means each selected reference was read before it was relied on.
 The verifier checks only that the aggregate is true and that the file exists; it
 does not read the rows. The table is human-audited evidence; it adds no machine
 schema or event type. See [Definition of done](definition-of-done.md) for which
 proofs are only existence-checked.
 
 Core event vocabulary includes `plan_written`, `execution_started`, `node_started`, `chunk_verified`, `node_passed`, `node_failed`, `failure_diagnosed`, `node_rechunked`, `node_recovered`, `node_superseded`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, `verification_started`, `verification_passed`, and `done`.
+
+Material events, which make a `verification_passed` stale if any follows it, are `node_passed`, `node_recovered`, `node_superseded`, `node_rechunked`, `failure_diagnosed`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, and `chunk_verified`; every node's `node_passed`, the verification node's own included, must come before `verification_passed` (put them before `verification_started` so the checks run on a finished ledger).
 
 `evidence/failure-ledger.md` exists even for clean runs (`No failures.` is sufficient). `evidence/verification-log.txt` records fresh final proving actions after the last material change.
 
@@ -253,7 +257,7 @@ Two hashes go into `run.json`. Compute each with this command, run once for the 
 python -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" <file>
 ```
 
-Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative to the run folder (`source/source.md`); `<SOURCE_SHA256>` and `<MANIFEST_SHA256>` come from the `sha256` command; `<CHUNK_ID>` and `<CHUNK_SHA256>` are `chunks[0].id` and `chunks[0].content_sha256` of the manifest. For a run with more chunks, repeat the `chunk_verified` and `node_started` / `node_passed` event triple and one `plan.nodes` entry for every chunk, in manifest order. This is the final state after `done` is appended; the `qa.required` names are the format checks your run owes (see [Definition of done](definition-of-done.md)).
+Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative to the run folder (`source/source.md`); `<SOURCE_SHA256>` and `<MANIFEST_SHA256>` come from the `sha256` command; `<CHUNK_ID>` and `<CHUNK_SHA256>` are `chunks[0].id` and `chunks[0].content_sha256` of the manifest. For a run with more chunks, repeat the `chunk_verified` and `node_started` / `node_passed` event triple and one `plan.nodes` entry for every chunk, in manifest order. This is the final state after `done` is appended; the `qa.required` names are the format checks your run owes (see [Definition of done](definition-of-done.md)). `source.authority` is `primary` for the source you were given, or `approved-secondary` for a substitute the user approved.
 
 ```json run.json
 {
@@ -311,6 +315,8 @@ Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative
   }
 }
 ```
+
+The `qa` names are your own: one per format check your run owes (for example `markdown-structure`), each also listed in `qa.passed` and recorded in `evidence/format-qa.md`. For a PDF run, a name containing `ocr` is accepted only when the recorded backend declares OCR capability.
 
 All eight files named in `evidence` must exist. `build_evidence.py` creates `evidence/chunk-evidence.json` and `traversal_report.py` creates `deliverables/TRAVERSAL_REPORT.md`; the agent writes the other six (`plan.md`, `evidence/skill-preflight.md`, `evidence/source-manifest.md`, `evidence/failure-ledger.md`, `evidence/verification-log.txt`, `evidence/format-qa.md`). The verifier checks that several of them exist, not what they say; see [Definition of done](definition-of-done.md).
 

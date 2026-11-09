@@ -36,7 +36,8 @@ The **run root is the output and proof boundary**: source manifests, chunk evide
 
 The root owns lifecycle order. Read the bundled module for the current state in
 full; that module owns the references and helper guidance required before its
-gate. Do not preload modules for states that have not been reached.
+gate. Do not preload modules for states that have not been reached. A module
+read early is not a failure: note it and continue from the current state.
 
 | Current lifecycle state | Bundled module |
 |---|---|

@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from layout import SKILL_ROOT
@@ -129,6 +131,29 @@ def test_dod_predicate_keys_are_predicates_plus_the_deliverable_alias(tmp_path):
         assert set(predicates) == set(PREDICATES) | {"deliverable_provided"}
         assert predicates["deliverable_provided"] is predicates["requested_deliverable_produced"]
         assert predicates["requested_deliverable_produced"] is expected
+
+
+def _documented_events(prefix):
+    text = (SKILL_ROOT / "references/evidence.md").read_text(encoding="utf-8")
+    line = next(ln for ln in text.splitlines() if ln.startswith(prefix))
+    return re.findall(r"`(\w+)`", line)
+
+
+_VOCABULARY = _documented_events("Core event vocabulary")
+_MATERIAL = set(_documented_events("Material events"))
+
+
+@pytest.mark.parametrize(
+    "event",
+    [e for e in _VOCABULARY if e not in {"verification_started", "verification_passed", "done"}],
+)
+def test_documented_material_events_are_the_ones_that_stale_verification(tmp_path, event):
+    from scripts.verify_run import validate_findings
+
+    run = valid_run(tmp_path)
+    run["events"].insert(-1, {"type": event})
+    stale = "done.verification.stale" in codes_of(validate_findings(run))
+    assert stale is (event in _MATERIAL)
 
 
 def _resolved_run(tmp_path):
