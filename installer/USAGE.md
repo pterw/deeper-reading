@@ -29,6 +29,22 @@ npx deeper-reading doctor --target auto --scope user --json
 
 `install --dry-run` computes the transaction without writing it. `uninstall --force` permits removal of modified receipt-owned files; unowned files remain preserved. For project scope, pass `--scope project --project-dir PATH`; omitted `--project-dir` defaults to the current directory. `--document-profile` accepts `standalone` or `oai-native`. `--json` emits structured output.
 
+| Command | Purpose |
+| --- | --- |
+| `doctor` | Inspect package and runtime readiness without installing. |
+| `install` | Copy the manifest-owned payload; `--dry-run` previews it. |
+| `verify` | Recheck installed files, receipt and declared readiness. |
+| `uninstall` | Remove receipt-owned files while preserving unowned files. |
+
+Use each command's `--help` for its accepted options. `--force` on uninstall never bypasses containment in the resolved install root.
+
+To try the current checkout instead of a published package, run the Node CLI from the repository root:
+
+```text
+node installer/node/cli.js doctor --target generic-agents --json
+node installer/node/cli.js install --target generic-agents --scope project --project-dir . --json
+```
+
 ### Exit codes
 
 Both installers (Node and Python) behave the same way:
@@ -37,6 +53,10 @@ Both installers (Node and Python) behave the same way:
 - `install`, `verify` and `uninstall` exit 2 when the operation is blocked or failed (including `passed: false` from `verify`) and 0 otherwise.
 
 The Node installer does not require Python. The installed extraction and verification scripts require Python 3.10 through 3.13, and `doctor` reports installer readiness separately from Python runtime readiness. No npm lifecycle hook writes into an Agent Skills directory. The Python commands below remain supported.
+
+## Python installer
+
+The Python installer is not on PyPI or npm. It needs a checkout of this repository, or the `deeper-reading-<version>.zip` asset on the [GitHub Release](https://github.com/pterw/deeper-reading/releases). Unzip the archive and run the commands below from the extracted `deeper-reading/` folder.
 
 ## Inspect first
 
@@ -90,9 +110,32 @@ The skill is installed at `<base>/skills/deeper-reading`, where `<base>` depends
 | `installer.owner.mismatch` | The receipt belongs to another target or scope than the request. |
 | `installer.project.escape` | Project scope, and the resolved folder is outside the resolved project, for example a `.claude` that is a link out of the project. `install` checks this even with no receipt, before writing anything. It is also given when a link on the way to the folder leads nowhere (the folder it points to does not exist); create that folder, or remove the link. At user scope the same refusal exits 2 with that advice and no code. Use `--scope user` or a real folder in the project; if `.claude` or `.claude/skills` is a link out, remove that link itself and not its contents. To remove an existing install there, delete it by hand first. |
 | `installer.receipt.owner_invalid` | The receipt's `target` is missing or unknown, or its `scope` is not `user` or `project`. Delete the skill folder `deeper-reading`; if it is a link, remove the link itself and not its contents; never delete only the shared `.agents` folder; then run `install`. |
-| `installer.receipt.missing` | `install` or `uninstall` found the folder without a receipt, for example after `npx skills add`. The message gives the recovery; see the README. `verify` fails there without this code. |
+| `installer.receipt.missing` | `install` or `uninstall` found the folder without a receipt, for example after `npx skills add`. The message gives the recovery; see [Mixing installers and recovering from `npx skills add`](#mixing-installers-and-recovering-from-npx-skills-add). `verify` fails there without this code. |
 
 For `install` and `uninstall` (not `verify` or `--dry-run`), the check repeats inside the target lock, so if another target takes the folder after the first check, the operation is refused with the same code. A linked skills folder is the usual cause of `installer.owner.mismatch`. If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to one folder, so the target that did not install it is refused. The message names the owning target and the working command: `--target <owner>`, plus `--scope <owner scope>` when the scope differs. `generic-agents` and `codex` share a root by design and are not refused for it. `--project-dir` is ignored for user scope.
+
+## Mixing installers and recovering from `npx skills add`
+
+This project's own installers are the supported way to install the skill, and the npm installer is the primary one. `npx skills add` is a different tool and is not supported for this skill. Running it over an npm install replaces the skill folder and drops its `.install-receipt.json`. An interactive run asks before it overwrites; a run with `-y`, or one that uses the agents it detects, does not ask. After that, `install` and `uninstall` refuse the folder with `installer.receipt.missing` and change nothing, and `verify` fails, because they will not touch files they cannot prove they own. Going the other way is safe: if `npx skills add` came first, a later `install` refuses the unmanaged folder and leaves it as it is.
+
+To recover from `npx skills add`, remove its copy, then run `install` again. For the `claude` target the agent name is `claude-code`; for `codex` it is `codex`. Pass `-g` for user scope; for project scope omit it and run the command from the project directory. If you added the skill for one agent:
+
+```sh
+npx skills remove deeper-reading -g -a claude-code -y
+npx skills remove deeper-reading -g -a codex -y
+```
+
+Those are alternatives: use the line for your agent. `codex` and `generic-agents` share `.agents/skills`, so one folder may belong to more than one agent. If you added it for both claude-code and codex, list each agent in a single `remove`:
+
+```sh
+npx skills remove deeper-reading -g -a claude-code codex -y
+```
+
+For any other target, or if you prefer, delete by hand: delete the skill folder `deeper-reading` for each agent; if it is a link, remove the link itself and not its contents; never delete only the shared `.agents` folder; then run `install` for each agent.
+
+If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to one folder. The second target is refused with `installer.owner.mismatch`, and the message names the owner and the working command (`--target <owner>`). See [Skill roots](#skill-roots).
+
+Both installers share a per-target lock across install, upgrade and uninstall, including rollback and cleanup. Contention fails clearly; retry after the active operation finishes. Older installers do not honor the lock. See [Concurrent operations and interrupted installs](#concurrent-operations-and-interrupted-installs) for interrupted-lock recovery.
 
 ## Verify
 
@@ -100,7 +143,7 @@ For `install` and `uninstall` (not `verify` or `--dry-run`), the check repeats i
 python installer/install.py verify --target generic-agents --scope user --json
 ```
 
-Verification re-reads installed bytes and checks the canonical root, payload hashes, document-profile state, runtime/profile consistency, host-discovery state where available, receipt identity, and transaction leftovers.
+Verification re-reads installed bytes and checks the canonical root, payload hashes, document-profile state, runtime/profile consistency, host-discovery state where available, receipt identity, and transaction leftovers. It checks recorded discovery state, not a fresh semantic assessment of the host.
 
 ## Uninstall
 
@@ -136,6 +179,14 @@ or a process ID. If a lock persists, stop all installers for that target,
 inspect the target, receipt and backup/stage siblings, and restore a consistent
 installation before manually removing the empty lock directory and retrying.
 Do not remove a live lock or discard a backup needed for recovery. If an install or upgrade fails after the skill folder was replaced and the installer then cannot remove the new folder, the error says "rollback failed" and ends with "the previous install is in <path>". That backup folder (named .SKILL-NAME.backup-ID, beside the skill folder) holds your previous install, including files you added. The skill folder is left partly deleted, and install refuses it. Close whatever holds its files, delete the skill folder, or move it out of the skills folder, rename the backup folder to SKILL-NAME, and run install again. verify reports "backup leftovers remain" until the backup is gone. Do not delete the backup before the previous install is back.
+
+## PDF provenance and migration
+
+PDF text comes from the first available backend, in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then `pdftotext`. No backend is installed automatically. To add the Python backend, run `python -m pip install pypdf`; an existing `pdftotext` executable also works. The shipped adapters return text only. A library having layout features does not mean this extraction path proves layout. See the [PDF reference](https://github.com/pterw/deeper-reading/blob/main/skills/deeper-reading/references/pdf.md) and [dependency resolution](https://github.com/pterw/deeper-reading/blob/main/skills/deeper-reading/references/dependencies.md).
+
+Copy the PDF manifest's `extraction` object into the run ledger. It names the backend and installed version, `format: "pdf"`, and `capabilities: ["text"]`. Final verification compares this with independently reproduced extraction and surfaces it in `dod.json`. Unknown backends, mismatched provenance and unsupported OCR claims fail verification.
+
+PDF manifests from before 0.2.3 require regeneration with their evidence: page boundaries and backend provenance are now explicit. Changing backend or version can change extraction. `--password` supports encrypted extraction, but final verification has no password input; see the [PDF reference](https://github.com/pterw/deeper-reading/blob/main/skills/deeper-reading/references/pdf.md) for that limitation. The test fixture includes text, a table, an empty page and an encrypted variant, with [recorded source hashes](https://github.com/pterw/deeper-reading/blob/main/tests/fixtures/pdf-first-run/README.md).
 
 ## Discovery output contracts
 
