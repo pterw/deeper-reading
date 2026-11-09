@@ -151,7 +151,6 @@ def test_documented_material_events_are_the_ones_that_stale_verification(tmp_pat
     from scripts.verify_run import validate_findings
 
     run = valid_run(tmp_path)
-    run["_ledger_path"] = str(tmp_path / "run.json")
     run["events"].insert(-1, {"type": event})
     stale = "done.verification.stale" in codes_of(validate_findings(run))
     assert stale is (event in _MATERIAL)

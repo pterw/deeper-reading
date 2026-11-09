@@ -192,7 +192,7 @@ proofs are only existence-checked.
 
 Core event vocabulary includes `plan_written`, `execution_started`, `node_started`, `chunk_verified`, `node_passed`, `node_failed`, `failure_diagnosed`, `node_rechunked`, `node_recovered`, `node_superseded`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, `verification_started`, `verification_passed`, and `done`.
 
-Material events, which make a `verification_passed` stale if any follows it, are `node_passed`, `node_recovered`, `node_superseded`, `node_rechunked`, `failure_diagnosed`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, and `chunk_verified`; every node's `node_passed`, the verification node's own included, must come before `verification_started`.
+Material events, which make a `verification_passed` stale if any follows it, are `node_passed`, `node_recovered`, `node_superseded`, `node_rechunked`, `failure_diagnosed`, `architecture_stop`, `paths_exhausted`, `disclosure`, `alternative_designed`, `plan_revised`, and `chunk_verified`; every node's `node_passed`, the verification node's own included, must come before `verification_passed` (put them before `verification_started` so the checks run on a finished ledger).
 
 `evidence/failure-ledger.md` exists even for clean runs (`No failures.` is sufficient). `evidence/verification-log.txt` records fresh final proving actions after the last material change.
 
@@ -314,7 +314,7 @@ Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative
 }
 ```
 
-The `qa` names are your own: one per format check your run owes (for example `markdown-structure`), each also listed in `qa.passed` and recorded in `evidence/format-qa.md`.
+The `qa` names are your own: one per format check your run owes (for example `markdown-structure`), each also listed in `qa.passed` and recorded in `evidence/format-qa.md`. For a PDF run, a name containing `ocr` is accepted only when the recorded backend declares OCR capability.
 
 All eight files named in `evidence` must exist. `build_evidence.py` creates `evidence/chunk-evidence.json` and `traversal_report.py` creates `deliverables/TRAVERSAL_REPORT.md`; the agent writes the other six (`plan.md`, `evidence/skill-preflight.md`, `evidence/source-manifest.md`, `evidence/failure-ledger.md`, `evidence/verification-log.txt`, `evidence/format-qa.md`). The verifier checks that several of them exist, not what they say; see [Definition of done](definition-of-done.md).
 
