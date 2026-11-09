@@ -8,8 +8,9 @@
   points to does not exist) is refused with exit 2 and nothing changed; create
   that folder, or remove the link. A 0.2.5 install that landed at the wrong
   place through such a relative link is no longer found by `verify` or
-  `uninstall` and stays where it is; delete it by hand. The Python installer is
-  not changed.
+  `uninstall` and stays where it is; delete it by hand. The Python installer
+  does not resolve links this way: at user scope it still installs through a
+  link that leads nowhere and creates the missing folder.
 - Installer: `install` (also with `--dry-run`), `verify` and `uninstall` now
   read the receipt in the skill folder and refuse a folder that another
   target or scope installed. This can happen when a skills folder is a link.
@@ -44,13 +45,15 @@
   `SKILL.md`, `VERSION`, `references/`, `scripts/` and the workflow modules
   moved there. `MANIFEST.json` names the folder in a new optional field,
   `skill.root`. The root `LICENSE` stays, and the skill folder holds a copy.
+  If you installed by hand, copy `skills/deeper-reading/`, not the repository
+  or ZIP root; or use `install`.
 - Layout: the npm package and the release ZIP now hold the skill under
   `skills/deeper-reading/`, not at the package root. Each gains one file,
   the `LICENSE` copy inside the skill.
 - Layout: the installed skill has the same 38 files as 0.2.5. The folder move
   changes no installed path; the module rename below changes six. A 0.2.5
-  install still verifies and uninstalls, and it upgrades unless you edited or
-  deleted a module file (see Compatibility).
+  install still verifies and uninstalls. It upgrades unless you edited or
+  deleted a file the installer put there, as in 0.2.5 (see Compatibility).
 - Layout: `npx skills add` on the repository (checked with `skills@1.7.6`)
   finds one skill and installs those 38 files, not the whole repository. This
   is the same list as an npm install.
