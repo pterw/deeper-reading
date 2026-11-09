@@ -37,7 +37,7 @@ jobs:
       - name: VERSION, package.json and CHANGELOG agree
         run: python tools/release_check.py
 
-  # Pyflakes and syntax errors only; ruff.toml holds the rule set.
+  # Pyflakes and syntax errors (ruff; ruff.toml holds the rule set), then skills-ref validation of the skill folder.
   lint:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -52,6 +52,11 @@ jobs:
         run: |
           python -m pip install ruff==0.16.10
           python -m ruff check .
+
+      - name: skills-ref validate
+        run: |
+          python -m pip install skills-ref==0.1.1
+          agentskills validate skills/deeper-reading
 
   test:
     runs-on: ${{ matrix.os }}

@@ -22,7 +22,7 @@ def test_manifest_contract():
     assert 'tests' not in manifest['payload']
     assert 'installer' not in manifest['payload']
     assert manifest.get('prerequisites') == {}
-    assert 'skills' in manifest['payload']
+    assert 'modules' in manifest['payload']
     assert set(manifest['document_profiles']) == {'standalone', 'oai-native'}
 
 
@@ -58,12 +58,12 @@ def _synthetic_package(tmp_path: Path, skill: dict, skill_dir: str = '.'):
 
     pkg = tmp_path / 'pkg'
     folder = pkg / skill_dir
-    (folder / 'skills').mkdir(parents=True)
+    (folder / 'modules').mkdir(parents=True)
     (folder / 'SKILL.md').write_text('---\nname: deeper-reading\ndescription: Use when testing.\n---\n', encoding='utf-8')
     data = {
         'schema_version': 1,
         'skill': {'name': 'deeper-reading', 'entrypoint': 'SKILL.md', **skill},
-        'payload': ['SKILL.md', 'skills'],
+        'payload': ['SKILL.md', 'modules'],
         'prerequisites': {},
         'document_profiles': {'standalone': {}, 'oai-native': {}},
         'targets': ['generic-agents'],
@@ -77,6 +77,14 @@ def test_skill_root_places_skill_and_payload_under_that_folder(tmp_path: Path):
     manifest, pkg = _synthetic_package(tmp_path, {'root': 'skills/deeper-reading'}, 'skills/deeper-reading')
     assert validate_manifest(manifest, pkg) == []
     assert skill_root(manifest.data, pkg) == (pkg / 'skills' / 'deeper-reading').resolve()
+
+
+def test_payload_without_modules_is_refused(tmp_path: Path):
+    from installer.manifest import validate_manifest
+
+    manifest, pkg = _synthetic_package(tmp_path, {})
+    manifest.data['payload'] = ['SKILL.md']
+    assert validate_manifest(manifest, pkg) == ['Standalone runtime payload must include package-owned modules']
 
 
 def test_skill_root_defaults_to_package_root(tmp_path: Path):
@@ -157,7 +165,8 @@ def test_payload_markdown_links_resolve_inside_payload():
         for link in re.findall(r'\]\(([^)\s]+)\)', text):
             if re.match(r'[A-Za-z][A-Za-z0-9+.-]*:|#', link):
                 continue
-            target = posixpath.normpath(posixpath.join(posixpath.dirname(rel), link.split('#')[0]))
+            base = '' if rel.startswith('modules/') else posixpath.dirname(rel)  # R107
+            target = posixpath.normpath(posixpath.join(base, link.split('#')[0]))
             if target not in files:
                 broken.append(f'{rel} -> {link}')
     assert broken == []

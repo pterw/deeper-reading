@@ -133,7 +133,7 @@ def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
     if not isinstance(profiles, dict) or set(profiles) != {'standalone', 'oai-native'}:
         errors.append('Document profiles must be exactly standalone and oai-native')
 
-    if 'skills' not in payload:
-        errors.append('Standalone runtime payload must include package-owned skills')
+    if 'modules' not in payload:
+        errors.append('Standalone runtime payload must include package-owned modules')
 
     return errors

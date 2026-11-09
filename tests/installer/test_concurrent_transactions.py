@@ -16,9 +16,9 @@ def package_at(root, text):
     root.mkdir()
     (root / 'SKILL.md').write_text('---\nname: deeper-reading\n---\n', encoding='utf-8')
     (root / 'VERSION').write_text(text, encoding='utf-8')
-    (root / 'skills').mkdir()
+    (root / 'modules').mkdir()
     manifest = {'skill': {'name':'deeper-reading', 'entrypoint':'SKILL.md'},
-                'payload':['SKILL.md', 'VERSION', 'skills'],
+                'payload':['SKILL.md', 'VERSION', 'modules'],
                 'document_profiles': {'standalone':{}, 'oai-native':{}}}
     (root / 'MANIFEST.json').write_text(json.dumps(manifest), encoding='utf-8')
     return root

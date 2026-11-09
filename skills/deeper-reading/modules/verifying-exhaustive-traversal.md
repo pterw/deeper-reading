@@ -1,8 +1,3 @@
----
-name: verifying-exhaustive-traversal
-description: Use when all planned document traversal nodes are resolved and completion must be proven from fresh source bytes, canonical chunk coverage, and reproducible evidence.
----
-
 # Verifying Exhaustive Traversal
 
 ## Invariant
@@ -12,9 +7,9 @@ description: Use when all planned document traversal nodes are resolved and comp
 ## Phase inputs
 
 Before final verification, re-check
-[`definition-of-done`](../../references/definition-of-done.md) and
-[`evidence`](../../references/evidence.md), then run
-`python ../../scripts/verify_run.py --help` before the final verifier call.
+[`definition-of-done`](references/definition-of-done.md) and
+[`evidence`](references/evidence.md), then run
+`python <skill-root>/scripts/verify_run.py --help` before the final verifier call.
 
 ## Final verification
 

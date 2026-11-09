@@ -65,7 +65,7 @@ INSTRUCTIONS = [
 def test_required_instruction_is_stated_where_its_phase_loads_it(instruction, rel, module):
     assert instruction in text(rel)
     if module is not None:
-        assert f"](../../{rel})" in text(f"skills/{module}/SKILL.md")
+        assert f"]({rel})" in text(f"modules/{module}.md")
 
 
 def test_readme_explains_chunk_contract_access_and_future_scope():

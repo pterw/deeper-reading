@@ -23,7 +23,7 @@ Thank you for helping improve **`deeper-reading`**!
    - Backend installation is opt-in. CI installs `requirements-optional.txt` to exercise PDF fixtures.
 
 4. **Package-Owned Process Skills**:
-   - Orchestration is self-contained in `skills/deeper-reading/skills/` (`exhaustive-document-traversal`, `planning-document-traversal`, `executing-document-traversal`, `debugging-document-workflows`, `recovering-document-workflows`, `verifying-exhaustive-traversal`).
+   - Orchestration is self-contained in `skills/deeper-reading/modules/` as `<name>.md` files (`exhaustive-document-traversal`, `planning-document-traversal`, `executing-document-traversal`, `debugging-document-workflows`, `recovering-document-workflows`, `verifying-exhaustive-traversal`).
 
 ---
 
@@ -36,6 +36,7 @@ as [AGENTS.md "Done means"](https://github.com/pterw/deeper-reading/blob/main/AG
 requires. That file owns the commands, so they are not copied here. Install the
 tools first with `python -m pip install pytest ruff==0.16.10 -r requirements-optional.txt`
 (CI runs `python -m ruff check .`, so lint before you push).
+CI also runs `agentskills validate skills/deeper-reading`; the pin is in `.github/workflows/ci.yml`.
 
 ---
 
@@ -46,7 +47,7 @@ If contributing support for an additional document format:
 2. Ensure it supports both `--out <path>` and `--run-root <path>`.
 3. Register it in `EXTRACTOR_SCRIPTS` in `skills/deeper-reading/scripts/verify_run.py`, so the verifier can re-extract the source.
 4. Document the format's structural invariants in a reference under `skills/deeper-reading/references/`, named for the format (`skills/deeper-reading/references/html.md`, `skills/deeper-reading/references/pdf.md`, `skills/deeper-reading/references/lengthy-markdown.md`).
-5. Add the format's route to `skills/deeper-reading/skills/exhaustive-document-traversal/SKILL.md`, linking that reference.
+5. Add the format's route to `skills/deeper-reading/modules/exhaustive-document-traversal.md`, linking that reference.
 6. Add deterministic test coverage in `tests/test_extractors.py`, and update `tests/test_phase_gated_loading.py` for the new route and reference.
 7. Record images, SVG and diagrams through `MediaCollector` in `skills/deeper-reading/scripts/chunk_common.py`, and add a row to `tests/test_media_extractors.py`.
 

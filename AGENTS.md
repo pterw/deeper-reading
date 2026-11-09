@@ -19,7 +19,7 @@ code, docs and commit messages honest about that.
 |------|------|----------|
 | `AGENTS.md` (this file) | **Rules** | How agents behave: bootstrap, gates, roles, commits, anti-patterns. |
 | `skills/deeper-reading/references/definition-of-done.md` | **Predicate owner** | Owns the Definition of Done predicates; `PREDICATES` in `skills/deeper-reading/scripts/verification_findings.py` mirrors it, and the owner wins. |
-| `skills/deeper-reading/` | **Skill payload** | `MANIFEST.json` `skill.root` names this folder, and `payload` (relative to it) is what installers copy into a skill directory: `SKILL.md`, `LICENSE`, `VERSION`, `skills`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
+| `skills/deeper-reading/` | **Skill payload** | `MANIFEST.json` `skill.root` names this folder, and `payload` (relative to it) is what installers copy into a skill directory: `SKILL.md`, `LICENSE`, `VERSION`, `modules`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
 | `docs/superpowers/plans/*.md` | **Work orders** | Plans with checkbox tasks and binding interfaces. |
 | `.superpowers/sdd/<plan>/progress.md` | **Ledger** | Git-ignored, local. Events, verdicts and the `RESUME HERE` checkpoint for a plan in flight. |
 | `README.md` | **Product docs** | Install, commands, artifacts, limits. Not for agent orchestration. |
@@ -157,7 +157,7 @@ Bound every long command with a timeout. A test that can hang is a defect.
 ### Skill payload
 
 - `skills/deeper-reading/SKILL.md` is the router: a phase-gated table mapping lifecycle state to one
-  module in `skills/deeper-reading/skills/*/SKILL.md`. Each module owns the `skills/deeper-reading/references/*.md` it
+  module in `skills/deeper-reading/modules/<name>.md`. Each module owns the `skills/deeper-reading/references/*.md` it
   must read before its gate; references are never preloaded.
 - **Prose is behaviour.** The skill text is what the agent executes, so
   contract tests pin required instructions in it and in the release docs
@@ -211,7 +211,7 @@ draft -> `build_evidence.py` (schema v2; binds quotes to byte spans through
 | When you change | Also update |
 |---|---|
 | `skills/deeper-reading/scripts/extract_*.py` | `tests/test_extractors.py`; re-extraction in `skills/deeper-reading/scripts/verify_run.py` accepts only what the extractor reproduces |
-| A new document format | `skills/deeper-reading/scripts/extract_<format>.py`, `EXTRACTOR_SCRIPTS` in `skills/deeper-reading/scripts/verify_run.py`, `skills/deeper-reading/references/<format>.md`, the format routes in `skills/deeper-reading/skills/exhaustive-document-traversal/SKILL.md`, `tests/test_extractors.py`, `tests/test_phase_gated_loading.py` |
+| A new document format | `skills/deeper-reading/scripts/extract_<format>.py`, `EXTRACTOR_SCRIPTS` in `skills/deeper-reading/scripts/verify_run.py`, `skills/deeper-reading/references/<format>.md`, the format routes in `skills/deeper-reading/modules/exhaustive-document-traversal.md`, `tests/test_extractors.py`, `tests/test_phase_gated_loading.py` |
 | `installer/*.py` or `installer/adapters/*.py` | the matching `installer/node/*.js`; `tests/node/parity.test.js` must still pass |
 | What ships | `MANIFEST.json` `payload`, `package.json` `files`, `RELEASE_FILES` / `RELEASE_DIRECTORIES` in `installer/distribution.py` |
 | Definition of Done predicates | `skills/deeper-reading/references/definition-of-done.md` and `PREDICATES` in `skills/deeper-reading/scripts/verification_findings.py` |

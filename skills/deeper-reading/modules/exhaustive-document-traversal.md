@@ -1,8 +1,3 @@
----
-name: exhaustive-document-traversal
-description: Use when a long or dense source must be read completely and early retrieval would risk skipped sections, caveats, proofs, appendices, or overrides.
----
-
 # Exhaustive Document Traversal
 
 ## Invariant
@@ -14,30 +9,30 @@ Chunking is the ruler; exhaustive traversal is the product. **Every canonical ch
 ### Activation and contract establishment
 
 Before establishing the traversal contract, read
-[`prerequisites`](../../references/prerequisites.md),
-[`runtime-profiles`](../../references/runtime-profiles.md), and
-[`control-flow`](../../references/control-flow.md).
+[`prerequisites`](references/prerequisites.md),
+[`runtime-profiles`](references/runtime-profiles.md), and
+[`control-flow`](references/control-flow.md).
 
 ### Source acquisition and extraction
 
 Before acquiring or extracting source bytes, read
-[`source-acquisition`](../../references/source-acquisition.md) and
-[`dependencies`](../../references/dependencies.md). Then read
-[`run-workspace`](../../references/run-workspace.md) for the run-root layout and
+[`source-acquisition`](references/source-acquisition.md) and
+[`dependencies`](references/dependencies.md). Then read
+[`run-workspace`](references/run-workspace.md) for the run-root layout and
 the `--run-root` extractor commands. Whenever the profile is or becomes
 `oai-native` (including after the extractor reports a PDF with no text layer),
-read [`oai-native`](../../references/oai-native.md) before reading any native
+read [`oai-native`](references/oai-native.md) before reading any native
 OAI skill tree. Then load exactly the route
 for the selected format:
 
-- PDF: read [`pdf`](../../references/pdf.md), then run
-  `python ../../scripts/extract_pdf.py --help` before first use.
-- DOCX: read [`docx`](../../references/docx.md), then run
-  `python ../../scripts/extract_docx.py --help` before first use.
-- HTML: read [`html`](../../references/html.md), then run
-  `python ../../scripts/extract_html.py --help` before first use.
-- Markdown: run `python ../../scripts/extract_markdown.py --help` before first
-  use; read [`lengthy-markdown`](../../references/lengthy-markdown.md) only for large Markdown.
+- PDF: read [`pdf`](references/pdf.md), then run
+  `python <skill-root>/scripts/extract_pdf.py --help` before first use.
+- DOCX: read [`docx`](references/docx.md), then run
+  `python <skill-root>/scripts/extract_docx.py --help` before first use.
+- HTML: read [`html`](references/html.md), then run
+  `python <skill-root>/scripts/extract_html.py --help` before first use.
+- Markdown: run `python <skill-root>/scripts/extract_markdown.py --help` before first
+  use; read [`lengthy-markdown`](references/lengthy-markdown.md) only for large Markdown.
 
 Do not read an unselected format guide.
 

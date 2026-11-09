@@ -19,7 +19,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { InstallerError, loadManifest, sha256File } from "../../installer/node/manifest.js";
+import { InstallerError, loadManifest, sha256File, skillRoot } from "../../installer/node/manifest.js";
 import {
   buildInstallPlan,
   installSkill,
@@ -234,6 +234,49 @@ for (const name of ["legacy-managed.txt", "README.md"]) test(`upgrade removes ${
   assert.equal(verifyInstallation(targetRoot).passed, true);
 });
 
+function installedFiles(root) {
+  return readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.relative(root, path.join(entry.parentPath, entry.name)).split(path.sep).join("/"))
+    .filter((name) => name !== ".install-receipt.json")
+    .sort();
+}
+
+test("upgrade from the 0.2.5 layout removes skills/*/SKILL.md and installs modules/*.md", (t) => {
+  const { sandbox, targetRoot, options } = fixture(t);
+  const packageRoot = path.join(sandbox, "package");
+  cpSync(ROOT, packageRoot, {
+    recursive: true,
+    filter: (source) => ![".git", "node_modules", "__pycache__", ".pytest_cache"].includes(path.basename(source))
+  });
+  const fixtures = path.join(ROOT, "tests", "fixtures");
+  const readList = (name) => JSON.parse(readFileSync(path.join(fixtures, name), "utf8"));
+  const current = readList("installed-files-0.2.6.json");
+  const stale = readList("installed-files-0.2.5.json").filter((name) => !current.includes(name));
+  assert.equal(stale.length, 6);
+  const manifestPath = path.join(packageRoot, "MANIFEST.json");
+  const realManifestBytes = readFileSync(manifestPath);
+  const oldManifest = loadManifest(manifestPath);
+  oldManifest.payload.push("skills");
+  const copiedSkillRoot = skillRoot(oldManifest, packageRoot);
+  for (const name of stale) {
+    mkdirSync(path.dirname(path.join(copiedSkillRoot, name)), { recursive: true });
+    writeFileSync(path.join(copiedSkillRoot, name), `old ${name}\n`, "utf8");
+  }
+  writeFileSync(manifestPath, `${JSON.stringify(oldManifest, null, 2)}\n`, "utf8");
+  installSkill({ ...options, packageRoot, manifest: oldManifest });
+  for (const name of stale) assert.equal(existsSync(path.join(targetRoot, name)), true);
+  writeFileSync(manifestPath, realManifestBytes);
+  installSkill({ ...options, packageRoot, manifest: loadManifest(manifestPath) });
+  for (const name of stale) assert.equal(existsSync(path.join(targetRoot, name)), false);
+  assert.equal(existsSync(path.join(targetRoot, "skills")), false);
+  for (const name of current.filter((entry) => entry.startsWith("modules/"))) {
+    assert.equal(existsSync(path.join(targetRoot, name)), true);
+  }
+  assert.deepEqual(installedFiles(targetRoot), current);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
 test("successful install leaves no stage or backup siblings", (t) => {
   const { targetRoot, options } = fixture(t);
   installSkill(options);
@@ -269,15 +312,15 @@ test("failure after replacement restores the prior installation", (t) => {
 function syntheticPackage(directory, root, extraPayload = []) {
   const skill = path.join(directory, ...root.split("/").filter((part) => part !== "."));
   mkdirSync(path.join(skill, "references"), { recursive: true });
-  mkdirSync(path.join(skill, "skills"), { recursive: true });
+  mkdirSync(path.join(skill, "modules"), { recursive: true });
   writeFileSync(path.join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n", "utf8");
   writeFileSync(path.join(skill, "VERSION"), `7.8.9-${root === "." ? "flat" : "rooted"}\n`, "utf8");
   writeFileSync(path.join(skill, "references", "a.md"), "a\n", "utf8");
-  writeFileSync(path.join(skill, "skills", "s.md"), "s\n", "utf8");
+  writeFileSync(path.join(skill, "modules", "s.md"), "s\n", "utf8");
   for (const name of extraPayload) writeFileSync(path.join(skill, name), "extra\n", "utf8");
   const manifest = {
     skill: { name: "demo", entrypoint: "SKILL.md", ...(root === "." ? {} : { root }) },
-    payload: ["SKILL.md", "VERSION", "references", "skills", ...extraPayload],
+    payload: ["SKILL.md", "VERSION", "references", "modules", ...extraPayload],
     document_profiles: { standalone: {}, "oai-native": {} }
   };
   return { packageRoot: directory, manifest };
@@ -290,7 +333,7 @@ test("a rooted package installs, hashes and verifies, with the receipt version f
   const receipt = readReceipt(targetRoot);
   assert.equal(receipt.version, "7.8.9-rooted");
   assert.deepEqual(Object.keys(receipt.payload_hashes).sort(), [
-    "SKILL.md", "VERSION", "references/a.md", "skills/s.md"
+    "SKILL.md", "VERSION", "modules/s.md", "references/a.md"
   ]);
   assert.equal(existsSync(path.join(targetRoot, "skills", "demo")), false);
   assert.equal(verifyInstallation(targetRoot).passed, true);

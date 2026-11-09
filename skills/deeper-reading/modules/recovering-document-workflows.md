@@ -1,8 +1,3 @@
----
-name: recovering-document-workflows
-description: Use when diagnosed recovery branches are exhausted or an architecture stop requires a disclosed alternative path and revised traversal plan before execution can resume.
----
-
 # Recovering Document Workflows
 
 ## Invariant
@@ -12,7 +7,7 @@ Recovery redesign is a terminal branch of diagnosis, not the first fallback. `al
 ## Phase inputs
 
 Before alternative design or plan revision, re-check
-[`failure-recovery`](../../references/failure-recovery.md).
+[`failure-recovery`](references/failure-recovery.md).
 
 ## Exhausted-path sequence
 

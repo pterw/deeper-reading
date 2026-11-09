@@ -154,8 +154,8 @@ export function validateManifest(manifest, packageRoot) {
     errors.push("Standalone manifest must not require an external process framework");
   if (JSON.stringify(Object.keys(manifest?.document_profiles ?? {}).sort()) !== JSON.stringify(["oai-native", "standalone"]))
     errors.push("Document profiles must be exactly standalone and oai-native");
-  if (!Array.isArray(payload) || !payload.includes("skills"))
-    errors.push("Standalone runtime payload must include package-owned skills");
+  if (!Array.isArray(payload) || !payload.includes("modules"))
+    errors.push("Standalone runtime payload must include package-owned modules");
   return errors;
 }
 

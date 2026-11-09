@@ -20,17 +20,17 @@ def _package(root: Path, *, skill_root: str | None, version: str = '9.9.9', extr
     """Build a synthetic package; ``skill_root`` None means a root-level layout."""
     folder = root if skill_root is None else root / skill_root
     (folder / 'scripts').mkdir(parents=True)
-    (folder / 'skills').mkdir()
+    (folder / 'modules').mkdir()
     (folder / 'SKILL.md').write_text('---\nname: demo\n---\nbody\n', encoding='utf-8')
     (folder / 'VERSION').write_text(version + '\n', encoding='utf-8')
     (folder / 'scripts' / 'tool.py').write_text('# tool\n', encoding='utf-8')
-    (folder / 'skills' / 'owned.txt').write_text('owned\n', encoding='utf-8')
+    (folder / 'modules' / 'owned.txt').write_text('owned\n', encoding='utf-8')
     if extra:
         (folder / 'scripts' / extra).write_text('# extra\n', encoding='utf-8')
     manifest = {
         'schema_version': 1,
         'skill': {'name': 'demo', 'entrypoint': 'SKILL.md'},
-        'payload': ['SKILL.md', 'VERSION', 'scripts', 'skills'],
+        'payload': ['SKILL.md', 'VERSION', 'scripts', 'modules'],
         'prerequisites': {},
         'document_profiles': {'standalone': {}, 'oai-native': {}},
     }
