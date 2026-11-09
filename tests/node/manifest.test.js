@@ -105,7 +105,7 @@ const BAD_ROOTS = [
   ["skills/../skills/demo", "skill.root must not contain .."]
 ];
 
-for (const root of ["skills/none", "skills/demo/SKILL.md"]) {
+for (const root of ["skills/none", "skills/demo/SKILL.md", "skills/demo/SKILL.md/sub"]) {
   test(`skill.root ${JSON.stringify(root)} without a SKILL.md reports the missing entrypoint`, (t) => {
     const { pkg, manifest } = rootedPackage(t, root);
     const errors = validateManifest(manifest, pkg);
@@ -138,6 +138,21 @@ test("skill.root that resolves outside the package through a link is refused", (
   }
   assert.deepEqual(validateManifest(manifest, pkg), ["skill.root is outside the package root"]);
 });
+
+for (const root of ["loop", "loop/sub"]) {
+  test(`skill.root ${JSON.stringify(root)} through a symlink loop gives one error`, (t) => {
+    const { pkg, manifest } = rootedPackage(t, root);
+    try {
+      symlinkSync("loop", path.join(pkg, "loop"), process.platform === "win32" ? "junction" : "dir");
+    } catch (error) {
+      if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return t.skip("links unavailable");
+      throw error;
+    }
+    const errors = validateManifest(manifest, pkg);
+    assert.equal(errors.length, 1, errors.join("; "));
+    assert.match(errors[0], /^too many symbolic links/);
+  });
+}
 
 test("managedPath rejects lexical and symlink escapes", (t) => {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-paths-"));
