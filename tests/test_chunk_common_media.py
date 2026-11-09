@@ -1,10 +1,10 @@
 import sys
 import time
-from pathlib import Path
 
 import pytest
+from layout import SKILL_ROOT
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 
 from chunk_common import Block, MediaCollector, check_dispositions, manifest_media
 

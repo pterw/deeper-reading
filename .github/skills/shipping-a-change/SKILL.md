@@ -1,6 +1,8 @@
 ---
 name: shipping-a-change
 description: How a deeper-reading release ships, from a dated CHANGELOG section to npm and the GitHub Release. Use before cutting a release.
+metadata:
+  internal: true
 ---
 
 # Shipping a change

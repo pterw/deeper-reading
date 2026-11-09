@@ -1,7 +1,6 @@
-from pathlib import Path
 
+from layout import SKILL_ROOT as ROOT
 
-ROOT = Path(__file__).resolve().parents[1]
 ROOT_SKILL = (ROOT / "SKILL.md").read_text(encoding="utf-8")
 
 MODULES = {

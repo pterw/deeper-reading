@@ -4,6 +4,7 @@ import {
   chmodSync,
   cpSync,
   existsSync,
+  lstatSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -17,14 +18,14 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { loadManifest, sha256File } from "../../installer/node/manifest.js";
+import { InstallerError, loadManifest, sha256File } from "../../installer/node/manifest.js";
 import {
   buildInstallPlan,
   installSkill,
   uninstallSkill,
   verifyInstallation
 } from "../../installer/node/core.js";
-import { runNodeCli } from "./helpers.js";
+import { fortyLinkEscape, linkChainEscape, runNodeCli, SKILL_ROOT } from "./helpers.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const READY = { state: "ready", evidence: ["test-ready"], action: [] };
@@ -137,25 +138,78 @@ test("an absolute receipt path to a file outside the target is rejected without 
   assert.equal(readFileSync(victim, "utf8"), "do not touch");
 });
 
-test("receipt symlink escapes are rejected without touching outside bytes", (t) => {
+// The chain's message differs by platform (Windows follows every link and sees the escape, Linux gives up
+// after 40), so that case checks the error type only; the direct link must name the containment check.
+const ESCAPES = {
+  "a direct link": {
+    build: (base, outside) => {
+      symlinkSync(outside, path.join(base, "escape"), process.platform === "win32" ? "junction" : "dir");
+      return "escape";
+    },
+    refused: (error) => error instanceof InstallerError && /managed payload path escapes install root/.test(error.message)
+  },
+  "a long link chain": {
+    build: linkChainEscape,
+    refused: (error) => error instanceof InstallerError
+  },
+  "a link that steps back from a missing name": {
+    build: (base, outside) => {
+      symlinkSync(outside, path.join(base, "evil"), process.platform === "win32" ? "junction" : "dir");
+      symlinkSync("missing/../evil", path.join(base, "viaMissing"), "dir");
+      return "viaMissing";
+    },
+    refused: (error) => error instanceof InstallerError
+  }
+};
+
+for (const [name, { build, refused }] of Object.entries(ESCAPES)) test(`receipt symlink escapes through ${name} are rejected without touching outside bytes`, (t) => {
   const { sandbox, targetRoot, options } = fixture(t);
   installSkill(options);
   const outside = path.join(sandbox, "outside");
   const victim = path.join(outside, "victim.txt");
   mkdirSync(outside);
   writeFileSync(victim, "keep", "utf8");
+  let prefix;
   try {
-    symlinkSync(outside, path.join(targetRoot, "escape"), process.platform === "win32" ? "junction" : "dir");
+    prefix = build(targetRoot, outside);
   } catch (error) {
-    if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return;
+    if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return t.skip("links unavailable");
     throw error;
   }
   const receipt = readReceipt(targetRoot);
-  receipt.payload_hashes = { "escape/victim.txt": sha256File(victim) };
+  receipt.payload_hashes = { [`${prefix}/victim.txt`]: sha256File(victim) };
   writeReceipt(targetRoot, receipt);
   assert.equal(verifyInstallation(targetRoot).passed, false);
-  assert.throws(() => uninstallSkill(targetRoot), /managed payload path/);
+  assert.throws(() => uninstallSkill(targetRoot), refused);
   assert.equal(readFileSync(victim, "utf8"), "keep");
+});
+
+test("a target root that needs a 41st link is refused instead of installed into", (t) => {
+  const { sandbox, options } = fixture(t);
+  const links = path.join(sandbox, "links");
+  const dest = path.join(sandbox, "dest");
+  mkdirSync(links);
+  mkdirSync(dest);
+  let rel;
+  try {
+    rel = fortyLinkEscape(links, dest);
+  } catch (error) {
+    if (["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) return t.skip("links unavailable");
+    throw error;
+  }
+  const targetRoot = path.join(links, rel, "deeper-reading");
+  let limited = false;
+  try {
+    lstatSync(targetRoot);
+  } catch (error) {
+    limited = error.code === "ELOOP";
+  }
+  // Only a platform that answers ELOOP after 40 links (Linux, macOS) has a limit to enforce here.
+  if (!limited) return t.skip("this platform does not limit the links a lookup follows");
+  assert.throws(() => installSkill({ ...options, targetRoot }), InstallerError);
+  assert.deepEqual(readdirSync(dest), []);
+  assert.throws(() => installSkill({ ...options, targetRoot }), InstallerError);
+  assert.deepEqual(readdirSync(dest), []);
 });
 
 for (const name of ["legacy-managed.txt", "README.md"]) test(`upgrade removes ${name} owned only by the old manifest`, (t) => {
@@ -169,7 +223,7 @@ for (const name of ["legacy-managed.txt", "README.md"]) test(`upgrade removes ${
   const newManifestBytes = readFileSync(manifestPath);
   const oldManifest = loadManifest(manifestPath);
   oldManifest.payload.push(name);
-  writeFileSync(path.join(packageRoot, name), "legacy", "utf8");
+  writeFileSync(path.join(packageRoot, path.relative(ROOT, SKILL_ROOT), name), "legacy", "utf8");
   writeFileSync(manifestPath, `${JSON.stringify(oldManifest, null, 2)}\n`, "utf8");
   installSkill({ ...options, packageRoot, manifest: oldManifest });
   assert.equal(existsSync(path.join(targetRoot, name)), true);
@@ -196,7 +250,7 @@ test("failure after replacement restores the prior installation", (t) => {
     recursive: true,
     filter: (source) => ![".git", "node_modules", "__pycache__", ".pytest_cache"].includes(path.basename(source))
   });
-  writeFileSync(path.join(packageRoot, "references", "anti-patterns.md"), "replacement\n", "utf8");
+  writeFileSync(path.join(packageRoot, path.relative(ROOT, SKILL_ROOT), "references", "anti-patterns.md"), "replacement\n", "utf8");
   assert.throws(() => installSkill({
     ...options,
     packageRoot,
@@ -206,6 +260,50 @@ test("failure after replacement restores the prior installation", (t) => {
     }
   }), /injected after-replace failure/);
   assert.deepEqual(readFileSync(path.join(targetRoot, "SKILL.md")), original);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
+// A synthetic package whose skill folder is `root` below the package root ("." keeps it at the top).
+function syntheticPackage(directory, root, extraPayload = []) {
+  const skill = path.join(directory, ...root.split("/").filter((part) => part !== "."));
+  mkdirSync(path.join(skill, "references"), { recursive: true });
+  mkdirSync(path.join(skill, "skills"), { recursive: true });
+  writeFileSync(path.join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n", "utf8");
+  writeFileSync(path.join(skill, "VERSION"), `7.8.9-${root === "." ? "flat" : "rooted"}\n`, "utf8");
+  writeFileSync(path.join(skill, "references", "a.md"), "a\n", "utf8");
+  writeFileSync(path.join(skill, "skills", "s.md"), "s\n", "utf8");
+  for (const name of extraPayload) writeFileSync(path.join(skill, name), "extra\n", "utf8");
+  const manifest = {
+    skill: { name: "demo", entrypoint: "SKILL.md", ...(root === "." ? {} : { root }) },
+    payload: ["SKILL.md", "VERSION", "references", "skills", ...extraPayload],
+    document_profiles: { standalone: {}, "oai-native": {} }
+  };
+  return { packageRoot: directory, manifest };
+}
+
+test("a rooted package installs, hashes and verifies, with the receipt version from its VERSION", (t) => {
+  const { sandbox, targetRoot, options } = fixture(t);
+  const pkg = syntheticPackage(path.join(sandbox, "rooted"), "skills/demo");
+  installSkill({ ...options, ...pkg });
+  const receipt = readReceipt(targetRoot);
+  assert.equal(receipt.version, "7.8.9-rooted");
+  assert.deepEqual(Object.keys(receipt.payload_hashes).sort(), [
+    "SKILL.md", "VERSION", "references/a.md", "skills/s.md"
+  ]);
+  assert.equal(existsSync(path.join(targetRoot, "skills", "demo")), false);
+  assert.equal(verifyInstallation(targetRoot).passed, true);
+});
+
+test("upgrading from a root-level package to a rooted one leaves no stale files", (t) => {
+  const { sandbox, targetRoot, options } = fixture(t);
+  const flat = syntheticPackage(path.join(sandbox, "flat"), ".", ["legacy.txt"]);
+  installSkill({ ...options, ...flat });
+  const flatKeys = Object.keys(readReceipt(targetRoot).payload_hashes).filter((key) => key !== "legacy.txt");
+  assert.equal(existsSync(path.join(targetRoot, "legacy.txt")), true);
+  const rooted = syntheticPackage(path.join(sandbox, "rooted"), "skills/demo");
+  installSkill({ ...options, ...rooted });
+  assert.equal(existsSync(path.join(targetRoot, "legacy.txt")), false);
+  assert.deepEqual(Object.keys(readReceipt(targetRoot).payload_hashes).sort(), flatKeys.sort());
   assert.equal(verifyInstallation(targetRoot).passed, true);
 });
 

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Installer (Node): the install folder and the project check now resolve links
+  by asking the operating system, so a relative link reached through another
+  link leads to its real folder, and a link that leads nowhere (the folder it
+  points to does not exist) is refused with exit 2 and nothing changed; create
+  that folder, or remove the link. A 0.2.5 install that landed at the wrong
+  place through such a relative link is no longer found by `verify` or
+  `uninstall` and stays where it is; delete it by hand. The Python installer is
+  not changed.
 - Installer: `install` (also with `--dry-run`), `verify` and `uninstall` now
   read the receipt in the skill folder and refuse a folder that another
   target or scope installed. This can happen when a skills folder is a link.
@@ -31,6 +39,35 @@
 - `README.md` says the project's own installers are the supported route, with
   npm the primary one, what `npx skills add` does to an npm install, and how
   to recover. `installer/USAGE.md` lists the ownership checks and their codes.
+- Layout: the skill now lives in `skills/deeper-reading/` in the repository.
+  `SKILL.md`, `VERSION`, `references/`, `scripts/` and the workflow modules
+  moved there. `MANIFEST.json` names the folder in a new optional field,
+  `skill.root`. The root `LICENSE` stays, and the skill folder holds a copy.
+- Layout: the npm package and the release ZIP now hold the skill under
+  `skills/deeper-reading/`, not at the package root. Each gains one file,
+  the `LICENSE` copy inside the skill.
+- Layout: the installed skill is unchanged. It has the same 38 files at the
+  same paths, with the same hashes, as 0.2.5. A 0.2.5 install still
+  verifies, upgrades and uninstalls.
+- Layout: `npx skills add` on the repository (checked with `skills@1.7.6`)
+  finds one skill and installs those 38 files, not the whole repository. This
+  is the same list as an npm install.
+- Layout: the two repository helper skills in `.github/skills/` are marked
+  internal, so `npx skills add` does not install them by default.
+- Installer: a `skill.root` that is not a relative path, has a `..` segment,
+  resolves outside the package or has no `SKILL.md` is refused. `doctor`,
+  `install` and `verify` exit 2 in both installers, and Node `uninstall` does
+  too; Python `uninstall` does not read the manifest. `doctor` in the Python
+  installer now reads the manifest, so it also exits 2 when the manifest is
+  missing or damaged. It did not read it before. The Node `doctor` already
+  exited 2 in that case.
+- Installer: in the Node installer, a `skill.root` that lies beneath a file or
+  beneath a symlink loop is refused with one error; on Linux it gave a raw
+  filesystem error.
+- Installer: on Python before 3.13, a symlink loop in `skill.root` (`doctor`,
+  `install`), in a payload entry (`install`) or in the target folder
+  (`install`, `install --dry-run`, `uninstall`) now exits 2 with an error
+  message. It was a traceback.
 
 ## 0.2.5 - 2026-11-08
 

@@ -10,14 +10,18 @@ import tempfile
 from zipfile import ZIP_DEFLATED, ZipFile
 
 PACKAGE_ROOT = Path(__file__).resolve().parents[1]
+if str(PACKAGE_ROOT) not in sys.path:
+    sys.path.insert(0, str(PACKAGE_ROOT))
+
+from installer.manifest import skill_root  # noqa: E402
 
 EXCLUDED_PARTS = {'__pycache__', '.pytest_cache', '.git'}
 EXCLUDED_NAMES = {'.install-receipt.json'}
 EXCLUDED_SUFFIXES = {'.pyc', '.tgz'}
-RELEASE_FILES = {'LICENSE', 'MANIFEST.json', 'README.md', 'SKILL.md', 'VERSION',
+RELEASE_FILES = {'LICENSE', 'MANIFEST.json', 'README.md',
                  'CHANGELOG.md', 'package.json',
                  'requirements-optional.txt'}
-RELEASE_DIRECTORIES = {'installer', 'references', 'scripts', 'skills'}
+RELEASE_DIRECTORIES = {'installer', 'skills'}
 
 
 def _included(path: Path, root: Path) -> bool:
@@ -33,7 +37,9 @@ def _included(path: Path, root: Path) -> bool:
 
 def build_distribution(package_root: Path, output_path: Path) -> Path:
     root = Path(package_root).resolve()
-    if not (root / 'SKILL.md').is_file():
+    manifest_path = root / 'MANIFEST.json'
+    skill_dir = skill_root(json.loads(manifest_path.read_text(encoding='utf-8')), root) if manifest_path.is_file() else root
+    if not (skill_dir / 'SKILL.md').is_file():
         raise ValueError('package root must contain SKILL.md')
     requested = Path(output_path).absolute()
     if requested.is_symlink():

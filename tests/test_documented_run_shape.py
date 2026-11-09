@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT as ROOT
 EVIDENCE_DOC = ROOT / "references" / "evidence.md"
 FENCE = re.compile(r"^```(\w+) (\S+)\n(.*?)\n```$", re.MULTILINE | re.DOTALL)
 SOURCE_REL = "source/source.md"

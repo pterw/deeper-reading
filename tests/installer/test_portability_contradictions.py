@@ -1,10 +1,8 @@
-from pathlib import Path
-
-ROOT = Path(__file__).resolve().parents[2]
+from layout import SKILL_ROOT
 
 
 def read(rel: str) -> str:
-    return (ROOT / rel).read_text(encoding="utf-8")
+    return (SKILL_ROOT / rel).read_text(encoding="utf-8")
 
 
 def test_control_flow_routes_through_package_owned_modules():

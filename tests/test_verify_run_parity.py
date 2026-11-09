@@ -2,7 +2,7 @@ import json
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import ROOT
 sys.path.insert(0, str(ROOT))
 
 from tests.run_fixture import valid_run  # noqa: E402

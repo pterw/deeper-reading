@@ -3,7 +3,7 @@ import sys
 import time
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT as ROOT
 SCRIPTS = ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 

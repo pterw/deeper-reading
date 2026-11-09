@@ -4,7 +4,6 @@ import {
   constants,
   existsSync,
   lstatSync,
-  readlinkSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -22,21 +21,37 @@ export class InstallerError extends Error {
 const EXCLUDED_DIRECTORIES = new Set(["__pycache__", ".pytest_cache"]);
 const WINDOWS_DRIVE = /^[A-Za-z]:/;
 
-export function physicalPath(candidate, links = 0) {
-  const absolute = path.resolve(candidate);
-  if (links > 40) throw new InstallerError(`too many symbolic links: ${absolute}`);
+// POSIX answers ENOTDIR for a name beneath a file; Windows answers ENOENT. Both mean the name is not there.
+const ABSENT = ["ENOENT", "ENOTDIR"];
+
+function isLink(candidate) {
   try {
-    if (lstatSync(absolute).isSymbolicLink()) {
-      // Resolve dangling aliases too: the target can temporarily be absent
-      // between backup and replacement while its sibling lock remains held.
-      return physicalPath(path.resolve(path.dirname(absolute), readlinkSync(absolute)), links + 1);
-    }
-    return realpathSync.native(absolute);
+    return lstatSync(candidate).isSymbolicLink();
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
-    const parent = path.dirname(absolute);
-    if (parent === absolute) return absolute;
-    return path.join(physicalPath(parent, links), path.basename(absolute));
+    if (ABSENT.includes(error.code)) return false;
+    throw error;
+  }
+}
+
+// Where a path really leads, for a path that need not exist yet: the filesystem's answer for the deepest part
+// that exists, then the names beneath it, which cannot be links. A link that leads nowhere is refused, not guessed at.
+export function physicalPath(candidate) {
+  const absolute = path.resolve(candidate);
+  const missing = [];
+  for (let prefix = absolute; ; prefix = path.dirname(prefix)) {
+    try {
+      return path.join(realpathSync.native(prefix), ...missing);
+    } catch (error) {
+      if (error.code === "ELOOP") throw new InstallerError(`too many symbolic links: ${absolute}`);
+      if (!ABSENT.includes(error.code)) throw error;
+    }
+    if (isLink(prefix)) {
+      throw new InstallerError(
+        `${absolute} passes through a link that leads nowhere: ${prefix}; create the folder it points to, or remove the link`
+      );
+    }
+    if (path.dirname(prefix) === prefix) return absolute;
+    missing.unshift(path.basename(prefix));
   }
 }
 
@@ -79,15 +94,43 @@ function frontmatterName(skillPath) {
   return name ? name.slice(5).trim().replace(/^["']|["']$/g, "") : null;
 }
 
+// The folder holding SKILL.md and the payload: `skill.root` (a POSIX path
+// relative to the package root, default ".") resolved to a physical path.
+export function skillRoot(manifest, packageRoot) {
+  const root = physicalPath(packageRoot);
+  const raw = manifest?.skill?.root;
+  if (raw === undefined) return root;
+  if (typeof raw !== "string") throw new InstallerError("skill.root must be a string");
+  if (raw === "" || raw.includes("\\") || raw.startsWith("/") || WINDOWS_DRIVE.test(raw))
+    throw new InstallerError("skill.root must be a relative path");
+  const parts = raw.split("/");
+  if (parts.includes("..")) throw new InstallerError("skill.root must not contain ..");
+  const resolved = physicalPath(path.join(root, ...parts));
+  if (!isInside(root, resolved)) throw new InstallerError("skill.root is outside the package root");
+  return resolved;
+}
+
 export function validateManifest(manifest, packageRoot) {
   const errors = [];
-  const root = physicalPath(packageRoot);
+  let root = null;
+  try {
+    root = skillRoot(manifest, packageRoot);
+  } catch (error) {
+    if (!(error instanceof InstallerError)) throw error;
+    errors.push(error.message);
+  }
   if (manifest?.skill?.entrypoint !== "SKILL.md")
     errors.push("Canonical entrypoint must be SKILL.md");
-  const skillPath = path.join(root, "SKILL.md");
-  if (!existsSync(skillPath)) errors.push("Missing canonical SKILL.md at package root");
-  else if (frontmatterName(skillPath) !== manifest?.skill?.name)
-    errors.push("Manifest skill name does not match SKILL.md name");
+  let skillFound = false;
+  if (root !== null) {
+    const skillPath = path.join(root, "SKILL.md");
+    if (!existsSync(skillPath)) errors.push("Missing canonical SKILL.md at package root");
+    else {
+      skillFound = true;
+      if (frontmatterName(skillPath) !== manifest?.skill?.name)
+        errors.push("Manifest skill name does not match SKILL.md name");
+    }
+  }
   const payload = manifest?.payload;
   if (!Array.isArray(payload) || payload.length === 0)
     errors.push("Payload must be a non-empty list");
@@ -99,9 +142,10 @@ export function validateManifest(manifest, packageRoot) {
     }
     if (seen.has(raw)) errors.push(`Duplicate payload entry: ${raw}`);
     seen.add(raw);
+    if (root === null) continue;
     try {
       const resolved = managedPath(root, raw);
-      if (!existsSync(resolved)) errors.push(`Payload entry does not exist: ${raw}`);
+      if (skillFound && !existsSync(resolved)) errors.push(`Payload entry does not exist: ${raw}`);
     } catch (error) {
       errors.push(error.message);
     }
@@ -126,8 +170,7 @@ function walk(directory) {
   return files;
 }
 
-export function payloadFiles(packageRoot, manifest) {
-  const root = physicalPath(packageRoot);
+function filesUnder(root, manifest) {
   const files = [];
   for (const raw of manifest.payload) {
     const candidate = managedPath(root, raw);
@@ -137,14 +180,18 @@ export function payloadFiles(packageRoot, manifest) {
   return [...new Set(files)].sort((a, b) => a.localeCompare(b));
 }
 
+export function payloadFiles(packageRoot, manifest) {
+  return filesUnder(skillRoot(manifest, packageRoot), manifest);
+}
+
 export function sha256File(filePath) {
   accessSync(filePath, constants.R_OK);
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
 }
 
 export function payloadHashes(packageRoot, manifest) {
-  const root = physicalPath(packageRoot);
-  return Object.fromEntries(payloadFiles(root, manifest).map((file) => [
+  const root = skillRoot(manifest, packageRoot);
+  return Object.fromEntries(filesUnder(root, manifest).map((file) => [
     path.relative(root, file).split(path.sep).join("/"),
     sha256File(file)
   ]));

@@ -4,6 +4,9 @@ from pathlib import Path
 import subprocess
 import sys
 
+ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = ROOT / "skills" / "deeper-reading"
+
 REQUIRED_EVIDENCE_FILES = {
     "plan_status": "plan.md",
     "skill_preflight": "evidence/skill-preflight.md",
@@ -35,7 +38,7 @@ def valid_run(tmp_path: Path) -> dict:
     source_uri = "https://www.rfc-editor.org/rfc/rfc9110.html"
 
     manifest_path = tmp_path / "evidence" / "chunk-manifest.json"
-    extractor = Path(__file__).resolve().parents[1] / "scripts" / "extract_html.py"
+    extractor = SKILL_ROOT / "scripts" / "extract_html.py"
     result = subprocess.run(
         [
             sys.executable, str(extractor), str(source_path),
@@ -71,7 +74,7 @@ def valid_run(tmp_path: Path) -> dict:
         }],
     })
 
-    report_script = Path(__file__).resolve().parents[1] / "scripts" / "traversal_report.py"
+    report_script = SKILL_ROOT / "scripts" / "traversal_report.py"
     report_result = subprocess.run(
         [sys.executable, str(report_script), "--run-root", str(tmp_path)],
         capture_output=True, text=True, check=False,

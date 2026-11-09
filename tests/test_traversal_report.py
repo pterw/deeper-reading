@@ -9,9 +9,9 @@ import pytest
 
 from media_helpers import normalise, read_golden
 
-ROOT = Path(__file__).resolve().parents[1]
-VERIFY = ROOT / "scripts" / "verify_run.py"
-REPORT = ROOT / "scripts" / "traversal_report.py"
+from layout import ROOT, SKILL_ROOT
+VERIFY = SKILL_ROOT / "scripts" / "verify_run.py"
+REPORT = SKILL_ROOT / "scripts" / "traversal_report.py"
 
 
 def sha(data: bytes) -> str:
@@ -31,7 +31,7 @@ def make_run(tmp_path: Path) -> dict:
     source = source_dir / "source.html"
     source.write_text("<h1>A</h1><p>Alpha proof.</p><h1>B</h1><p>Beta caveat.</p>", encoding="utf-8")
     manifest_path = tmp_path / "evidence" / "chunk-manifest.json"
-    result = subprocess.run([sys.executable, str(ROOT / "scripts" / "extract_html.py"), str(source), "--run-root", str(tmp_path), "--max-bytes", "80"], capture_output=True, text=True, check=False)
+    result = subprocess.run([sys.executable, str(SKILL_ROOT / "scripts" / "extract_html.py"), str(source), "--run-root", str(tmp_path), "--max-bytes", "80"], capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stdout + result.stderr
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     assert len(manifest["chunks"]) == 2
@@ -235,7 +235,7 @@ def test_report_lists_each_media_with_its_disposition_and_counts_missing(tmp_pat
 
 
 def test_deliverable_contract_makes_traversal_report_user_visible():
-    body = (ROOT / "references" / "deliverable.md").read_text(encoding="utf-8").lower()
+    body = (SKILL_ROOT / "references" / "deliverable.md").read_text(encoding="utf-8").lower()
     assert "traversal_report.md" in body
     assert "user-visible" in body
     assert "requested" in body and "deliverable" in body

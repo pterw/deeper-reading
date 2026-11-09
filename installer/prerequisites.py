@@ -19,17 +19,24 @@ BUNDLED_EXTRACTORS = (
 )
 
 
+def _default_skill_root() -> Path:
+    from .manifest import load_manifest, skill_root as resolve_skill_root
+
+    package = Path(__file__).resolve().parents[1]
+    return resolve_skill_root(load_manifest(package / "MANIFEST.json").data, package)
+
+
 def document_profile_status(
     profile: str,
     *,
-    package_root: Path | str | None = None,
+    skill_root: Path | str | None = None,
     native_pdf: Path | str | None = None,
     native_docx: Path | str | None = None,
 ) -> PrerequisiteStatus:
     profile = profile.lower()
-    package = Path(package_root) if package_root is not None else Path(__file__).resolve().parents[1]
 
     if profile == "standalone":
+        package = Path(skill_root) if skill_root is not None else _default_skill_root()
         scripts = package / "scripts"
         required = [scripts / name for name in BUNDLED_EXTRACTORS]
         missing = [path for path in required if not path.is_file()]

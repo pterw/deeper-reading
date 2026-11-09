@@ -8,7 +8,8 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
+SKILL_ROOT = ROOT / "skills" / "deeper-reading"
+SCRIPTS = SKILL_ROOT / "scripts"
 GOLDEN = ROOT / "tests" / "golden_no_media"
 GOLDEN_MAX_BYTES = 90
 

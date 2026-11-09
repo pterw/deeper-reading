@@ -1,8 +1,6 @@
-from pathlib import Path
-
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT
 
 CASES = [
     ("exhaustive-document-traversal", ("every canonical chunk", "evidence", "non_match", "premature")),
@@ -16,7 +14,7 @@ CASES = [
 
 @pytest.mark.parametrize(("name", "required"), CASES)
 def test_package_owned_process_skill_contract(name, required):
-    path = ROOT / "skills" / name / "SKILL.md"
+    path = SKILL_ROOT / "skills" / name / "SKILL.md"
     assert path.is_file(), path
     text = path.read_text(encoding="utf-8")
     assert f"name: {name}" in text

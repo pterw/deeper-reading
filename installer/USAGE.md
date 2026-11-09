@@ -1,6 +1,6 @@
 # Standalone Installer Usage
 
-The canonical skill entrypoint remains `../SKILL.md`. The installer copies the manifest-owned runtime payload into a supported Agent Skills root; it does not wrap, rename, or relocate the canonical skill inside the distribution.
+The canonical skill entrypoint is `../skills/deeper-reading/SKILL.md`. The installer copies the manifest-owned runtime payload into a supported Agent Skills root; it does not wrap, rename, or relocate the canonical skill inside the distribution.
 
 The normal runtime is sovereign and **standalone**: the package includes its own process skills plus bundled extractors for PDF, DOCX, HTML, and Markdown. No external process framework is required.
 
@@ -44,7 +44,7 @@ The Node installer does not require Python. The installed extraction and verific
 python installer/install.py doctor --target generic-agents --json
 ```
 
-`doctor` is read-only and exits 0. It reports the resolved target root, runtime detection, document-profile status, and whether installation can proceed in `can_install`.
+`doctor` is read-only and exits 0 whenever it can report. It reports the resolved target root, runtime detection, document-profile status, and whether installation can proceed in `can_install`.
 
 ## Install
 
@@ -58,7 +58,7 @@ Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`. `auto
 
 Document profiles:
 
-- `standalone` — canonical/default. Basic text traversal is supplied by the bundled extractors:
+- `standalone` — canonical/default. Basic text traversal is supplied by the bundled extractors in the skill's `scripts/` folder (`skills/deeper-reading/scripts/` in a checkout, `scripts/` in the installed skill):
   - `scripts/extract_pdf.py`
   - `scripts/extract_docx.py`
   - `scripts/extract_html.py`
@@ -88,7 +88,7 @@ The skill is installed at `<base>/skills/deeper-reading`, where `<base>` depends
 | Code | When |
 | --- | --- |
 | `installer.owner.mismatch` | The receipt belongs to another target or scope than the request. |
-| `installer.project.escape` | Project scope, and the resolved folder is outside the resolved project, for example a `.claude` that is a link out of the project. `install` checks this even with no receipt, before writing anything. Use `--scope user` or a real folder in the project; if `.claude` or `.claude/skills` is a link out, remove that link itself and not its contents. To remove an existing install there, delete it by hand first. |
+| `installer.project.escape` | Project scope, and the resolved folder is outside the resolved project, for example a `.claude` that is a link out of the project. `install` checks this even with no receipt, before writing anything. It is also given when a link on the way to the folder leads nowhere (the folder it points to does not exist); create that folder, or remove the link. At user scope the same refusal exits 2 with that advice and no code. Use `--scope user` or a real folder in the project; if `.claude` or `.claude/skills` is a link out, remove that link itself and not its contents. To remove an existing install there, delete it by hand first. |
 | `installer.receipt.owner_invalid` | The receipt's `target` is missing or unknown, or its `scope` is not `user` or `project`. Delete the skill folder `deeper-reading`; if it is a link, remove the link itself and not its contents; never delete only the shared `.agents` folder; then run `install`. |
 | `installer.receipt.missing` | `install` or `uninstall` found the folder without a receipt, for example after `npx skills add`. The message gives the recovery; see the README. `verify` fails there without this code. |
 

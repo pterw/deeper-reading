@@ -196,6 +196,39 @@
       {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "user"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
       {"do": "run", "cwd": "{work}", "args": ["verify", "--target", "claude", "--scope", "user"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false},
       {"do": "run", "cwd": "{work}", "args": ["uninstall", "--target", "claude", "--scope", "user"], "expect": {"exit": 0, "state": "uninstalled"}, "unchanged": false}
+    ]},
+    {"id": "project_relative_link_through_link", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{project}/a/b/c/d"},
+      {"do": "mkdir", "path": "{project}/a/zzz"},
+      {"do": "link", "at": "{project}/.claude/skills", "to": "../a/b/c/d"},
+      {"do": "link", "at": "{project}/a/b/c/d/deeper-reading", "to": "../../../zzz"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing"}, "unchanged": true, "survives": ["{project}/a/zzz"]}
+    ]},
+    {"id": "project_relative_link_does_not_take_over_user_install", "steps": [
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "codex", "--scope", "user"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "mkdir", "path": "{project}/a/b/c/d"},
+      {"do": "mkdir", "path": "{project}/a/home/.agents/skills/deeper-reading"},
+      {"do": "link", "at": "{project}/.claude/skills", "to": "../a/b/c/d"},
+      {"do": "link", "at": "{project}/a/b/c/d/deeper-reading", "to": "../../../home/.agents/skills/deeper-reading"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.receipt.missing"}, "unchanged": true},
+      {"do": "run", "cwd": "{work}", "args": ["verify", "--target", "codex", "--scope", "user"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false}
+    ]},
+    {"id": "project_junction_relative_link_does_not_take_over_other_agent_install", "steps": [
+      {"do": "mkdir", "path": "{project}/a/b/c/d"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "generic-agents", "--scope", "project"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "link", "at": "{project}/.claude/skills", "to": "{project}/a/b/c/d"},
+      {"do": "link", "at": "{project}/a/b/c/d/deeper-reading", "to": "../../../../.agents/skills/deeper-reading"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code_one_of": ["installer.project.escape", "installer.owner.mismatch"]}, "unchanged": true},
+      {"do": "run", "cwd": "{project}", "args": ["verify", "--target", "generic-agents", "--scope", "project"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false}
+    ]},
+    {"id": "project_relative_link_out_of_the_project_is_refused", "steps": [
+      {"do": "mkdir", "path": "{home}"},
+      {"do": "mkdir", "path": "{project}/a/b"},
+      {"do": "mkdir", "path": "{work}/zzz"},
+      {"do": "link", "at": "{project}/.claude/skills", "to": "../a/b"},
+      {"do": "link", "at": "{project}/a/b/deeper-reading", "to": "../../../zzz"},
+      {"do": "run", "cwd": "{project}", "args": ["install", "--target", "claude", "--scope", "project"], "expect": {"exit": 2, "state": "failed", "code": "installer.project.escape"}, "unchanged": true, "survives": ["{work}/zzz"]}
     ]}
   ]
 }

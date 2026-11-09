@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
+from layout import ROOT, SKILL_ROOT
+SCRIPTS = SKILL_ROOT / "scripts"
 
 
 def run_extractor(name: str, source: Path, out: Path, *extra: str) -> dict:

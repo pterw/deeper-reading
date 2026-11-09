@@ -13,7 +13,7 @@ import shutil
 import uuid
 from typing import Callable
 
-from .manifest import Manifest, validate_manifest
+from .manifest import Manifest, skill_root, validate_manifest
 from .prerequisites import PrerequisiteStatus
 
 
@@ -84,7 +84,7 @@ def _sha256(path: Path) -> str:
 
 
 def payload_files(package_root: Path, manifest: Manifest) -> list[Path]:
-    root = Path(package_root)
+    root = skill_root(manifest.data, package_root)
     files: list[Path] = []
     for raw in manifest['payload']:
         path = root / raw
@@ -96,12 +96,12 @@ def payload_files(package_root: Path, manifest: Manifest) -> list[Path]:
 
 
 def payload_hashes(package_root: Path, manifest: Manifest) -> dict[str, str]:
-    root = Path(package_root)
-    return {str(path.relative_to(root)).replace(os.sep, '/'): _sha256(path) for path in payload_files(root, manifest)}
+    root = skill_root(manifest.data, package_root)
+    return {str(path.relative_to(root)).replace(os.sep, '/'): _sha256(path) for path in payload_files(package_root, manifest)}
 
 
 def _copy_payload(package_root: Path, stage: Path, manifest: Manifest) -> None:
-    root = Path(package_root)
+    root = skill_root(manifest.data, package_root)
     for raw in manifest['payload']:
         src = root / raw
         dst = stage / raw
@@ -296,7 +296,7 @@ def install_skill(
 
             receipt = {
                 'skill': manifest['skill']['name'],
-                'version': (package_root / 'VERSION').read_text(encoding='utf-8').strip(),
+                'version': (skill_root(manifest.data, package_root) / 'VERSION').read_text(encoding='utf-8').strip(),
                 'target': target_name,
                 'scope': scope,
                 'installed_root': str(target_root),

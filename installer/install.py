@@ -12,7 +12,7 @@ if str(PACKAGE_ROOT) not in sys.path:
 
 from installer.adapters import ADAPTERS, detect_target, get_adapter
 from installer.core import InstallError, install_skill, uninstall_skill, verify_installation
-from installer.manifest import load_manifest
+from installer.manifest import load_manifest, skill_root
 from installer.prerequisites import document_profile_status
 
 
@@ -102,7 +102,11 @@ def _failure(exc: InstallError, target_name: str, target_root: Path, **extra) ->
 
 
 def _document_status(profile: str):
-    return document_profile_status(profile, package_root=PACKAGE_ROOT)
+    try:
+        root = skill_root(load_manifest(PACKAGE_ROOT / "MANIFEST.json").data, PACKAGE_ROOT)
+    except (OSError, ValueError) as exc:
+        raise InstallError(str(exc)) from exc
+    return document_profile_status(profile, skill_root=root)
 
 
 def _emit(data: dict, as_json: bool) -> None:
@@ -256,7 +260,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
-    return args.func(args)
+    try:
+        return args.func(args)
+    except RuntimeError as exc:
+        # Python before 3.13 raises a plain RuntimeError for a symlink loop; any other one keeps its traceback.
+        if not isinstance(exc, InstallError) and "Symlink loop" not in str(exc):
+            raise
+        data = {"state": "failed", "error": str(exc), "command": args.command}
+        if args.command == "verify":
+            data["passed"] = False
+        _emit(data, args.json)
+        return 2
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import ROOT, SKILL_ROOT
 
 DOD = "references/definition-of-done.md"
 EVIDENCE = "references/evidence.md"
@@ -18,8 +18,8 @@ VERIFYING = "verifying-exhaustive-traversal"
 DEBUGGING = "debugging-document-workflows"
 
 
-def text(rel: str) -> str:
-    return (ROOT / rel).read_text(encoding="utf-8")
+def text(rel: str, base: Path = SKILL_ROOT) -> str:
+    return (base / rel).read_text(encoding="utf-8")
 
 
 # (instruction an agent executes, file that states it, module whose SKILL.md
@@ -69,7 +69,7 @@ def test_required_instruction_is_stated_where_its_phase_loads_it(instruction, re
 
 
 def test_readme_explains_chunk_contract_access_and_future_scope():
-    body = text("README.md").lower()
+    body = text("README.md", ROOT).lower()
     assert "what is a chunk" in body
     assert "chunk id" in body
     assert "evidence/chunk-manifest.json" in body
@@ -83,7 +83,7 @@ def test_readme_explains_chunk_contract_access_and_future_scope():
 
 
 def test_readme_documents_receipt_ownership_and_evidence_schema():
-    readme = text("README.md").lower()
+    readme = text("README.md", ROOT).lower()
     assert "receipt-owned" in readme and "install root" in readme
     assert "schema v2" in readme and "atom_id" in readme
 

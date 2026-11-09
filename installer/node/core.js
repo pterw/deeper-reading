@@ -20,6 +20,7 @@ import {
   managedPath,
   payloadHashes,
   sha256File,
+  skillRoot,
   validateManifest
 } from "./manifest.js";
 
@@ -225,9 +226,9 @@ function pruneOwnedFiles(stage, staleOwned) {
   }
 }
 
-function copyPayload(packageRoot, stage, manifest) {
+function copyPayload(sourceRoot, stage, manifest) {
   for (const raw of manifest.payload) {
-    const source = managedPath(packageRoot, raw);
+    const source = managedPath(sourceRoot, raw);
     const destination = managedPath(stage, raw);
     mkdirSync(path.dirname(destination), { recursive: true });
     cpSync(source, destination, {
@@ -293,7 +294,8 @@ function installLocked(options) {
     } else {
       mkdirSync(stage);
     }
-    copyPayload(packageRoot, stage, options.manifest);
+    const sourceRoot = skillRoot(options.manifest, packageRoot);
+    copyPayload(sourceRoot, stage, options.manifest);
     const stagedErrors = verifyInstalled(stage, expectedHashes);
     if (stagedErrors.length) throw new InstallerError(stagedErrors.join("; "));
     inject("after-stage");
@@ -325,7 +327,7 @@ function installLocked(options) {
 
     const receipt = {
       skill: options.manifest.skill.name,
-      version: readFileSync(path.join(packageRoot, "VERSION"), "utf8").trim(),
+      version: readFileSync(path.join(sourceRoot, "VERSION"), "utf8").trim(),
       target: options.targetName,
       scope: options.scope,
       installed_root: targetRoot,

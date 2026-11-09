@@ -1,6 +1,8 @@
 ---
 name: security-review
 description: The trust boundaries in deeper-reading and the hostile case each change must keep. Use when a change touches installer paths, output writes, extraction, or evidence verification.
+metadata:
+  internal: true
 ---
 
 # Security review
@@ -28,8 +30,9 @@ touches the code keeps the hostile case rejected and its test green.
 
 ## 2. Output writes and run-root containment
 
-- Code: `validate_output` and `write_text_atomic` in `scripts/script_io.py`;
-  `_validate_run_root_paths` in `scripts/verify_run.py`.
+- Code: `validate_output` and `write_text_atomic` in
+  `skills/deeper-reading/scripts/script_io.py`;
+  `_validate_run_root_paths` in `skills/deeper-reading/scripts/verify_run.py`.
 - Untrusted: output paths, and the paths a `run.json` names.
 - Must stay rejected: an output that is a symlink, escapes the run root, or
   would overwrite its input; evidence or deliverables outside their run-root
@@ -39,13 +42,13 @@ touches the code keeps the hostile case rejected and its test green.
 ## 3. Re-extraction
 
 - Code: `_reproduce_extraction_manifest` and `EXTRACTION_TIMEOUT_SECONDS` in
-  `scripts/verify_run.py`.
+  `skills/deeper-reading/scripts/verify_run.py`.
 - Untrusted: the source document, and `max_bytes` and the format read from
   the supplied chunk manifest.
 - Must stay rejected: a `max_bytes` outside 1..`MAX_VERIFIED_CHUNK_BYTES`,
   an unsupported format, an extractor that fails or runs past the timeout.
   The extractor runs as a subprocess with a timeout, never in process.
-  `scripts/extract_docx.py` opens an untrusted ZIP with no decompressed-size
+  `skills/deeper-reading/scripts/extract_docx.py` opens an untrusted ZIP with no decompressed-size
   limit; only the extraction timeout bounds it (untested).
 - Tests: `tests/test_verify_run.py` (timeout only).
 - Untested: the `max_bytes` bound, an unsupported format and a failing
@@ -53,8 +56,9 @@ touches the code keeps the hostile case rejected and its test green.
 
 ## 4. Evidence binding
 
-- Code: the `coverage.mirror.*` checks in `scripts/verify_run.py`;
-  `bind_atom` in `scripts/evidence_atoms.py`.
+- Code: the `coverage.mirror.*` checks in
+  `skills/deeper-reading/scripts/verify_run.py`;
+  `bind_atom` in `skills/deeper-reading/scripts/evidence_atoms.py`.
 - Untrusted: the chunk manifest, the ledger and the report in a run.
 - Must stay rejected: a self-consistent forged smaller manifest, a coverage
   list that shrinks the universe, a forged atom id, a hand-edited

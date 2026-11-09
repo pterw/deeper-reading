@@ -12,8 +12,8 @@ from scripts.verification_findings import codes_of
 from scripts.verify_run import _build_dod_from_findings, validate_findings
 from tests.run_fixture import REQUIRED_EVIDENCE_FILES, valid_run
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
+from layout import SKILL_ROOT
+SCRIPTS = SKILL_ROOT / "scripts"
 
 SOURCE = "# Title\n\nalpha text\n\n![diagram](diagram.png)\n\n```mermaid\ngraph TD\n```\n"
 READ = {"id": "media-0001", "disposition": "read", "tool": "vision", "summary": "a diagram"}
