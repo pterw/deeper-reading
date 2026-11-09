@@ -51,6 +51,9 @@ def _skill_root_error(data: dict[str, Any], root: Path) -> str | None:
         folder.relative_to(root)
     except (OSError, ValueError):
         return 'skill.root is outside the package root'
+    except RuntimeError:
+        # Python before 3.13 raises RuntimeError for a symlink loop.
+        return 'Missing canonical SKILL.md at package root'
     if not (folder / 'SKILL.md').is_file():
         return 'Missing canonical SKILL.md at package root'
     return None
@@ -105,7 +108,13 @@ def validate_manifest(manifest: Manifest, package_root: Path) -> list[str]:
         if rel.is_absolute() or '..' in rel.parts:
             errors.append(f'Payload path traversal/outside package root: {raw}')
             continue
-        resolved = (base / rel).resolve()
+        try:
+            resolved = (base / rel).resolve()
+        except RuntimeError:
+            # Python before 3.13 raises RuntimeError for a symlink loop.
+            if skill_dir:
+                errors.append(f'Payload entry does not exist: {raw}')
+            continue
         try:
             resolved.relative_to(base)
         except ValueError:

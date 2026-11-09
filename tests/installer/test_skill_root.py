@@ -88,6 +88,66 @@ def test_upgrade_from_root_level_to_rooted_leaves_no_stale_files(tmp_path):
     assert verify_installation(target)['passed'] is True
 
 
+def _self_link(path: Path) -> None:
+    """Make ``path`` a link loop: a symlink to itself, or on Windows two junctions pointing at each other."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if sys.platform != 'win32':
+        path.symlink_to(path.name, target_is_directory=True)
+        return
+    import _winapi
+
+    other = path.with_name(path.name + '-other')
+    other.mkdir()
+    _winapi.CreateJunction(str(other), str(path))
+    other.rmdir()
+    _winapi.CreateJunction(str(path), str(other))
+
+
+@pytest.mark.parametrize('root', ['skills/demo/SKILL.md', 'skills/demo/SKILL.md/sub', 'loop', 'loop/sub'])
+def test_unusable_skill_root_gives_one_error_not_a_raise(tmp_path, root):
+    from installer.manifest import validate_manifest
+
+    package = _package(tmp_path / 'pkg', skill_root='skills/demo')
+    manifest = load_manifest(package / 'MANIFEST.json')
+    manifest.data['skill']['root'] = root
+    if root.startswith('loop'):
+        _self_link(package / 'loop')
+
+    assert validate_manifest(manifest, package) == ['Missing canonical SKILL.md at package root']
+
+
+@pytest.mark.parametrize(
+    ('root', 'expected'),
+    [
+        ('pkg-skill/demo', ['Payload entry does not exist: loop', 'Payload entry does not exist: gone']),
+        ('skills/demo/SKILL.md', ['Missing canonical SKILL.md at package root']),
+    ],
+)
+def test_payload_loop_is_reported_and_checking_goes_on_unless_the_root_is_unusable(tmp_path, root, expected):
+    from installer.manifest import validate_manifest
+
+    package = _package(tmp_path / 'pkg', skill_root='pkg-skill/demo')
+    manifest = load_manifest(package / 'MANIFEST.json')
+    manifest.data['payload'] += ['loop', 'gone']
+    _self_link(package / 'pkg-skill' / 'demo' / 'loop')  # where a usable root looks
+    _self_link(package / 'loop')  # where an unusable root falls back to the package root
+    manifest.data['skill']['root'] = root
+
+    assert validate_manifest(manifest, package) == expected
+
+
+def test_a_runtime_error_that_is_not_a_symlink_loop_keeps_its_traceback(monkeypatch):
+    from installer import install
+
+    def broken(args):
+        raise RuntimeError('something else broke')
+
+    monkeypatch.setattr(install, 'command_doctor', broken)
+
+    with pytest.raises(RuntimeError, match='something else broke'):
+        install.main(['doctor', '--target', 'generic-agents', '--json'])
+
+
 def _cli(package: Path, home: Path, command: str):
     env = {**os.environ, 'HOME': str(home), 'USERPROFILE': str(home)}
     args = [sys.executable, str(package / 'installer' / 'install.py'), command, '--target', 'generic-agents', '--json']
@@ -133,6 +193,22 @@ def test_bad_manifest_fails_cleanly_through_the_cli(tmp_path, command, damage):
 
     proc = _cli(package, home, command)
 
+    assert proc.returncode == 2
+    assert 'Traceback' not in proc.stderr
+    assert json.loads(proc.stdout)['state'] == 'failed'
+
+
+@pytest.mark.parametrize('command', ['install', 'uninstall'])
+def test_target_that_is_a_symlink_loop_fails_cleanly_through_the_cli(tmp_path, command):
+    repo = Path(__file__).resolve().parents[2]
+    home = tmp_path / 'home'
+    home.mkdir()
+    _self_link(home / '.agents' / 'skills' / 'deeper-reading')
+    before = sorted(p.relative_to(home).as_posix() for p in home.rglob('*'))
+
+    proc = _cli(repo, home, command)
+
+    assert sorted(p.relative_to(home).as_posix() for p in home.rglob('*')) == before
     assert proc.returncode == 2
     assert 'Traceback' not in proc.stderr
     assert json.loads(proc.stdout)['state'] == 'failed'

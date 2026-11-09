@@ -53,6 +53,13 @@
   installer now reads the manifest, so it also exits 2 when the manifest is
   missing or damaged. It did not read it before. The Node `doctor` already
   exited 2 in that case.
+- Installer: in the Node installer, a `skill.root` that lies beneath a file or
+  beneath a symlink loop is refused with one error; on Linux it gave a raw
+  filesystem error.
+- Installer: on Python before 3.13, a symlink loop in `skill.root` (`doctor`,
+  `install`), in a payload entry (`install`) or in the target folder
+  (`install`, `install --dry-run`, `uninstall`) now exits 2 with an error
+  message. It was a traceback.
 
 ## 0.2.5 - 2026-11-08
 

@@ -33,7 +33,8 @@ export function physicalPath(candidate, links = 0) {
     }
     return realpathSync.native(absolute);
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error;
+    // POSIX answers ENOTDIR for a path beneath a file and ELOOP for a loop; Windows answers ENOENT.
+    if (!["ENOENT", "ENOTDIR", "ELOOP"].includes(error.code)) throw error;
     const parent = path.dirname(absolute);
     if (parent === absolute) return absolute;
     return path.join(physicalPath(parent, links), path.basename(absolute));
