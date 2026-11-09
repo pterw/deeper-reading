@@ -1,6 +1,6 @@
 {
   "name": "deeper-reading",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Exhaustive document traversal and anti-skimming for agentic workflows",
   "keywords": [
     "agent-skills",

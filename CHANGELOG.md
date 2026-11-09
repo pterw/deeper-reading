@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.6 - 2026-11-09
 
 - Installer (Node): the install folder and the project check now resolve links
   by asking the operating system, so a relative link reached through another
@@ -8,8 +8,9 @@
   points to does not exist) is refused with exit 2 and nothing changed; create
   that folder, or remove the link. A 0.2.5 install that landed at the wrong
   place through such a relative link is no longer found by `verify` or
-  `uninstall` and stays where it is; delete it by hand. The Python installer is
-  not changed.
+  `uninstall` and stays where it is; delete it by hand. The Python installer
+  does not resolve links this way: at user scope it still installs through a
+  link that leads nowhere and creates the missing folder.
 - Installer: `install` (also with `--dry-run`), `verify` and `uninstall` now
   read the receipt in the skill folder and refuse a folder that another
   target or scope installed. This can happen when a skills folder is a link.
@@ -36,20 +37,23 @@
   and says how to recover. For `claude` and `codex` it gives the
   `npx skills remove` command. Other targets get the delete route. Nothing is
   changed. `verify` keeps its existing failure, with no code.
-- `README.md` says the project's own installers are the supported route, with
-  npm the primary one, what `npx skills add` does to an npm install, and how
-  to recover. `installer/USAGE.md` lists the ownership checks and their codes.
+- `installer/USAGE.md` says the project's own installers are the supported
+  route, with npm the primary one, what `npx skills add` does to an npm
+  install, and how to recover. It also lists the ownership checks and their
+  codes.
 - Layout: the skill now lives in `skills/deeper-reading/` in the repository.
   `SKILL.md`, `VERSION`, `references/`, `scripts/` and the workflow modules
   moved there. `MANIFEST.json` names the folder in a new optional field,
   `skill.root`. The root `LICENSE` stays, and the skill folder holds a copy.
+  If you installed by hand, copy `skills/deeper-reading/`, not the repository
+  or ZIP root; or use `install`.
 - Layout: the npm package and the release ZIP now hold the skill under
   `skills/deeper-reading/`, not at the package root. Each gains one file,
   the `LICENSE` copy inside the skill.
 - Layout: the installed skill has the same 38 files as 0.2.5. The folder move
   changes no installed path; the module rename below changes six. A 0.2.5
-  install still verifies and uninstalls, and it upgrades unless you edited or
-  deleted a module file (see Compatibility).
+  install still verifies and uninstalls. It upgrades unless you edited or
+  deleted a file the installer put there, as in 0.2.5 (see Compatibility).
 - Layout: `npx skills add` on the repository (checked with `skills@1.7.6`)
   finds one skill and installs those 38 files, not the whole repository. This
   is the same list as an npm install.
@@ -78,7 +82,7 @@
   `.deeper-reading.backup-<id>` folder beside the skill folder, and the error
   (exit 2, as before) ends with `the previous install is in <path>`. To restore
   it, delete the leftover skill folder or move it out of the skills folder, and
-  rename the backup folder to `deeper-reading`. This was already so in 0.2.5. A
+  rename the backup folder to `deeper-reading`. 0.2.5 has the same defect. A
   failure that rolls back cleanly is unchanged and leaves no backup.
 - Layout: the six workflow modules are now plain files at
   `modules/<name>.md`, for example `modules/exhaustive-document-traversal.md`,
@@ -110,15 +114,26 @@
   characters.
 - CI: the lint job now runs `agentskills validate skills/deeper-reading`,
   with `skills-ref` pinned to 0.1.1.
-- Docs: `README.md`, `CONTRIBUTING.md`, `AGENTS.md` and `installer/USAGE.md`
-  name `modules/<name>.md` in place of the old `skills/` module paths.
+- Docs: `CONTRIBUTING.md`, `AGENTS.md` and `installer/USAGE.md` name
+  `modules/<name>.md` in place of the old `skills/` module paths.
+- Docs: `README.md` is rewritten for a reader deciding whether to use the
+  skill, and it is the page npm shows. `docs/examples/` holds a real run to
+  check with the verifier, and `AUDIT.md` and `MUTATION_REPORT.md` moved to
+  `docs/history/0.2.0/`.
 
 ### Compatibility
 
-- A user who edited or deleted any of the six installed module files under
-  `skills/` gets `modified managed files` on upgrade to 0.2.6. Run `uninstall
-  --force`, then `install` again. `--force` removes your edited files, so copy
-  them first.
+- An upgrade is refused with `modified managed files` when you edited or
+  deleted any file the installer put in the skill folder, as in 0.2.5. This
+  includes the six module files under `skills/`, which 0.2.6 replaces with
+  `modules/<name>.md`. Copy your edits out first, then run `uninstall --force`,
+  which removes the edited files.
+- `uninstall` keeps files the installer does not own, and running the skill's
+  scripts creates some (`scripts/__pycache__`). If `uninstall` reports
+  `preserved_root: true`, delete the `deeper-reading` folder by hand before you
+  run `install` again; otherwise `install` refuses with
+  `installer.receipt.missing`. The `npx skills remove` command in that message
+  does not clear this folder. This was so in 0.2.5 too.
 
 ## 0.2.5 - 2026-11-08
 
