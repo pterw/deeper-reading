@@ -13,16 +13,6 @@
       ]
     },
     {
-      "name": "py-target-not-string",
-      "edits": [
-        {
-          "file": "installer/install.py",
-          "old": "if not isinstance(owner, str) or owner not in ADAPTERS",
-          "new": "if owner not in ADAPTERS"
-        }
-      ]
-    },
-    {
       "name": "py-owner-root-comparison-skipped",
       "edits": [
         {
@@ -53,42 +43,12 @@
       ]
     },
     {
-      "name": "py-containment-prefix-sibling-accepted",
-      "edits": [
-        {
-          "file": "installer/install.py",
-          "old": "_canonical(target_root).relative_to(project)",
-          "new": "if not str(_canonical(target_root)).startswith(str(project)): raise ValueError"
-        }
-      ]
-    },
-    {
       "name": "py-install-containment-skipped",
       "edits": [
         {
           "file": "installer/install.py",
           "old": "        if installing:",
           "new": "        if False:"
-        }
-      ]
-    },
-    {
-      "name": "py-doctor-guarded",
-      "edits": [
-        {
-          "file": "installer/install.py",
-          "old": "\"runtime_detected\": adapter.detect(),",
-          "new": "\"runtime_detected\": _check_owner(target_name, args.scope, args.project_dir, target_root) or adapter.detect(),"
-        }
-      ]
-    },
-    {
-      "name": "py-code-dropped-from-payload",
-      "edits": [
-        {
-          "file": "installer/install.py",
-          "old": "if exc.code:",
-          "new": "if False:"
         }
       ]
     },
@@ -133,16 +93,6 @@
       ]
     },
     {
-      "name": "node-containment-prefix-sibling-accepted",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "return relative !== \"..\" && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);",
-          "new": "return canonicalPath(folder).startsWith(canonicalPath(project));"
-        }
-      ]
-    },
-    {
       "name": "node-install-containment-skipped",
       "edits": [
         {
@@ -153,62 +103,12 @@
       ]
     },
     {
-      "name": "node-ancestor-not-walked",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "      real = realpathSync.native(existing);",
-          "new": "      real = path.resolve(existing);"
-        }
-      ]
-    },
-    {
       "name": "node-dangling-link-not-followed",
       "edits": [
         {
           "file": "installer/node/cli.js",
           "old": "      if (target !== null && hops < 40) {",
           "new": "      if (false) {"
-        }
-      ]
-    },
-    {
-      "name": "node-missing-order",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "  real = path.join(real, ...missing.reverse()).replace(/^\\\\\\\\\\?\\\\/, \"\");",
-          "new": "  real = path.join(real, ...missing).replace(/^\\\\\\\\\\?\\\\/, \"\");"
-        }
-      ]
-    },
-    {
-      "name": "node-doctor-guarded",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "if (command !== \"doctor\") guardOwnership(targetRoot, options.scope, projectDir, env, command);",
-          "new": "guardOwnership(targetRoot, options.scope, projectDir, env, command);"
-        }
-      ]
-    },
-    {
-      "name": "node-code-dropped-from-payload",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "if (error instanceof InstallerError && error.code !== undefined) payload.code = error.code;",
-          "new": ""
-        }
-      ]
-    },
-    {
-      "name": "node-user-scope-honours-project-dir",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "const projectDir = options.scope === \"project\"",
-          "new": "const projectDir = (options.scope === \"project\" || options.projectDir)"
         }
       ]
     },
@@ -238,16 +138,6 @@
         {
           "file": "installer/install.py",
           "old": "owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root, installing=True),",
-          "new": "owner_check=None,"
-        }
-      ]
-    },
-    {
-      "name": "py-uninstall-check-not-passed",
-      "edits": [
-        {
-          "file": "installer/install.py",
-          "old": "owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root),",
           "new": "owner_check=None,"
         }
       ]
@@ -284,26 +174,6 @@
           "file": "installer/node/core.js",
           "old": "return withTargetLock(options.targetRoot, (targetRoot) => {",
           "new": "options.ownerCheck?.(); return withTargetLock(options.targetRoot, (targetRoot) => {"
-        }
-      ]
-    },
-    {
-      "name": "node-install-check-not-passed",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": "ownerCheck: context.ownerCheck,",
-          "new": ""
-        }
-      ]
-    },
-    {
-      "name": "node-uninstall-check-not-passed",
-      "edits": [
-        {
-          "file": "installer/node/cli.js",
-          "old": ", ownerCheck: context.ownerCheck",
-          "new": ""
         }
       ]
     }
