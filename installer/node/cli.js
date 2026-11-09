@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { existsSync, readFileSync, readlinkSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TARGET_NAMES, detectTarget, getAdapter } from "./adapters.js";
 import { documentProfileStatus, pythonRuntimeStatus } from "./prerequisites.js";
-import { InstallerError, loadManifest, skillRoot, validateManifest } from "./manifest.js";
+import { InstallerError, loadManifest, physicalPath, skillRoot, validateManifest } from "./manifest.js";
 import { installSkill, uninstallSkill, verifyInstallation } from "./core.js";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -116,38 +116,22 @@ function readOwnerReceipt(targetRoot) {
   }
 }
 
-// The real path of the deepest existing ancestor, with the parts that do not exist yet joined on.
-function canonicalPath(candidate) {
-  let existing = path.resolve(candidate);
-  const missing = [];
-  let real = null;
-  let hops = 0;
-  while (real === null) {
-    try {
-      real = realpathSync.native(existing);
-    } catch {
-      let target = null;
-      try { target = readlinkSync(existing); } catch { /* not a link */ }
-      if (target !== null && hops < 40) {
-        hops += 1;
-        existing = path.resolve(path.dirname(existing), target);
-        continue;
-      }
-      const parent = path.dirname(existing);
-      if (parent === existing) {
-        real = existing;
-      } else {
-        missing.push(path.basename(existing));
-        existing = parent;
-      }
-    }
-  }
-  real = path.join(real, ...missing.reverse()).replace(/^\\\\\?\\/, "");
-  return process.platform === "win32" ? real.toLowerCase() : real;
+// The one resolver the writer uses, so the guard and the write cannot disagree; the spelling is only
+// normalised for the comparison.
+function comparable(candidate) {
+  const physical = physicalPath(candidate).replace(/^\\\\\?\\/, "");
+  return process.platform === "win32" ? physical.toLowerCase() : physical;
 }
 
 function isInside(folder, project) {
-  const relative = path.relative(canonicalPath(project), canonicalPath(folder));
+  let relative;
+  try {
+    relative = path.relative(comparable(project), comparable(folder));
+  } catch (error) {
+    // A folder that cannot be resolved is treated as outside, as Python does.
+    if (error instanceof InstallerError) return false;
+    throw error;
+  }
   return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
 }
 

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Installer (Node): the install folder and the project check now resolve links
+  by asking the operating system, so a relative link reached through another
+  link leads to its real folder, and a link that leads nowhere (the folder it
+  points to does not exist) is refused with exit 2 and nothing changed; create
+  that folder, or remove the link. A 0.2.5 install that landed at the wrong
+  place through such a relative link is no longer found by `verify` or
+  `uninstall` and stays where it is; delete it by hand. The Python installer is
+  not changed.
 - Installer: `install` (also with `--dry-run`), `verify` and `uninstall` now
   read the receipt in the skill folder and refuse a folder that another
   target or scope installed. This can happen when a skills folder is a link.

@@ -19,12 +19,13 @@ STEP_KEYS = {
     'receipt': {'do', 'path', 'delete', 'set'},
     'run': {'do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives'},
 }
-EXPECT_KEYS = {'exit', 'state', 'code', 'passed', 'message_has', 'message_lacks'}
+EXPECT_KEYS = {'exit', 'state', 'code', 'code_one_of', 'passed', 'message_has', 'message_lacks'}
 
 
 def make_link(at, to):
     at.parent.mkdir(parents=True, exist_ok=True)
-    if sys.platform == 'win32':
+    if sys.platform == 'win32' and to.is_absolute():
+        # A junction cannot be relative; a relative target (as git stores it) is a directory symlink.
         import _winapi
 
         _winapi.CreateJunction(str(to), str(at))
@@ -85,7 +86,10 @@ def check_run(step, work):
         assert 'state' not in payload, payload
     else:
         assert payload.get('state') == expect['state'], payload
-    assert payload.get('code') == expect.get('code'), payload
+    if 'code_one_of' in expect:  # the platforms name this refusal differently
+        assert payload.get('code') in expect['code_one_of'], payload
+    else:
+        assert payload.get('code') == expect.get('code'), payload
     if 'passed' in expect:
         assert payload.get('passed') is expect['passed'], payload
     for text in expect.get('message_has', []):

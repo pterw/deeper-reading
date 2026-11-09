@@ -17,7 +17,7 @@ STEP_KEYS = {
     'receipt': {'do', 'path', 'delete', 'set'},
     'run': {'do', 'cwd', 'home', 'args', 'expect', 'unchanged', 'survives'},
 }
-EXPECT_KEYS = {'exit', 'state', 'code', 'passed', 'message_has', 'message_lacks'}
+EXPECT_KEYS = {'exit', 'state', 'code', 'code_one_of', 'passed', 'message_has', 'message_lacks'}
 PLACEHOLDERS = {'{work}', '{home}', '{project}'}
 # Frozen: an unreadable receipt gets no guard, so the core's error stands and has no code.
 # Without a receipt, verify has nothing to guard either: its core failure has no code.
@@ -112,7 +112,8 @@ def test_every_refusal_has_a_code_and_leaves_disk_unchanged(name):
         # The core's own verify failure carries passed but no state.
         state = None if has_no_code(case_id, step) and step['args'][0] == 'verify' else 'failed'
         assert step['expect']['state'] == state, case_id
-        assert bool(step['expect'].get('code')) != has_no_code(case_id, step), case_id
+        has_code = step['expect'].get('code') or step['expect'].get('code_one_of')
+        assert bool(has_code) != has_no_code(case_id, step), case_id
         assert step['unchanged'] is True, case_id
 
 
