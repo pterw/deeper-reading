@@ -75,7 +75,7 @@ Use `--scope project --project-dir PATH` to install into one project instead of 
 
 ## Use it
 
-Start a task by naming the skill, for example: "Use deeper-reading to read this report end to end and list every exception to the refund policy." The agent then follows the phases in `SKILL.md`: establish the source, plan, extract, read every chunk, handle failures, write your deliverable, and run a fresh verification.
+Start a task by naming the skill, for example: "Use deeper-reading to read this report end to end and list every exception to the refund policy." Some agents also load it when you ask for an exhaustive read of every section, but naming it is the reliable way. The agent then follows the phases in `SKILL.md`: establish the source, plan, extract, read every chunk, handle failures, write your deliverable, and run a fresh verification.
 
 The agent does this with helper scripts from the skill folder. Extraction and chunk inspection look like this, run from the installed `deeper-reading` folder (see [skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots)):
 
