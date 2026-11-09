@@ -2,7 +2,7 @@
 
 The canonical skill entrypoint is `../skills/deeper-reading/SKILL.md`. The installer copies the manifest-owned runtime payload into a supported Agent Skills root; it does not wrap, rename, or relocate the canonical skill inside the distribution.
 
-The normal runtime is sovereign and **standalone**: the package includes its own process skills plus bundled extractors for PDF, DOCX, HTML, and Markdown. No external process framework is required.
+The normal runtime is sovereign and **standalone**: the package includes its own process modules plus bundled extractors for PDF, DOCX, HTML, and Markdown. No external process framework is required.
 
 ## Node CLI
 
@@ -65,7 +65,7 @@ Document profiles:
   - `scripts/extract_markdown.py`
 - `oai-native` — optional enhancement only when native OpenAI PDF/DOCX rendering, OCR, or richer layout tooling actually exists. It may add QA capability but cannot weaken or replace the standalone anti-skimming evidence contract.
 
-The installed runtime payload also includes the package-owned planning, execution, debugging, recovery, and verification skills under `skills/`.
+The installed runtime payload also includes the package-owned planning, execution, debugging, recovery, and verification modules as `modules/<name>.md` files in the skill root.
 
 ## Skill roots
 

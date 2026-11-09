@@ -38,9 +38,10 @@
 - Layout: the npm package and the release ZIP now hold the skill under
   `skills/deeper-reading/`, not at the package root. Each gains one file,
   the `LICENSE` copy inside the skill.
-- Layout: the installed skill is unchanged. It has the same 38 files at the
-  same paths, with the same hashes, as 0.2.5. A 0.2.5 install still
-  verifies, upgrades and uninstalls.
+- Layout: the installed skill has the same 38 files as 0.2.5. The folder move
+  changes no installed path; the module rename below changes six. A 0.2.5
+  install still verifies and uninstalls, and it upgrades unless you edited or
+  deleted a module file (see Compatibility).
 - Layout: `npx skills add` on the repository (checked with `skills@1.7.6`)
   finds one skill and installs those 38 files, not the whole repository. This
   is the same list as an npm install.
@@ -60,6 +61,34 @@
   `install`), in a payload entry (`install`) or in the target folder
   (`install`, `install --dry-run`, `uninstall`) now exits 2 with an error
   message. It was a traceback.
+- Layout: the six workflow modules are now plain files at
+  `modules/<name>.md`, for example `modules/exhaustive-document-traversal.md`,
+  and no module is named `SKILL.md`. Before, in the installed skill, each sat
+  at `skills/<name>/SKILL.md`, so a client that collects every `SKILL.md`, as
+  Codex does, found them beside the real skill. `MANIFEST.json` `payload`
+  lists `modules` where it listed `skills`, and both installers refuse a
+  package whose payload lacks `modules`. The installed skill still has 38
+  files. An upgrade from 0.2.5 removes the old `skills/<name>/SKILL.md`
+  files; each installer has a test for it.
+- Layout: module links are paths from the skill root (`references/...`, not
+  `../../references/...`), and module commands use `<skill-root>`. The root
+  `SKILL.md` says that `<skill-root>` and relative paths in a module mean the
+  folder that holds `SKILL.md`.
+- The `description` in `SKILL.md` now says what the skill does (formats, a
+  verdict for every chunk, a verifier that blocks Done) as well as when to use
+  it. A test checks that it is one line, unquoted YAML and at most 1,024
+  characters.
+- CI: the lint job now runs `agentskills validate skills/deeper-reading`,
+  with `skills-ref` pinned to 0.1.1.
+- Docs: `README.md`, `CONTRIBUTING.md`, `AGENTS.md` and `installer/USAGE.md`
+  name `modules/<name>.md` in place of the old `skills/` module paths.
+
+### Compatibility
+
+- A user who edited or deleted any of the six installed module files under
+  `skills/` gets `modified managed files` on upgrade to 0.2.6. Run `uninstall
+  --force`, then `install` again. `--force` removes your edited files, so copy
+  them first.
 
 ## 0.2.5 - 2026-11-08
 

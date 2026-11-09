@@ -282,7 +282,7 @@ The version matrix covers
 Python 3.10–3.13 and Node 20/22/24 on Windows and Linux; local success is not a
 claim that the remote matrix has run. See [CONTRIBUTING.md](https://github.com/pterw/deeper-reading/blob/main/CONTRIBUTING.md).
 
-The canonical skill is `skills/deeper-reading/SKILL.md`; workflow modules are in `skills/deeper-reading/skills/`, detailed
+The canonical skill is `skills/deeper-reading/SKILL.md`; workflow modules are the `modules/<name>.md` files in that folder, detailed
 contracts in `skills/deeper-reading/references/`, document tools in `skills/deeper-reading/scripts/`, and installation code
 in `installer/`. [Release notes](https://github.com/pterw/deeper-reading/blob/main/CHANGELOG.md) record compatibility changes.
 
