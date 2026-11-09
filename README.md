@@ -148,7 +148,7 @@ For Markdown, HTML and DOCX, the manifest lists every image, SVG and diagram
 reference it finds. Each one needs a disposition in the evidence ledger: read
 with a host vision tool, or not read with a reason. The verifier checks that
 every one has a disposition. It does not prove the media was understood. See
-[evidence](references/evidence.md).
+[evidence](skills/deeper-reading/references/evidence.md).
 
 PDF backends are detected in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then
 `pdftotext`. To choose the declared optional Python backend, run
@@ -156,8 +156,8 @@ PDF backends are detected in this order: `pypdf`, `PyMuPDF`, `pdfplumber`, then
 executable also works. No backend is installed automatically.
 
 The shipped PDF adapters return text only. A library having layout features
-does not mean this extraction path proves layout. See [PDF guidance](references/pdf.md)
-and [dependency resolution](references/dependencies.md).
+does not mean this extraction path proves layout. See [PDF guidance](skills/deeper-reading/references/pdf.md)
+and [dependency resolution](skills/deeper-reading/references/dependencies.md).
 
 ## What is a chunk?
 
@@ -189,9 +189,9 @@ References load at their required phase rather than all at activation. The agent
 records phase receipts in `evidence/skill-preflight.md`; final verification still
 requires the aggregate preflight contract. A failed node must be diagnosed before
 execution continues. Recovery preserves already verified work and follows the
-[documented failure protocol](references/failure-recovery.md).
+[documented failure protocol](skills/deeper-reading/references/failure-recovery.md).
 
-From the package root, inspect helper `--help` before use. For example:
+From the skill folder (the installed `deeper-reading` folder, or `skills/deeper-reading` in a checkout), inspect helper `--help` before use. For example:
 
 ```sh
 python scripts/extract_markdown.py source.md --run-root runs/review
@@ -209,7 +209,7 @@ python scripts/verify_run.py runs/review/run.json
 
 These commands are individual tools, not an automatic end-to-end run generator.
 The agent must also create the plan, run ledger, event records, required QA
-evidence and requested deliverables described in [the evidence contract](references/evidence.md).
+evidence and requested deliverables described in [the evidence contract](skills/deeper-reading/references/evidence.md).
 Extraction or report generation alone does not establish completion.
 
 ## Find the deliverables
@@ -254,7 +254,7 @@ OCR claims fail verification.
 PDF manifests from before 0.2.3 require regeneration with their evidence: page
 boundaries and backend provenance are now explicit. Changing backend or version
 can change extraction. `--password` supports encrypted extraction, but final
-verification has no password input; see [PDF reference](references/pdf.md)
+verification has no password input; see [PDF reference](skills/deeper-reading/references/pdf.md)
 for that limitation. The new fixture includes text, a table, an empty page and an
 encrypted variant, with [recorded source hashes](https://github.com/pterw/deeper-reading/blob/main/tests/fixtures/pdf-first-run/README.md).
 
@@ -282,8 +282,8 @@ The version matrix covers
 Python 3.10–3.13 and Node 20/22/24 on Windows and Linux; local success is not a
 claim that the remote matrix has run. See [CONTRIBUTING.md](https://github.com/pterw/deeper-reading/blob/main/CONTRIBUTING.md).
 
-The canonical skill is `SKILL.md`; workflow modules are in `skills/`, detailed
-contracts in `references/`, document tools in `scripts/`, and installation code
+The canonical skill is `skills/deeper-reading/SKILL.md`; workflow modules are in `skills/deeper-reading/skills/`, detailed
+contracts in `skills/deeper-reading/references/`, document tools in `skills/deeper-reading/scripts/`, and installation code
 in `installer/`. [Release notes](https://github.com/pterw/deeper-reading/blob/main/CHANGELOG.md) record compatibility changes.
 
 ## Future scope

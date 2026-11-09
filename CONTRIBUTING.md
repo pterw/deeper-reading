@@ -14,7 +14,7 @@ Thank you for helping improve **`deeper-reading`**!
    - Finding an early match or useful fact is never authorization to stop traversal.
 
 2. **Source-Bound Verification**:
-   - `scripts/verify_run.py` re-extracts the original source bytes independently using the bundled extractor.
+   - `skills/deeper-reading/scripts/verify_run.py` re-extracts the original source bytes independently using the bundled extractor.
    - Forged or hand-edited manifests cannot shrink the required coverage universe.
 
 3. **Explicit Runtime Dependencies**:
@@ -23,7 +23,7 @@ Thank you for helping improve **`deeper-reading`**!
    - Backend installation is opt-in. CI installs `requirements-optional.txt` to exercise PDF fixtures.
 
 4. **Package-Owned Process Skills**:
-   - Orchestration is self-contained in `skills/` (`exhaustive-document-traversal`, `planning-document-traversal`, `executing-document-traversal`, `debugging-document-workflows`, `recovering-document-workflows`, `verifying-exhaustive-traversal`).
+   - Orchestration is self-contained in `skills/deeper-reading/skills/` (`exhaustive-document-traversal`, `planning-document-traversal`, `executing-document-traversal`, `debugging-document-workflows`, `recovering-document-workflows`, `verifying-exhaustive-traversal`).
 
 ---
 
@@ -42,13 +42,13 @@ tools first with `python -m pip install pytest ruff==0.16.10 -r requirements-opt
 ## Adding New Extractors or Formats
 
 If contributing support for an additional document format:
-1. Implement the extractor in `scripts/extract_<format>.py` adhering to the `Block`, `pack_blocks`, and `build_manifest` schema from `scripts/chunk_common.py`.
+1. Implement the extractor in `skills/deeper-reading/scripts/extract_<format>.py` adhering to the `Block`, `pack_blocks`, and `build_manifest` schema from `skills/deeper-reading/scripts/chunk_common.py`.
 2. Ensure it supports both `--out <path>` and `--run-root <path>`.
-3. Register it in `EXTRACTOR_SCRIPTS` in `scripts/verify_run.py`, so the verifier can re-extract the source.
-4. Document the format's structural invariants in a reference under `references/`, named for the format (`references/html.md`, `references/pdf.md`, `references/lengthy-markdown.md`).
-5. Add the format's route to `skills/exhaustive-document-traversal/SKILL.md`, linking that reference.
+3. Register it in `EXTRACTOR_SCRIPTS` in `skills/deeper-reading/scripts/verify_run.py`, so the verifier can re-extract the source.
+4. Document the format's structural invariants in a reference under `skills/deeper-reading/references/`, named for the format (`skills/deeper-reading/references/html.md`, `skills/deeper-reading/references/pdf.md`, `skills/deeper-reading/references/lengthy-markdown.md`).
+5. Add the format's route to `skills/deeper-reading/skills/exhaustive-document-traversal/SKILL.md`, linking that reference.
 6. Add deterministic test coverage in `tests/test_extractors.py`, and update `tests/test_phase_gated_loading.py` for the new route and reference.
-7. Record images, SVG and diagrams through `MediaCollector` in `scripts/chunk_common.py`, and add a row to `tests/test_media_extractors.py`.
+7. Record images, SVG and diagrams through `MediaCollector` in `skills/deeper-reading/scripts/chunk_common.py`, and add a row to `tests/test_media_extractors.py`.
 
 Other changes have a matching list of files to update: see the
 [AGENTS.md "Maintenance Matrix"](https://github.com/pterw/deeper-reading/blob/main/AGENTS.md#maintenance-matrix).

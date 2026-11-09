@@ -1,14 +1,14 @@
 # AGENTS.md: Rules for AI Agents
 
-deeper-reading: an Agent Skill for exhaustive document traversal (root
-`SKILL.md`), stdlib-only Python document tools (`scripts/`), and two installers
+deeper-reading: an Agent Skill for exhaustive document traversal (in
+`skills/deeper-reading/`), stdlib-only Python document tools (`skills/deeper-reading/scripts/`), and two installers
 that must behave identically (Python `installer/`, Node `installer/node/`, the
 npm `bin`). Tests are pytest and `node --test`. This file is the ruleset for
 every repo-aware agent (Claude Code, Codex, Copilot).
 
 The product is exhaustive traversal: every chunk in the canonical extractor
 manifest gets exactly one `evidence` or `non_match` verdict, and
-`scripts/verify_run.py` re-extracts the source to prove coverage. Chunking is
+`skills/deeper-reading/scripts/verify_run.py` re-extracts the source to prove coverage. Chunking is
 the mechanism, not the product. The verifier proves source identity, coverage
 and byte fidelity. It never proves semantic truth or model comprehension; keep
 code, docs and commit messages honest about that.
@@ -18,8 +18,8 @@ code, docs and commit messages honest about that.
 | File | Role | Contains |
 |------|------|----------|
 | `AGENTS.md` (this file) | **Rules** | How agents behave: bootstrap, gates, roles, commits, anti-patterns. |
-| `references/definition-of-done.md` | **Predicate owner** | Owns the Definition of Done predicates; `PREDICATES` in `scripts/verification_findings.py` mirrors it, and the owner wins. |
-| `SKILL.md`, `skills/`, `references/`, `scripts/` | **Skill payload** | `MANIFEST.json` `payload` is what installers copy into a skill directory: `SKILL.md`, `LICENSE`, `VERSION`, `skills`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
+| `skills/deeper-reading/references/definition-of-done.md` | **Predicate owner** | Owns the Definition of Done predicates; `PREDICATES` in `skills/deeper-reading/scripts/verification_findings.py` mirrors it, and the owner wins. |
+| `skills/deeper-reading/` | **Skill payload** | `MANIFEST.json` `skill.root` names this folder, and `payload` (relative to it) is what installers copy into a skill directory: `SKILL.md`, `LICENSE`, `VERSION`, `skills`, `references`, `scripts`. What ships in the npm package and the ZIP is decided by `package.json` `files` and `installer/distribution.py`. |
 | `docs/superpowers/plans/*.md` | **Work orders** | Plans with checkbox tasks and binding interfaces. |
 | `.superpowers/sdd/<plan>/progress.md` | **Ledger** | Git-ignored, local. Events, verdicts and the `RESUME HERE` checkpoint for a plan in flight. |
 | `README.md` | **Product docs** | Install, commands, artifacts, limits. Not for agent orchestration. |
@@ -53,10 +53,11 @@ A person has to have **read this diff** before it lands. Telling an agent "merge
 it when you're done" is approving a goal, not this change, so it does not count
 for anything on this list. Everywhere else it counts.
 
-- `.github/workflows/release.yml`, `VERSION`, or the `version` in `package.json`:
+- `.github/workflows/release.yml`, `skills/deeper-reading/VERSION`, or the `version` in `package.json`:
   they decide what is published to npm, which cannot be undone.
-- `scripts/verify_run.py`, `scripts/verification_findings.py`,
-  `scripts/evidence_atoms.py`: they decide the verdict users rely on.
+- `skills/deeper-reading/scripts/verify_run.py`,
+  `skills/deeper-reading/scripts/verification_findings.py`,
+  `skills/deeper-reading/scripts/evidence_atoms.py`: they decide the verdict users rely on.
 - Receipt or containment code in `installer/core.py` or `installer/node/core.js`:
   it removes files in users' directories.
 - `MANIFEST.json` `payload`, `package.json` `files`, or `RELEASE_FILES` /
@@ -87,7 +88,7 @@ for the PDF tests; ruff lints). There is no `npm install`: no dependencies. Pyth
 the tools and pytest; Node 20+ runs the npm installer and its tests. The parity
 and lock tests need both on PATH (on Windows `py -3` is tried first, then
 `python`, then `python3`). Run pytest from the repo root: there is no pytest
-config, and tests put `scripts/` on `sys.path`.
+config, and the root `conftest.py` puts `skills/deeper-reading/` and `tests/` on `sys.path`.
 
 ## Gates
 
@@ -104,27 +105,27 @@ repository root, so a worktree tests itself.
   run: npm test
   pass: exit 0
   quote: the pass and fail summary counts
-  when: installer/, package.json, VERSION, MANIFEST.json or tests/node/ changed
+  when: installer/, package.json, skills/deeper-reading/VERSION, MANIFEST.json or tests/node/ changed
 - name: pack-smoke
   run: npm run test:pack-smoke
   pass: exit 0
   quote: the pass and fail summary counts
-  when: installer/node/, package.json, MANIFEST.json, tests/npm/, tests/node/ or a payload path changed
+  when: installer/node/, package.json, MANIFEST.json, tests/npm/, tests/node/ or a path under skills/deeper-reading/ changed
 - name: release-labels
   run: python tools/release_check.py
   pass: exit 0
   quote: PASS or FAIL lines
-  when: VERSION, package.json, CHANGELOG.md or tools/release_check.py changed
+  when: skills/deeper-reading/VERSION, package.json, CHANGELOG.md or tools/release_check.py changed
 - name: installer-doctor
   run: python installer/install.py doctor --target generic-agents --json
   pass: exit 0
   quote: "state" values
-  when: installer/, MANIFEST.json or a payload path changed
+  when: installer/, MANIFEST.json or a path under skills/deeper-reading/ changed
 - name: distribution
   run: python installer/distribution.py --out dist/deeper-reading.zip
   pass: exit 0
   quote: SHA256 line
-  when: installer/, MANIFEST.json, a payload path or a file in RELEASE_FILES changed
+  when: installer/, MANIFEST.json, a path under skills/deeper-reading/ or a file in RELEASE_FILES changed
 - name: ruff
   run: python -m ruff check .
   pass: exit 0
@@ -155,8 +156,8 @@ Bound every long command with a timeout. A test that can hang is a defect.
 
 ### Skill payload
 
-- `SKILL.md` is the router: a phase-gated table mapping lifecycle state to one
-  module in `skills/*/SKILL.md`. Each module owns the `references/*.md` it
+- `skills/deeper-reading/SKILL.md` is the router: a phase-gated table mapping lifecycle state to one
+  module in `skills/deeper-reading/skills/*/SKILL.md`. Each module owns the `skills/deeper-reading/references/*.md` it
   must read before its gate; references are never preloaded.
 - **Prose is behaviour.** The skill text is what the agent executes, so
   contract tests pin required instructions in it and in the release docs
@@ -164,7 +165,7 @@ Bound every long command with a timeout. A test that can hang is a defect.
   names them). Before rewording any Markdown file, release docs included, grep
   `tests/` for its file name and the phrase.
 
-### Document scripts (`scripts/`, standard library only)
+### Document scripts (`skills/deeper-reading/scripts/`, standard library only)
 
 Pipeline: `extract_<format>.py` -> `chunk-manifest.json` -> agent-authored
 draft -> `build_evidence.py` (schema v2; binds quotes to byte spans through
@@ -185,7 +186,7 @@ draft -> `build_evidence.py` (schema v2; binds quotes to byte spans through
 - `script_io.py` owns output safety: no symlink outputs, never overwrite an
   input, containment inside the run root, atomic writes. `run_cli` turns an
   exception into `FAIL:` and exit 1 at the CLI boundary only.
-- Scripts run as `python scripts/x.py` and as `scripts.x` imports from tests.
+- Scripts run as `python skills/deeper-reading/scripts/x.py` and as `scripts.x` imports from tests.
   Keep the dual-import pattern.
 - PDF backends are optional, probed in the order pypdf, PyMuPDF, pdfplumber,
   pdftotext. The manifest records backend, version and `capabilities`, and
@@ -209,12 +210,12 @@ draft -> `build_evidence.py` (schema v2; binds quotes to byte spans through
 
 | When you change | Also update |
 |---|---|
-| `scripts/extract_*.py` | `tests/test_extractors.py`; re-extraction in `scripts/verify_run.py` accepts only what the extractor reproduces |
-| A new document format | `scripts/extract_<format>.py`, `EXTRACTOR_SCRIPTS` in `scripts/verify_run.py`, `references/<format>.md`, the format routes in `skills/exhaustive-document-traversal/SKILL.md`, `tests/test_extractors.py`, `tests/test_phase_gated_loading.py` |
+| `skills/deeper-reading/scripts/extract_*.py` | `tests/test_extractors.py`; re-extraction in `skills/deeper-reading/scripts/verify_run.py` accepts only what the extractor reproduces |
+| A new document format | `skills/deeper-reading/scripts/extract_<format>.py`, `EXTRACTOR_SCRIPTS` in `skills/deeper-reading/scripts/verify_run.py`, `skills/deeper-reading/references/<format>.md`, the format routes in `skills/deeper-reading/skills/exhaustive-document-traversal/SKILL.md`, `tests/test_extractors.py`, `tests/test_phase_gated_loading.py` |
 | `installer/*.py` or `installer/adapters/*.py` | the matching `installer/node/*.js`; `tests/node/parity.test.js` must still pass |
 | What ships | `MANIFEST.json` `payload`, `package.json` `files`, `RELEASE_FILES` / `RELEASE_DIRECTORIES` in `installer/distribution.py` |
-| Definition of Done predicates | `references/definition-of-done.md` and `PREDICATES` in `scripts/verification_findings.py` |
-| The version | `VERSION`, `package.json`, `CHANGELOG.md`; grep `README.md` and `references/runtime-profiles.md` for the old version |
+| Definition of Done predicates | `skills/deeper-reading/references/definition-of-done.md` and `PREDICATES` in `skills/deeper-reading/scripts/verification_findings.py` |
+| The version | `skills/deeper-reading/VERSION`, `package.json`, `CHANGELOG.md`; grep `README.md` and `skills/deeper-reading/references/runtime-profiles.md` for the old version |
 | Skill or reference prose | grep `tests/` for the file name and the phrase first |
 
 ## Agent skills
@@ -295,7 +296,7 @@ fix-round counts.
 
 ### Releases
 
-The version lives in `VERSION` and `package.json`; change both together.
+The version lives in `skills/deeper-reading/VERSION` and `package.json`; change both together.
 A change a user notices adds a line to the top `CHANGELOG.md` section in the
 same commit. The release procedure is in
 `.github/skills/shipping-a-change/SKILL.md`.
@@ -326,7 +327,7 @@ Check your diff against this list before handing work back.
    re-extraction of the bound source, never by the submitted manifest.
 3. **Fixing the instance instead of the class.** After fixing one copy of a
    bug or a claim, grep for its siblings (the other extractor, the other
-   installer, the README and `references/` copies) and fix them in the same
+   installer, the README and `skills/deeper-reading/references/` copies) and fix them in the same
    commit.
 4. **Assertions over sets.** Claims with `all`, `every`, `both`, `never` or a
    range ("Python 3.10-3.13") are checked member by member.

@@ -1,6 +1,6 @@
 # Standalone Installer Usage
 
-The canonical skill entrypoint remains `../SKILL.md`. The installer copies the manifest-owned runtime payload into a supported Agent Skills root; it does not wrap, rename, or relocate the canonical skill inside the distribution.
+The canonical skill entrypoint is `../skills/deeper-reading/SKILL.md`. The installer copies the manifest-owned runtime payload into a supported Agent Skills root; it does not wrap, rename, or relocate the canonical skill inside the distribution.
 
 The normal runtime is sovereign and **standalone**: the package includes its own process skills plus bundled extractors for PDF, DOCX, HTML, and Markdown. No external process framework is required.
 
@@ -44,7 +44,7 @@ The Node installer does not require Python. The installed extraction and verific
 python installer/install.py doctor --target generic-agents --json
 ```
 
-`doctor` is read-only and exits 0. It reports the resolved target root, runtime detection, document-profile status, and whether installation can proceed in `can_install`.
+`doctor` is read-only and exits 0 whenever it can report. It reports the resolved target root, runtime detection, document-profile status, and whether installation can proceed in `can_install`.
 
 ## Install
 
@@ -58,7 +58,7 @@ Targets: `auto`, `generic-agents`, `copilot`, `codex`, `gemini`, `claude`. `auto
 
 Document profiles:
 
-- `standalone` — canonical/default. Basic text traversal is supplied by the bundled extractors:
+- `standalone` — canonical/default. Basic text traversal is supplied by the bundled extractors in the skill's `scripts/` folder (`skills/deeper-reading/scripts/` in a checkout, `scripts/` in the installed skill):
   - `scripts/extract_pdf.py`
   - `scripts/extract_docx.py`
   - `scripts/extract_html.py`
