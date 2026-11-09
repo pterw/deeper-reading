@@ -285,7 +285,6 @@ function installLocked(options) {
   const stage = path.join(parent, `.${name}.stage-${token}`);
   const backup = path.join(parent, `.${name}.backup-${token}`);
   let replaced = false;
-  let cleanupFailed = false;
   const inject = (point) => options.failureInjector?.(point);
   try {
     if (hadTarget) {
@@ -351,7 +350,6 @@ function installLocked(options) {
       inject("cleanup-backup");
       rmSync(backup, { recursive: true, force: true });
     } catch (cleanupError) {
-      cleanupFailed = true;
       result.warnings = [`backup cleanup failed: ${cleanupError.message}; remove ${backup} by hand`];
     }
     return result;
@@ -361,16 +359,15 @@ function installLocked(options) {
       if (replaced) rmSync(targetRoot, { recursive: true, force: true });
       if (existsSync(backup)) renameSync(backup, targetRoot);
     } catch (rollbackError) {
-      throw new InstallerError(`${error.message}; rollback failed: ${rollbackError.message}`);
+      // The backup is the only copy of the previous install: keep it and say where it is.
+      const kept = existsSync(backup) ? `; the previous install is in ${backup}` : "";
+      throw new InstallerError(`${error.message}; rollback failed: ${rollbackError.message}${kept}`);
     }
     if (error instanceof InstallerError) throw error;
     throw new InstallerError(error.message);
   } finally {
     try {
       rmSync(stage, { recursive: true, force: true });
-      if (!cleanupFailed && existsSync(backup) && existsSync(targetRoot)) {
-        rmSync(backup, { recursive: true, force: true });
-      }
     } catch {
       // best effort; verify reports leftovers
     }

@@ -58,6 +58,47 @@ def test_failure_after_replace_rolls_back_previous_install(tmp_path):
 
     assert (target / 'SKILL.md').read_bytes() == original_skill
     assert marker.read_text(encoding='utf-8') == 'keep me'
+    assert not [p for p in target.parent.iterdir() if '.backup-' in p.name]
+
+
+@pytest.mark.parametrize('previous', [True, False], ids=['previous-install', 'fresh-install'])
+def test_rollback_that_cannot_finish_deleting_keeps_the_backup_and_names_it(tmp_path, monkeypatch, previous):
+    target = tmp_path / 'skills' / 'deeper-reading'
+    if previous:
+        target, _ = install(tmp_path)
+        (target / 'user-note.txt').write_text('keep me', encoding='utf-8')
+        (target / 'mydir').mkdir()
+        (target / 'mydir' / 'x.txt').write_text('keep me too', encoding='utf-8')
+        original_skill = (target / 'SKILL.md').read_bytes()
+    real_rmtree = installer_core.shutil.rmtree
+
+    def fail(point):
+        if point == 'after-verify':
+            raise RuntimeError('injected failure')
+
+    def rmtree_stuck_on_new_install(path, *args, **kwargs):
+        if Path(path) == target:  # delete part of the new tree, then stop
+            real_rmtree(target / 'references')
+            raise PermissionError('new install is partly undeletable')
+        return real_rmtree(path, *args, **kwargs)
+
+    monkeypatch.setattr(installer_core.shutil, 'rmtree', rmtree_stuck_on_new_install)
+    with pytest.raises(InstallError) as caught:
+        install(tmp_path, failure_injector=fail)
+
+    message = str(caught.value)
+    assert 'injected failure' in message
+    assert 'rollback failed' in message
+    backups = [p for p in target.parent.iterdir() if '.backup-' in p.name]
+    if not previous:
+        assert backups == []
+        assert 'previous install' not in message
+        return
+    assert len(backups) == 1
+    assert f'the previous install is in {backups[0]}' in message
+    assert (backups[0] / 'SKILL.md').read_bytes() == original_skill
+    assert (backups[0] / 'user-note.txt').read_text(encoding='utf-8') == 'keep me'
+    assert (backups[0] / 'mydir' / 'x.txt').read_text(encoding='utf-8') == 'keep me too'
 
 
 @pytest.mark.parametrize('mode', ['injector', 'real-removal'])
