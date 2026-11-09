@@ -109,6 +109,11 @@
       {"do": "run", "cwd": "{project}", "args": ["verify", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": null, "passed": true}, "unchanged": false},
       {"do": "run", "cwd": "{project}", "args": ["uninstall", "--target", "claude", "--scope", "project"], "expect": {"exit": 0, "state": "uninstalled"}, "unchanged": false}
     ]},
+    {"id": "project_upgrade_from_other_cwd", "steps": [
+      {"do": "mkdir", "path": "{project}"},
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "project", "--project-dir", "{project}"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false},
+      {"do": "run", "cwd": "{work}", "args": ["install", "--target", "claude", "--scope", "project", "--project-dir", "{project}"], "expect": {"exit": 0, "state": "installed"}, "unchanged": false}
+    ]},
     {"id": "project_dir_through_link", "steps": [
       {"do": "mkdir", "path": "{project}"},
       {"do": "link", "at": "{work}/link-project", "to": "{project}"},
