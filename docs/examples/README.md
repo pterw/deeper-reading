@@ -8,7 +8,7 @@ committed as it was left, so you can check it.
 
 Copy the folder somewhere temporary, then run the verifier on the copy:
 
-```
+```sh
 python skills/deeper-reading/scripts/verify_run.py <copy>/run.json
 ```
 
