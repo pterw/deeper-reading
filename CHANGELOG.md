@@ -31,6 +31,24 @@
 - `README.md` says the project's own installers are the supported route, with
   npm the primary one, what `npx skills add` does to an npm install, and how
   to recover. `installer/USAGE.md` lists the ownership checks and their codes.
+- Layout: the skill now lives in `skills/deeper-reading/` in the repository.
+  `SKILL.md`, `VERSION`, `references/`, `scripts/` and the workflow modules
+  moved there. `MANIFEST.json` names the folder in a new optional field,
+  `skill.root`. The root `LICENSE` stays, and the skill folder holds a copy.
+- Layout: the npm package and the release ZIP now hold the skill under
+  `skills/deeper-reading/`, not at the package root. The npm package gains
+  one file, the `LICENSE` copy inside the skill.
+- Layout: the installed skill is unchanged. It has the same 38 files at the
+  same paths, with the same hashes, as 0.2.5. A 0.2.5 install still
+  verifies, upgrades and uninstalls.
+- Layout: `npx skills add` on the repository finds one skill and installs
+  those 38 files, not the whole repository. This is the same list as an npm
+  install.
+- Layout: the two repository helper skills in `.github/skills/` are marked
+  internal, so `npx skills add` does not install them.
+- Installer: both installers refuse a bad `skill.root` in the manifest.
+  `doctor` in the Python installer now reads the manifest. It exits 2 when
+  the manifest is missing or damaged. It did not read it before.
 
 ## 0.2.5 - 2026-11-08
 
