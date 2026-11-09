@@ -257,7 +257,7 @@ Two hashes go into `run.json`. Compute each with this command, run once for the 
 python -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" <file>
 ```
 
-Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative to the run folder (`source/source.md`); `<SOURCE_SHA256>` and `<MANIFEST_SHA256>` come from the `sha256` command; `<CHUNK_ID>` and `<CHUNK_SHA256>` are `chunks[0].id` and `chunks[0].content_sha256` of the manifest. For a run with more chunks, repeat the `chunk_verified` and `node_started` / `node_passed` event triple and one `plan.nodes` entry for every chunk, in manifest order. This is the final state after `done` is appended; the `qa.required` names are the format checks your run owes (see [Definition of done](definition-of-done.md)).
+Fill the placeholders in `run.json`: `<SOURCE_PATH>` is the source path relative to the run folder (`source/source.md`); `<SOURCE_SHA256>` and `<MANIFEST_SHA256>` come from the `sha256` command; `<CHUNK_ID>` and `<CHUNK_SHA256>` are `chunks[0].id` and `chunks[0].content_sha256` of the manifest. For a run with more chunks, repeat the `chunk_verified` and `node_started` / `node_passed` event triple and one `plan.nodes` entry for every chunk, in manifest order. This is the final state after `done` is appended; the `qa.required` names are the format checks your run owes (see [Definition of done](definition-of-done.md)). `source.authority` is `primary` for the source you were given, or `approved-secondary` for a substitute the user approved.
 
 ```json run.json
 {
