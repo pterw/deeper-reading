@@ -220,7 +220,8 @@ function resolveContext(command, options, cwd, env) {
     documentStatus,
     installerStatus,
     scope: options.scope,
-    documentProfile: options.documentProfile
+    documentProfile: options.documentProfile,
+    ownerCheck: () => guardOwnership(targetRoot, options.scope, projectDir, env, command)
   };
 }
 
@@ -235,6 +236,7 @@ function coreOptions(context, options) {
     documentProfile: context.documentProfile,
     documentStatus: context.documentStatus,
     discoveryVerifier: (skillName) => context.adapter.discoveryVerify(skillName),
+    ownerCheck: context.ownerCheck,
     dryRun: options.dryRun
   };
 }
@@ -330,7 +332,7 @@ function runVerify(context, env) {
 
 function runUninstall(context, options) {
   const result = uninstallSkill(context.targetRoot, {
-    force: options.force, targetName: context.targetName, scope: context.scope
+    force: options.force, targetName: context.targetName, scope: context.scope, ownerCheck: context.ownerCheck
   });
   return {
     code: 0,

@@ -31,7 +31,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test tests/node/adapters.test.js tests/node/cli.test.js tests/node/core.test.js tests/node/cross.test.js tests/node/discovery.test.js tests/node/manifest.test.js tests/node/ownership.test.js tests/node/parity.test.js tests/node/prerequisites.test.js tests/node/recovery.test.js",
+    "test": "node --test tests/node/adapters.test.js tests/node/cli.test.js tests/node/core.test.js tests/node/cross.test.js tests/node/discovery.test.js tests/node/manifest.test.js tests/node/owner-recheck.test.js tests/node/ownership.test.js tests/node/parity.test.js tests/node/prerequisites.test.js tests/node/recovery.test.js",
     "test:pack-smoke": "node --test tests/npm/npm-pack-smoke.test.js"
   },
   "repository": {

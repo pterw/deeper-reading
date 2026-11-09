@@ -211,6 +211,101 @@
           "new": "const projectDir = (options.scope === \"project\" || options.projectDir)"
         }
       ]
+    },
+    {
+      "name": "py-install-recheck-dropped",
+      "edits": [
+        {
+          "file": "installer/core.py",
+          "old": "if owner_check is not None:",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "py-uninstall-recheck-dropped",
+      "edits": [
+        {
+          "file": "installer/core.py",
+          "old": "if owner_check:",
+          "new": "if False:"
+        }
+      ]
+    },
+    {
+      "name": "py-install-check-not-passed",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root, installing=True),",
+          "new": "owner_check=None,"
+        }
+      ]
+    },
+    {
+      "name": "py-uninstall-check-not-passed",
+      "edits": [
+        {
+          "file": "installer/install.py",
+          "old": "owner_check=lambda: _check_owner(target_name, args.scope, args.project_dir, target_root),",
+          "new": "owner_check=None,"
+        }
+      ]
+    },
+    {
+      "name": "node-install-recheck-dropped",
+      "edits": [
+        {
+          "file": "installer/node/core.js",
+          "old": "options.ownerCheck?.();",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "node-uninstall-recheck-dropped",
+      "edits": [
+        {
+          "file": "installer/node/core.js",
+          "old": "if (options.ownerCheck) options.ownerCheck();",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "node-install-check-before-lock",
+      "edits": [
+        {
+          "file": "installer/node/core.js",
+          "old": "options.ownerCheck?.();",
+          "new": ""
+        },
+        {
+          "file": "installer/node/core.js",
+          "old": "return withTargetLock(options.targetRoot, (targetRoot) => {",
+          "new": "options.ownerCheck?.(); return withTargetLock(options.targetRoot, (targetRoot) => {"
+        }
+      ]
+    },
+    {
+      "name": "node-install-check-not-passed",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": "ownerCheck: context.ownerCheck,",
+          "new": ""
+        }
+      ]
+    },
+    {
+      "name": "node-uninstall-check-not-passed",
+      "edits": [
+        {
+          "file": "installer/node/cli.js",
+          "old": ", ownerCheck: context.ownerCheck",
+          "new": ""
+        }
+      ]
     }
   ]
 }

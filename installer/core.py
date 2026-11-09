@@ -222,6 +222,7 @@ def install_skill(
     discovery_verifier=None,
     dry_run: bool = False,
     failure_injector: Callable[[str], None] | None = None,
+    owner_check: Callable[[], None] | None = None,
 ) -> dict:
     package_root = Path(package_root).resolve()
     target_root = Path(target_root).expanduser().resolve()
@@ -233,6 +234,8 @@ def install_skill(
 
     expected_hashes = payload_hashes(package_root, manifest)
     with nullcontext() if dry_run else _target_lock(target_root):
+        if owner_check is not None:
+            owner_check()
         had_target = target_root.exists()
         stale_owned: set[str] = set()
         if had_target:
@@ -423,10 +426,17 @@ def verify_installation(target_root: Path) -> dict:
 
 
 def uninstall_skill(
-    target_root: Path, *, force: bool = False, target_name: str | None = None, scope: str | None = None
+    target_root: Path,
+    *,
+    force: bool = False,
+    target_name: str | None = None,
+    scope: str | None = None,
+    owner_check: Callable[[], None] | None = None,
 ) -> dict:
     target = Path(target_root).expanduser().resolve()
     with _target_lock(target):
+        if owner_check:
+            owner_check()
         receipt_path = target / '.install-receipt.json'
         if not receipt_path.is_file():
             raise InstallError(
