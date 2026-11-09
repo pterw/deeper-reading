@@ -1,6 +1,6 @@
 ---
 name: deeper-reading
-description: Use when long or dense documents must be read exhaustively and models are at risk of skimming, stopping at the first plausible match, or claiming completion before every source chunk is verified.
+description: Reads long or dense documents (PDF, DOCX, HTML, Markdown) exhaustively. It splits the source into numbered chunks, requires one verified evidence or non_match verdict for every chunk, and runs a verifier that blocks Done until the whole source is covered. Use when a document must be read in full and models risk skimming, stopping at the first plausible match, or claiming completion before every source chunk is verified.
 compatibility: standalone is the default profile with bundled extractors and package-owned document workflow modules; optional oai-native enhancements may add richer visual/OCR QA without changing the anti-skimming evidence contract.
 ---
 
