@@ -9,6 +9,7 @@ import {
   mkdtempSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -261,6 +262,7 @@ test("failure after replacement restores the prior installation", (t) => {
   }), /injected after-replace failure/);
   assert.deepEqual(readFileSync(path.join(targetRoot, "SKILL.md")), original);
   assert.equal(verifyInstallation(targetRoot).passed, true);
+  assert.equal(readdirSync(path.dirname(targetRoot)).some((name) => name.includes(".backup-")), false);
 });
 
 // A synthetic package whose skill folder is `root` below the package root ("." keeps it at the top).
@@ -320,12 +322,15 @@ function isAlive(pid) {
   }
 }
 
-// Makes the real backup removal fail: a child process holding a directory inside
-// the backup on Windows, a read-only directory elsewhere. Returns an undo function.
-function makeBackupUndeletable(targetRoot) {
+// Makes a real removal fail, in the backup or in the installed folder: a child
+// process holding a directory there on Windows, a read-only directory elsewhere.
+// Returns an undo function.
+function makeUndeletable(targetRoot, where) {
   const parent = path.dirname(targetRoot);
-  const name = readdirSync(parent).find((entry) => entry.includes(".backup-"));
-  const locked = path.join(parent, name, "references");
+  const holder = where === "backup"
+    ? path.join(parent, readdirSync(parent).find((entry) => entry.includes(".backup-")))
+    : targetRoot;
+  const locked = path.join(holder, "references");
   if (process.platform === "win32") {
     // The child takes its working directory only once it has started, so wait for it.
     const ready = path.join(path.dirname(parent), "child-ready");
@@ -366,7 +371,7 @@ for (const mode of ["injector", "real-removal"]) {
             throw new Error("injected cleanup failure");
           }
           if (mode === "real-removal" && point === "after-receipt") {
-            undo = makeBackupUndeletable(targetRoot);
+            undo = makeUndeletable(targetRoot, "backup");
           }
         }
       });
@@ -377,6 +382,57 @@ for (const mode of ["injector", "real-removal"]) {
       const verdict = verifyInstallation(targetRoot);
       const failed = Object.keys(verdict.predicates).filter((name) => !verdict.predicates[name]);
       assert.deepEqual(failed, ["no_backup_leftovers"]);
+    } finally {
+      undo();
+    }
+  });
+}
+
+for (const previous of [true, false]) {
+  test(`a rollback that cannot finish deleting ${previous ? "keeps the backup and names it" : "names no backup on a fresh install"}`, (t) => {
+    if (process.platform !== "win32" && process.getuid?.() === 0) {
+      t.skip("root ignores directory permissions");
+      return;
+    }
+    const { targetRoot, options } = fixture(t);
+    let original;
+    if (previous) {
+      installSkill(options);
+      writeFileSync(path.join(targetRoot, "user-note.txt"), "keep me", "utf8");
+      mkdirSync(path.join(targetRoot, "mydir"));
+      writeFileSync(path.join(targetRoot, "mydir", "x.txt"), "keep me too", "utf8");
+      original = readFileSync(path.join(targetRoot, "SKILL.md"));
+    }
+    let undo = () => {};
+    try {
+      let message = "";
+      try {
+        installSkill({
+          ...options,
+          failureInjector(point) {
+            if (point === "after-replace") undo = makeUndeletable(targetRoot, "target");
+            if (point === "after-verify") throw new Error("injected failure");
+          }
+        });
+      } catch (error) {
+        message = error.message;
+      }
+      // The message names the real (long-name) path, so expand 8.3 short temp names.
+      const parent = realpathSync.native(path.dirname(targetRoot));
+      const backups = readdirSync(parent).filter((name) => name.includes(".backup-"));
+      assert.match(message, /injected failure/);
+      assert.match(message, /rollback failed/);
+      if (!previous) {
+        assert.equal(backups.length, 0);
+        assert.doesNotMatch(message, /previous install/);
+        return;
+      }
+      assert.equal(backups.length, 1);
+      const backup = path.join(parent, backups[0]);
+      assert.ok(message.includes(`the previous install is in ${backup}`));
+      assert.deepEqual(readFileSync(path.join(backup, "SKILL.md")), original);
+      assert.equal(readFileSync(path.join(backup, "user-note.txt"), "utf8"), "keep me");
+      assert.equal(readFileSync(path.join(backup, "mydir", "x.txt"), "utf8"), "keep me too");
     } finally {
       undo();
     }

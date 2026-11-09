@@ -135,7 +135,7 @@ leave a lock plus stage/backup directories. Locks are never stolen based on age
 or a process ID. If a lock persists, stop all installers for that target,
 inspect the target, receipt and backup/stage siblings, and restore a consistent
 installation before manually removing the empty lock directory and retrying.
-Do not remove a live lock or discard a backup needed for recovery.
+Do not remove a live lock or discard a backup needed for recovery. If an install or upgrade fails after the skill folder was replaced and the installer then cannot remove the new folder, the error says "rollback failed" and ends with "the previous install is in <path>". That backup folder (named .SKILL-NAME.backup-ID, beside the skill folder) holds your previous install, including files you added. The skill folder is left partly deleted, and install refuses it. Close whatever holds its files, delete the skill folder, or move it out of the skills folder, rename the backup folder to SKILL-NAME, and run install again. verify reports "backup leftovers remain" until the backup is gone. Do not delete the backup before the previous install is back.
 
 ## Discovery output contracts
 

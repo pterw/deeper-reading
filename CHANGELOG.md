@@ -68,6 +68,17 @@
   `install`), in a payload entry (`install`) or in the target folder
   (`install`, `install --dry-run`, `uninstall`) now exits 2 with an error
   message. It was a traceback.
+- Installer: if an install or upgrade fails after it replaced the skill folder,
+  and the installer then cannot remove the new folder (a file in it is open in
+  another program, or the Python installer meets a read-only file on Windows),
+  it no longer deletes your previous install. Before, the previous install and
+  any files you had added to the skill folder were deleted and a half-removed
+  folder was left. Now the previous install stays in a hidden
+  `.deeper-reading.backup-<id>` folder beside the skill folder, and the error
+  (exit 2, as before) ends with `the previous install is in <path>`. To restore
+  it, delete the leftover skill folder or move it out of the skills folder, and
+  rename the backup folder to `deeper-reading`. This was already so in 0.2.5. A
+  failure that rolls back cleanly is unchanged and leaves no backup.
 
 ## 0.2.5 - 2026-11-08
 
