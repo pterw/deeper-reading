@@ -184,7 +184,9 @@ gate is crossed. Write it as a Markdown table with the columns `Reference path`,
 | references/evidence.md | before the evidence ledger is built | yes |
 
 The agent must not set the final `required_references_read` aggregate to true
-while a selected-path row is missing, incomplete, or recorded after its gate.
+while a selected-path row is missing or incomplete. Write each row when you read
+the reference; a row written after its gate is fine with a note, since the
+aggregate means each selected reference was read before it was relied on.
 The verifier checks only that the aggregate is true and that the file exists; it
 does not read the rows. The table is human-audited evidence; it adds no machine
 schema or event type. See [Definition of done](definition-of-done.md) for which
