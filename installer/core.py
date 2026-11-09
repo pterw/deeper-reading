@@ -18,7 +18,9 @@ from .prerequisites import PrerequisiteStatus
 
 
 class InstallError(RuntimeError):
-    pass
+    def __init__(self, message: str = '', code: str | None = None):
+        super().__init__(message)
+        self.code = code
 
 
 @contextmanager
@@ -147,10 +149,39 @@ def _read_receipt(receipt_path: Path) -> dict:
     return receipt
 
 
-def _upgrade_ownership(target_root: Path, expected_hashes: dict[str, str]) -> tuple[dict, set[str]]:
+_DELETE_ROUTE = (
+    'delete the skill folder `deeper-reading` for each agent; if it is a link, remove the link itself '
+    'and not its contents; never delete only the shared `.agents` folder; then run `install` for each agent.'
+)
+_SKILLS_AGENTS = {'claude': 'claude-code', 'codex': 'codex'}
+
+
+def _recovery_hint(target_name: str | None, scope: str | None) -> str:
+    """Recovery text for a folder with no receipt; `skills remove` only for the two tested agents."""
+    agent = _SKILLS_AGENTS.get(target_name or '')
+    if agent is None:
+        return ' The folder has no receipt, likely replaced by `npx skills add`. To recover: ' + _DELETE_ROUTE
+    flag = '' if scope == 'project' else ' -g'
+    where = ' (from the project directory)' if scope == 'project' else ''
+    return (
+        f' The folder has no receipt, likely replaced by `npx skills add`. To recover, run '
+        f'`npx skills remove deeper-reading{flag} -a {agent} -y`{where}; a shared `.agents` folder may belong to '
+        f'more than one agent, so list each (`-a claude-code codex`). Otherwise ' + _DELETE_ROUTE
+    )
+
+
+def _upgrade_ownership(
+    target_root: Path,
+    expected_hashes: dict[str, str],
+    target_name: str | None = None,
+    scope: str | None = None,
+) -> tuple[dict, set[str]]:
     receipt_path = target_root / '.install-receipt.json'
     if not receipt_path.is_file():
-        raise InstallError('existing target is unmanaged; installation receipt missing')
+        raise InstallError(
+            'existing target is unmanaged; installation receipt missing.' + _recovery_hint(target_name, scope),
+            code='installer.receipt.missing',
+        )
     receipt = _read_receipt(receipt_path)
     old_owned = receipt.get('payload_hashes') or {}
     if not isinstance(old_owned, dict) or not old_owned:
@@ -191,6 +222,7 @@ def install_skill(
     discovery_verifier=None,
     dry_run: bool = False,
     failure_injector: Callable[[str], None] | None = None,
+    owner_check: Callable[[], None] | None = None,
 ) -> dict:
     package_root = Path(package_root).resolve()
     target_root = Path(target_root).expanduser().resolve()
@@ -202,10 +234,12 @@ def install_skill(
 
     expected_hashes = payload_hashes(package_root, manifest)
     with nullcontext() if dry_run else _target_lock(target_root):
+        if owner_check is not None:
+            owner_check()
         had_target = target_root.exists()
         stale_owned: set[str] = set()
         if had_target:
-            _, stale_owned = _upgrade_ownership(target_root, expected_hashes)
+            _, stale_owned = _upgrade_ownership(target_root, expected_hashes, target_name, scope)
 
         if dry_run:
             return {
@@ -391,12 +425,24 @@ def verify_installation(target_root: Path) -> dict:
     }
 
 
-def uninstall_skill(target_root: Path, *, force: bool = False) -> dict:
+def uninstall_skill(
+    target_root: Path,
+    *,
+    force: bool = False,
+    target_name: str | None = None,
+    scope: str | None = None,
+    owner_check: Callable[[], None] | None = None,
+) -> dict:
     target = Path(target_root).expanduser().resolve()
     with _target_lock(target):
+        if owner_check:
+            owner_check()
         receipt_path = target / '.install-receipt.json'
         if not receipt_path.is_file():
-            raise InstallError('installation receipt missing; refusing unmanaged uninstall')
+            raise InstallError(
+                'installation receipt missing; refusing unmanaged uninstall.' + _recovery_hint(target_name, scope),
+                code='installer.receipt.missing',
+            )
         receipt = _read_receipt(receipt_path)
         owned = receipt.get('payload_hashes') or {}
         if not owned:

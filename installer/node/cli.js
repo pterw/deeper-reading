@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { existsSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, readlinkSync, realpathSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { TARGET_NAMES, detectTarget, getAdapter } from "./adapters.js";
 import { documentProfileStatus, pythonRuntimeStatus } from "./prerequisites.js";
-import { loadManifest, validateManifest } from "./manifest.js";
+import { InstallerError, loadManifest, validateManifest } from "./manifest.js";
 import { installSkill, uninstallSkill, verifyInstallation } from "./core.js";
 
 const PACKAGE_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -99,6 +99,95 @@ function homeDirectory(env) {
   return env.USERPROFILE || env.HOME || os.homedir();
 }
 
+const RECEIPT_NAME = ".install-receipt.json";
+const OWNER_TARGETS = TARGET_NAMES.filter((name) => name !== "auto");
+const DELETE_ROUTE = "delete the skill folder `deeper-reading` for each agent; if it is a link, " +
+  "remove the link itself and not its contents; never delete only the shared `.agents` folder; " +
+  "then run `install` for each agent.";
+
+// The receipt at the resolved folder, or null when it is absent, unreadable or not a JSON object
+// (the core keeps its own handling of those).
+function readOwnerReceipt(targetRoot) {
+  try {
+    const receipt = JSON.parse(readFileSync(path.join(targetRoot, RECEIPT_NAME), "utf8"));
+    return receipt !== null && typeof receipt === "object" && !Array.isArray(receipt) ? receipt : null;
+  } catch {
+    return null;
+  }
+}
+
+// The real path of the deepest existing ancestor, with the parts that do not exist yet joined on.
+function canonicalPath(candidate) {
+  let existing = path.resolve(candidate);
+  const missing = [];
+  let real = null;
+  let hops = 0;
+  while (real === null) {
+    try {
+      real = realpathSync.native(existing);
+    } catch {
+      let target = null;
+      try { target = readlinkSync(existing); } catch { /* not a link */ }
+      if (target !== null && hops < 40) {
+        hops += 1;
+        existing = path.resolve(path.dirname(existing), target);
+        continue;
+      }
+      const parent = path.dirname(existing);
+      if (parent === existing) {
+        real = existing;
+      } else {
+        missing.push(path.basename(existing));
+        existing = parent;
+      }
+    }
+  }
+  real = path.join(real, ...missing.reverse()).replace(/^\\\\\?\\/, "");
+  return process.platform === "win32" ? real.toLowerCase() : real;
+}
+
+function isInside(folder, project) {
+  const relative = path.relative(canonicalPath(project), canonicalPath(folder));
+  return relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+// Ownership rule: a receipt at the resolved folder must belong to the requested root, and a
+// project folder must lie inside its project. Runs for install, verify and uninstall, not doctor.
+function guardContained(targetRoot, projectDir) {
+  if (projectDir !== null && !isInside(targetRoot, projectDir)) {
+    throw new InstallerError(
+      `${targetRoot} is outside the project ${projectDir}; use \`--scope user\`, or make the folder ` +
+        "a real folder in the project (if `.claude` or `.claude/skills` is a link out, remove that link " +
+        `itself, not its contents); to remove an existing install there, ${DELETE_ROUTE}`,
+      "installer.project.escape"
+    );
+  }
+}
+
+function guardOwnership(targetRoot, scope, projectDir, env, command) {
+  const receipt = readOwnerReceipt(targetRoot);
+  if (receipt === null) {
+    if (command === "install") guardContained(targetRoot, projectDir);
+    return;
+  }
+  const owner = receipt.target;
+  if (!OWNER_TARGETS.includes(owner) || !SCOPES.has(receipt.scope)) {
+    throw new InstallerError(
+      `the installation receipt names no valid owner; the recovery is to ${DELETE_ROUTE}`,
+      "installer.receipt.owner_invalid"
+    );
+  }
+  if (receipt.scope !== scope ||
+      getAdapter(owner, { homeDir: homeDirectory(env), env }).resolveSkillRoot(scope, projectDir) !== targetRoot) {
+    throw new InstallerError(
+      `${targetRoot} belongs to target ${owner} (scope ${receipt.scope}); ` +
+        `run this command with --target ${owner} --scope ${receipt.scope}`,
+      "installer.owner.mismatch"
+    );
+  }
+  guardContained(targetRoot, projectDir);
+}
+
 function resolveContext(command, options, cwd, env) {
   const manifestPath = path.join(PACKAGE_ROOT, "MANIFEST.json");
   const manifest = loadManifest(manifestPath);
@@ -114,6 +203,7 @@ function resolveContext(command, options, cwd, env) {
     ? path.resolve(options.projectDir || cwd)
     : null;
   const targetRoot = adapter.resolveSkillRoot(options.scope, projectDir);
+  if (command !== "doctor") guardOwnership(targetRoot, options.scope, projectDir, env, command);
   const documentStatus = documentProfileStatus(options.documentProfile, {
     packageRoot: PACKAGE_ROOT
   });
@@ -130,7 +220,8 @@ function resolveContext(command, options, cwd, env) {
     documentStatus,
     installerStatus,
     scope: options.scope,
-    documentProfile: options.documentProfile
+    documentProfile: options.documentProfile,
+    ownerCheck: () => guardOwnership(targetRoot, options.scope, projectDir, env, command)
   };
 }
 
@@ -145,6 +236,7 @@ function coreOptions(context, options) {
     documentProfile: context.documentProfile,
     documentStatus: context.documentStatus,
     discoveryVerifier: (skillName) => context.adapter.discoveryVerify(skillName),
+    ownerCheck: context.ownerCheck,
     dryRun: options.dryRun
   };
 }
@@ -239,7 +331,9 @@ function runVerify(context, env) {
 }
 
 function runUninstall(context, options) {
-  const result = uninstallSkill(context.targetRoot, { force: options.force });
+  const result = uninstallSkill(context.targetRoot, {
+    force: options.force, targetName: context.targetName, scope: context.scope, ownerCheck: context.ownerCheck
+  });
   return {
     code: 0,
     payload: { command: "uninstall", target: context.targetRoot, ...result }
@@ -327,6 +421,8 @@ export function run(argv, io = {}) {
       error: error.message,
       command: error.command ?? fallbackCommand
     };
+    if (error instanceof InstallerError && error.code !== undefined) payload.code = error.code;
+    if (payload.command === "verify") payload.passed = false;
     if (json) emit(write, true, payload);
     else writeError(`error: ${error.message}`);
     return 2;

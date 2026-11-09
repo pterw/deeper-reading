@@ -88,6 +88,47 @@ state, not a fresh semantic assessment of the host.
 4. To remove it, run `uninstall` with the same target, scope and project directory. Only
    receipt-owned files are removed.
 
+### Supported route and mixing installers
+
+This project's own installers are the supported way to install the skill, and
+the npm installer is the primary one. `npx skills add` is a different tool and is
+not supported for this skill. Running it over an npm install replaces the skill
+folder and drops its `.install-receipt.json`. An interactive run asks before it
+overwrites; a run with `-y`, or one that uses the agents it detects, does not
+ask. After that, `install` and `uninstall` refuse the folder with
+`installer.receipt.missing` and change nothing, and `verify` fails, because they
+will not touch files they cannot prove they own. Going the other
+way is safe: if `npx skills add` came first, a later `install` refuses the
+unmanaged folder and leaves it as it is.
+
+To recover from `npx skills add`, remove its copy, then run `install` again.
+For the `claude` target the agent name is `claude-code`; for `codex` it is
+`codex`. Pass `-g` for user scope; for project scope omit it and run the command
+from the project directory. If you added the skill for one agent:
+
+```sh
+npx skills remove deeper-reading -g -a claude-code -y
+npx skills remove deeper-reading -g -a codex -y
+```
+
+Those are alternatives: use the line for your agent. `codex` and `generic-agents`
+share `.agents/skills`, so one folder may belong to more than one agent. If you
+added it for both claude-code and codex, list each agent in a single `remove`:
+
+```sh
+npx skills remove deeper-reading -g -a claude-code codex -y
+```
+
+For any other target, or if you prefer, delete by
+hand: delete the skill folder `deeper-reading` for each agent; if it is a link,
+remove the link itself and not its contents; never delete only the shared
+`.agents` folder; then run `install` for each agent.
+
+If `~/.claude/skills` is a link to `~/.agents/skills`, both targets resolve to
+one folder. The second target is refused with `installer.owner.mismatch`, and
+the message names the owner and the working command (`--target <owner>`). See
+[Skill roots](https://github.com/pterw/deeper-reading/blob/main/installer/USAGE.md#skill-roots).
+
 Both installers share a per-target lock across install, upgrade and uninstall,
 including rollback and cleanup. Contention fails clearly; retry after the active
 operation finishes. Older installers do not honor the lock. See
