@@ -72,7 +72,7 @@ def test_distribution_archive_has_one_canonical_skill_root(tmp_path):
     assert prefix + 'deeper-reading/SKILL.md' not in names
 
 
-def test_extracted_archive_installs_the_0_2_5_file_list(tmp_path):
+def test_extracted_archive_installs_the_0_2_6_file_list(tmp_path):
     archive = tmp_path / 'bundle.zip'
     build_distribution(ROOT, archive)
     with ZipFile(archive) as zf:
@@ -91,7 +91,7 @@ def test_extracted_archive_installs_the_0_2_5_file_list(tmp_path):
         assert proc.returncode == 0, proc.stdout + proc.stderr
     target = project / '.agents' / 'skills' / 'deeper-reading'
     installed = sorted(p.relative_to(target).as_posix() for p in target.rglob('*') if p.is_file())
-    pin = json.loads((ROOT / 'tests' / 'fixtures' / 'installed-files-0.2.5.json').read_text(encoding='utf-8'))
+    pin = json.loads((ROOT / 'tests' / 'fixtures' / 'installed-files-0.2.6.json').read_text(encoding='utf-8'))
     assert [name for name in installed if name != '.install-receipt.json'] == pin
 
 

@@ -1,8 +1,3 @@
----
-name: debugging-document-workflows
-description: Use when a document-workflow node fails, produces unexpected output, or cannot prove its success boundary before any sibling or fallback traversal continues.
----
-
 # Debugging Document Workflows
 
 ## Invariant
@@ -12,7 +7,7 @@ A failed node must produce `failure_diagnosed` **before** repair, re-chunking, s
 ## Phase inputs
 
 After a node fails and before diagnosis or repair, read
-[`failure-recovery`](../../references/failure-recovery.md).
+[`failure-recovery`](references/failure-recovery.md).
 
 ## Diagnosis
 

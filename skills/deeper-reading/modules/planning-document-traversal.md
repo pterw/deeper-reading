@@ -1,8 +1,3 @@
----
-name: planning-document-traversal
-description: Use when exhaustive document work has multiple acquisition, extraction, traversal, comparison, recovery, or verification steps that need explicit ordering before execution.
----
-
 # Planning Document Traversal
 
 ## Invariant
@@ -12,8 +7,8 @@ Write a **traversal plan** before substantial multi-step work. The plan exists t
 ## Phase inputs
 
 Before writing the plan, read
-[`deliverable`](../../references/deliverable.md) and
-[`definition-of-done`](../../references/definition-of-done.md).
+[`deliverable`](references/deliverable.md) and
+[`definition-of-done`](references/definition-of-done.md).
 
 ## Plan shape
 

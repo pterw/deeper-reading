@@ -66,12 +66,12 @@ function rootedPackage(t, root) {
   t.after(() => rmSync(sandbox, { recursive: true, force: true }));
   const pkg = path.join(sandbox, "pkg");
   const skill = path.join(pkg, "skills", "demo");
-  mkdirSync(path.join(skill, "skills"), { recursive: true });
+  mkdirSync(path.join(skill, "modules"), { recursive: true });
   writeFileSync(path.join(skill, "SKILL.md"), "---\nname: demo\n---\nbody\n", "utf8");
-  writeFileSync(path.join(skill, "skills", "a.txt"), "a", "utf8");
+  writeFileSync(path.join(skill, "modules", "a.txt"), "a", "utf8");
   const manifest = {
     skill: { name: "demo", entrypoint: "SKILL.md", ...(root === undefined ? {} : { root }) },
-    payload: ["SKILL.md", "skills"],
+    payload: ["SKILL.md", "modules"],
     document_profiles: { standalone: {}, "oai-native": {} }
   };
   return { sandbox, pkg, manifest };
@@ -80,15 +80,22 @@ function rootedPackage(t, root) {
 test("skill.root points the payload at the skill folder", (t) => {
   const { pkg, manifest } = rootedPackage(t, "skills/demo");
   assert.deepEqual(validateManifest(manifest, pkg), []);
-  assert.deepEqual(Object.keys(payloadHashes(pkg, manifest)), ["SKILL.md", "skills/a.txt"]);
-  assert.equal(path.basename(path.dirname(payloadFiles(pkg, manifest)[0])), "demo");
+  assert.deepEqual(Object.keys(payloadHashes(pkg, manifest)), ["modules/a.txt", "SKILL.md"]);
+  const demo = path.join(pkg, "skills", "demo");
+  assert.ok(payloadFiles(pkg, manifest).every((file) => file.startsWith(demo + path.sep)));
   assert.equal(skillRoot(manifest, pkg), physicalPath(path.join(pkg, "skills", "demo")));
+});
+
+test("a payload without modules is refused", (t) => {
+  const { pkg, manifest } = rootedPackage(t, "skills/demo");
+  const bare = { ...manifest, payload: ["SKILL.md"] };
+  assert.deepEqual(validateManifest(bare, pkg), ["Standalone runtime payload must include package-owned modules"]);
 });
 
 test("skill.root of '.' validates the same as no field", (t) => {
   const { pkg, manifest } = rootedPackage(t, undefined);
   writeFileSync(path.join(pkg, "SKILL.md"), "---\nname: demo\n---\n", "utf8");
-  mkdirSync(path.join(pkg, "skills"), { recursive: true });
+  mkdirSync(path.join(pkg, "modules"), { recursive: true });
   const dot = { ...manifest, skill: { ...manifest.skill, root: "." } };
   assert.deepEqual(validateManifest(manifest, pkg), []);
   assert.deepEqual(validateManifest(dot, pkg), []);

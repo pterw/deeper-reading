@@ -1,7 +1,7 @@
 ---
 name: deeper-reading
 description: Use when long or dense documents must be read exhaustively and models are at risk of skimming, stopping at the first plausible match, or claiming completion before every source chunk is verified.
-compatibility: standalone is the default profile with bundled extractors and package-owned document workflow skills; optional oai-native enhancements may add richer visual/OCR QA without changing the anti-skimming evidence contract.
+compatibility: standalone is the default profile with bundled extractors and package-owned document workflow modules; optional oai-native enhancements may add richer visual/OCR QA without changing the anti-skimming evidence contract.
 ---
 
 # Deeper Reading: Exhaustive Document Traversal
@@ -40,13 +40,15 @@ gate. Do not preload modules for states that have not been reached.
 
 | Current lifecycle state | Bundled module |
 |---|---|
-| Enter and establish the contract | `skills/exhaustive-document-traversal/SKILL.md` |
-| Write the traversal plan | `skills/planning-document-traversal/SKILL.md` |
-| Acquire and extract the selected format | Reuse `skills/exhaustive-document-traversal/SKILL.md` and load its selected-format inputs |
-| Execute bounded traversal nodes | `skills/executing-document-traversal/SKILL.md` |
-| Diagnose a failed node | `skills/debugging-document-workflows/SKILL.md` |
-| Redesign after exhausted recovery paths | `skills/recovering-document-workflows/SKILL.md` |
-| Prove final completion | `skills/verifying-exhaustive-traversal/SKILL.md` |
+| Enter and establish the contract | `modules/exhaustive-document-traversal.md` |
+| Write the traversal plan | `modules/planning-document-traversal.md` |
+| Acquire and extract the selected format | Reuse `modules/exhaustive-document-traversal.md` and load its selected-format inputs |
+| Execute bounded traversal nodes | `modules/executing-document-traversal.md` |
+| Diagnose a failed node | `modules/debugging-document-workflows.md` |
+| Redesign after exhausted recovery paths | `modules/recovering-document-workflows.md` |
+| Prove final completion | `modules/verifying-exhaustive-traversal.md` |
+
+In a module, `<skill-root>` and every relative path mean the folder that holds this SKILL.md, not the module's own folder. A module named elsewhere by its bare name, such as `debugging-document-workflows`, is the file `modules/<name>.md`; read it as the table above says.
 
 Return to this table only when the lifecycle state changes. A module may
 require a later module after its own transition succeeds; it may not move a

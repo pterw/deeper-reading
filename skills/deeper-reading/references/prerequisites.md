@@ -52,7 +52,7 @@ exhaustive-document-traversal
   -> verifying-exhaustive-traversal
 ```
 
-Read the corresponding `skills/<name>/SKILL.md` in full before using that phase.
+Read the corresponding `modules/<name>.md` in full before using that phase.
 
 ## Failure ordering
 

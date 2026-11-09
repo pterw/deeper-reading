@@ -1,8 +1,3 @@
----
-name: executing-document-traversal
-description: Use when a written traversal plan is ready and document nodes must be executed one bounded operation at a time with evidence before advancing.
----
-
 # Executing Document Traversal
 
 ## Invariant
@@ -12,8 +7,8 @@ Execute **one bounded** plan node at a time. A node advances only after its outp
 ## Phase inputs
 
 Before the first traversal node, read
-[`evidence`](../../references/evidence.md) and
-[`anti-patterns`](../../references/anti-patterns.md).
+[`evidence`](references/evidence.md) and
+[`anti-patterns`](references/anti-patterns.md).
 
 ## Loop
 

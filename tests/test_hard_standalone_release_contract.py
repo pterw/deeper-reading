@@ -8,13 +8,13 @@ RUNTIME_TEXT_FILES = [
     ROOT / "README.md",
     ROOT / "installer" / "USAGE.md",
     *sorted((SKILL_ROOT / "references").glob("*.md")),
-    *sorted((SKILL_ROOT / "skills").glob("*/SKILL.md")),
+    *sorted((SKILL_ROOT / "modules").glob("*.md")),
     SKILL_ROOT / "scripts" / "verify_run.py",
 ]
 
 
 def test_runtime_payload_does_not_require_external_process_framework():
-    for pattern in ("references/*.md", "skills/*/SKILL.md"):
+    for pattern in ("references/*.md", "modules/*.md"):
         assert list(SKILL_ROOT.glob(pattern)), f"{pattern} matches no file"
     offenders = []
     for path in RUNTIME_TEXT_FILES:

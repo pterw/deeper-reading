@@ -4,12 +4,12 @@ from layout import SKILL_ROOT as ROOT
 ROOT_SKILL = (ROOT / "SKILL.md").read_text(encoding="utf-8")
 
 MODULES = {
-    "exhaustive": ROOT / "skills" / "exhaustive-document-traversal" / "SKILL.md",
-    "planning": ROOT / "skills" / "planning-document-traversal" / "SKILL.md",
-    "execution": ROOT / "skills" / "executing-document-traversal" / "SKILL.md",
-    "debugging": ROOT / "skills" / "debugging-document-workflows" / "SKILL.md",
-    "recovery": ROOT / "skills" / "recovering-document-workflows" / "SKILL.md",
-    "verification": ROOT / "skills" / "verifying-exhaustive-traversal" / "SKILL.md",
+    "exhaustive": ROOT / "modules" / "exhaustive-document-traversal.md",
+    "planning": ROOT / "modules" / "planning-document-traversal.md",
+    "execution": ROOT / "modules" / "executing-document-traversal.md",
+    "debugging": ROOT / "modules" / "debugging-document-workflows.md",
+    "recovery": ROOT / "modules" / "recovering-document-workflows.md",
+    "verification": ROOT / "modules" / "verifying-exhaustive-traversal.md",
 }
 
 
@@ -35,31 +35,31 @@ def test_root_routes_lifecycle_modules_without_a_reference_bundle() -> None:
 
 def test_planning_module_owns_planning_inputs() -> None:
     body = read_module("planning")
-    assert "../../references/deliverable.md" in body
-    assert "../../references/definition-of-done.md" in body
-    assert "../../references/evidence.md" not in body
-    assert "../../references/failure-recovery.md" not in body
+    assert "references/deliverable.md" in body
+    assert "references/definition-of-done.md" in body
+    assert "references/evidence.md" not in body
+    assert "references/failure-recovery.md" not in body
 
 
 def test_exhaustive_module_owns_all_four_format_routes() -> None:
     body = read_module("exhaustive")
     for reference in (
-        "../../references/prerequisites.md",
-        "../../references/runtime-profiles.md",
-        "../../references/control-flow.md",
-        "../../references/source-acquisition.md",
-        "../../references/dependencies.md",
-        "../../references/pdf.md",
-        "../../references/docx.md",
-        "../../references/html.md",
-        "../../references/lengthy-markdown.md",
+        "references/prerequisites.md",
+        "references/runtime-profiles.md",
+        "references/control-flow.md",
+        "references/source-acquisition.md",
+        "references/dependencies.md",
+        "references/pdf.md",
+        "references/docx.md",
+        "references/html.md",
+        "references/lengthy-markdown.md",
     ):
         assert reference in body
     for helper in (
-        "../../scripts/extract_pdf.py",
-        "../../scripts/extract_docx.py",
-        "../../scripts/extract_html.py",
-        "../../scripts/extract_markdown.py",
+        "<skill-root>/scripts/extract_pdf.py",
+        "<skill-root>/scripts/extract_docx.py",
+        "<skill-root>/scripts/extract_html.py",
+        "<skill-root>/scripts/extract_markdown.py",
     ):
         assert helper in body
     assert "selected format" in body.lower()
@@ -70,19 +70,19 @@ def test_execution_and_failure_modules_own_later_inputs() -> None:
     execution = read_module("execution")
     debugging = read_module("debugging")
     recovery = read_module("recovery")
-    assert "../../references/evidence.md" in execution
-    assert "../../references/anti-patterns.md" in execution
-    assert "../../references/failure-recovery.md" in debugging
+    assert "references/evidence.md" in execution
+    assert "references/anti-patterns.md" in execution
+    assert "references/failure-recovery.md" in debugging
     assert "after a node fails" in debugging.lower()
-    assert "../../references/failure-recovery.md" in recovery
+    assert "references/failure-recovery.md" in recovery
     assert "before alternative design" in recovery.lower()
 
 
 def test_verification_module_owns_fresh_completion_inputs() -> None:
     body = read_module("verification")
-    assert "../../references/definition-of-done.md" in body
-    assert "../../references/evidence.md" in body
-    assert "../../scripts/verify_run.py" in body
+    assert "references/definition-of-done.md" in body
+    assert "references/evidence.md" in body
+    assert "<skill-root>/scripts/verify_run.py" in body
     assert "--help" in body
 
 
@@ -94,6 +94,7 @@ def test_skill_preflight_records_phase_receipts() -> None:
     done = (ROOT / "references" / "definition-of-done.md").read_text(
         encoding="utf-8"
     )
+    assert "modules/<name>.md" in prerequisites
     for body in (prerequisites, evidence, done):
         assert "reference path" in body.lower()
         assert "required gate" in body.lower()

@@ -22,12 +22,12 @@ def test_native_profile_is_optional_enhancement_only():
 
 
 def _skill_prose_files():
-    return [SKILL_ROOT / "SKILL.md", *SKILL_ROOT.glob("skills/*/SKILL.md"), *SKILL_ROOT.glob("references/*.md")]
+    return [SKILL_ROOT / "SKILL.md", *SKILL_ROOT.glob("modules/*.md"), *SKILL_ROOT.glob("references/*.md")]
 
 
 @pytest.mark.parametrize("path", _skill_prose_files(), ids=lambda p: p.relative_to(SKILL_ROOT).as_posix())
 def test_host_skill_path_appears_only_in_the_oai_native_reference(path):
-    assert list(SKILL_ROOT.glob("skills/*/SKILL.md")), "skills glob matched nothing"
+    assert list(SKILL_ROOT.glob("modules/*.md")), "modules glob matched nothing"
     assert list(SKILL_ROOT.glob("references/*.md")), "references glob matched nothing"
     assert ("/home/oai/skills" in path.read_text(encoding="utf-8")) == (path.name == "oai-native.md")
 

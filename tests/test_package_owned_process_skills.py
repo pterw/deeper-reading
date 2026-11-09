@@ -14,11 +14,17 @@ CASES = [
 
 @pytest.mark.parametrize(("name", "required"), CASES)
 def test_package_owned_process_skill_contract(name, required):
-    path = SKILL_ROOT / "skills" / name / "SKILL.md"
+    path = SKILL_ROOT / "modules" / f"{name}.md"
     assert path.is_file(), path
     text = path.read_text(encoding="utf-8")
-    assert f"name: {name}" in text
-    assert "description: Use when" in text
+    assert not text.startswith("---"), "a module has no YAML frontmatter"
     lowered = text.lower()
     for phrase in required:
         assert phrase.lower() in lowered, (name, phrase)
+
+
+def test_only_the_root_is_named_skill_md_and_modules_resolve_from_the_root():
+    assert [p for p in SKILL_ROOT.rglob("SKILL.md")] == [SKILL_ROOT / "SKILL.md"]
+    for name, _ in CASES:
+        text = (SKILL_ROOT / "modules" / f"{name}.md").read_text(encoding="utf-8")
+        assert "../" not in text, name
