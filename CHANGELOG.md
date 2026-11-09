@@ -123,10 +123,17 @@
 
 ### Compatibility
 
-- A user who edited or deleted any of the six installed module files under
-  `skills/` gets `modified managed files` on upgrade to 0.2.6. Run `uninstall
-  --force`, then `install` again. `--force` removes your edited files, so copy
-  them first.
+- An upgrade is refused with `modified managed files` when you edited or
+  deleted any file the installer put in the skill folder, as in 0.2.5. This
+  includes the six module files under `skills/`, which 0.2.6 replaces with
+  `modules/<name>.md`. Copy your edits out first, then run `uninstall --force`,
+  which removes the edited files.
+- `uninstall` keeps files the installer does not own, and running the skill's
+  scripts creates some (`scripts/__pycache__`). If `uninstall` reports
+  `preserved_root: true`, delete the `deeper-reading` folder by hand before you
+  run `install` again; otherwise `install` refuses with
+  `installer.receipt.missing`. The `npx skills remove` command in that message
+  does not clear this folder. This was so in 0.2.5 too.
 
 ## 0.2.5 - 2026-11-08
 
