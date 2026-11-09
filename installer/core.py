@@ -256,7 +256,6 @@ def install_skill(
         stage = parent / f'.{target_root.name}.stage-{token}'
         backup = parent / f'.{target_root.name}.backup-{token}'
         replaced = False
-        cleanup_failed = False
 
         def inject(point: str) -> None:
             if failure_injector is not None:
@@ -318,7 +317,6 @@ def install_skill(
                 inject('cleanup-backup')
                 _remove_tree(backup)
             except Exception as cleanup_exc:
-                cleanup_failed = True
                 result['warnings'] = [f'backup cleanup failed: {cleanup_exc}; remove {backup} by hand']
             return result
         except Exception as exc:
@@ -329,15 +327,15 @@ def install_skill(
                 if backup.exists():
                     os.replace(backup, target_root)
             except Exception as rollback_exc:
-                raise InstallError(f'{exc}; rollback failed: {rollback_exc}') from rollback_exc
+                # The backup is the only copy of the previous install: keep it and say where it is.
+                kept = f'; the previous install is in {backup}' if backup.exists() else ''
+                raise InstallError(f'{exc}; rollback failed: {rollback_exc}{kept}') from rollback_exc
             if isinstance(exc, InstallError):
                 raise
             raise InstallError(str(exc)) from exc
         finally:
             try:
                 _remove_tree(stage)
-                if not cleanup_failed and backup.exists() and target_root.exists():
-                    _remove_tree(backup)
             except OSError:
                 pass  # best effort; verify reports leftovers
 
