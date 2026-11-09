@@ -1,6 +1,38 @@
 import { spawnSync } from "node:child_process";
+import { mkdirSync, symlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+const LINK_TYPE = process.platform === "win32" ? "junction" : "dir";
+
+// Builds `a0/b0/escape` under base: two chains of `count` links, so a path through both follows more
+// than the 40 links Linux allows, ending at a link to `outside`. Returns that relative path.
+export function linkChainEscape(base, outside, count = 25) {
+  const chain = (prefix, target) => {
+    symlinkSync(target, path.join(base, `${prefix}${count}`), LINK_TYPE);
+    for (let i = count - 1; i >= 0; i -= 1) symlinkSync(path.join(base, `${prefix}${i + 1}`), path.join(base, `${prefix}${i}`), LINK_TYPE);
+  };
+  mkdirSync(path.join(base, "reala"));
+  mkdirSync(path.join(base, "realb"));
+  chain("a", path.join(base, "reala"));
+  chain("b", path.join(base, "realb"));
+  symlinkSync(path.join(base, "b0"), path.join(base, "reala", "b0"), LINK_TYPE);
+  symlinkSync(outside, path.join(base, "realb", "escape"), LINK_TYPE);
+  return "a0/b0/escape";
+}
+
+// Builds `X0/L/last` under base with exactly 40 links before the last component: X0..X39 lead to R,
+// R/L leads to R2 (the 41st link), R2/last leads to `outside`. A lookup of the whole path fails with
+// ELOOP on Linux while a lookup of `X0/L` does not. Returns that relative path.
+export function fortyLinkEscape(base, outside) {
+  mkdirSync(path.join(base, "R"));
+  mkdirSync(path.join(base, "R2"));
+  symlinkSync(path.join(base, "R2"), path.join(base, "R", "L"), LINK_TYPE);
+  symlinkSync(outside, path.join(base, "R2", "last"), LINK_TYPE);
+  symlinkSync(path.join(base, "R"), path.join(base, "X39"), LINK_TYPE);
+  for (let i = 38; i >= 0; i -= 1) symlinkSync(path.join(base, `X${i + 1}`), path.join(base, `X${i}`), LINK_TYPE);
+  return "X0/L/last";
+}
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 export const SKILL_ROOT = path.join(ROOT, "skills", "deeper-reading");

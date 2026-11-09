@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { SKILL_ROOT } from "./helpers.js";
+import { fortyLinkEscape, linkChainEscape, SKILL_ROOT } from "./helpers.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
@@ -153,6 +153,68 @@ for (const root of ["loop", "loop/sub"]) {
     assert.match(errors[0], /^too many symbolic links/);
   });
 }
+
+test("managedPath rejects a long link chain that leads outside the root", (t) => {
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-chain-"));
+  t.after(() => rmSync(sandbox, { recursive: true, force: true }));
+  const root = path.join(sandbox, "root");
+  const outside = path.join(sandbox, "outside");
+  mkdirSync(root);
+  mkdirSync(outside);
+  writeFileSync(path.join(outside, "victim"), "keep", "utf8");
+  let prefix;
+  try {
+    prefix = linkChainEscape(root, outside);
+  } catch (error) {
+    if (!["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) throw error;
+    t.skip("links unavailable");
+    return;
+  }
+  assert.throws(() => managedPath(root, `${prefix}/victim`), InstallerError);
+});
+
+// Exactly 40 links, then a 41st: the lookup of the whole path fails with ELOOP on Linux while the lookup of its
+// parent does not, so a walk that climbs one level and appends the name would end up outside the root.
+function fortyLinkSandbox(t) {
+  const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-forty-"));
+  t.after(() => rmSync(sandbox, { recursive: true, force: true }));
+  const outside = path.join(sandbox, "outside");
+  mkdirSync(outside);
+  return { sandbox, outside };
+}
+
+function linksUnavailable(t, error) {
+  if (!["EPERM", "EACCES", "ENOTSUP"].includes(error.code)) throw error;
+  t.skip("links unavailable");
+}
+
+test("managedPath rejects a path that needs a 41st link and leads outside the root", (t) => {
+  const { sandbox, outside } = fortyLinkSandbox(t);
+  const root = path.join(sandbox, "root");
+  mkdirSync(root);
+  let rel;
+  try {
+    rel = fortyLinkEscape(root, outside);
+  } catch (error) {
+    return linksUnavailable(t, error);
+  }
+  assert.throws(() => managedPath(root, rel), InstallerError);
+});
+
+test("skill.root that needs a 41st link and leads outside the package is refused", (t) => {
+  const { sandbox, outside } = fortyLinkSandbox(t);
+  const pkg = path.join(sandbox, "pkg");
+  mkdirSync(pkg);
+  let rel;
+  try {
+    rel = fortyLinkEscape(pkg, outside);
+  } catch (error) {
+    return linksUnavailable(t, error);
+  }
+  const manifest = { skill: { name: "demo", entrypoint: "SKILL.md", root: rel } };
+  const errors = validateManifest(manifest, pkg);
+  assert.match(errors[0], /^(too many symbolic links|skill\.root is outside the package root)/);
+});
 
 test("managedPath rejects lexical and symlink escapes", (t) => {
   const sandbox = mkdtempSync(path.join(os.tmpdir(), "deeper-reading-paths-"));

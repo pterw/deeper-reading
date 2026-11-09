@@ -33,8 +33,11 @@ export function physicalPath(candidate, links = 0) {
     }
     return realpathSync.native(absolute);
   } catch (error) {
-    // POSIX answers ENOTDIR for a path beneath a file and ELOOP for a loop; Windows answers ENOENT.
-    if (!["ENOENT", "ENOTDIR", "ELOOP"].includes(error.code)) throw error;
+    // POSIX answers ENOTDIR for a path beneath a file; Windows answers ENOENT. Both mean nothing real lies
+    // beneath, so walking up is safe. ELOOP is not walked: Linux also answers it after 40 links on a long
+    // finite chain, and names appended after a walk would stay unresolved and could lead outside the root.
+    if (error.code === "ELOOP") throw new InstallerError(`too many symbolic links: ${absolute}`);
+    if (!["ENOENT", "ENOTDIR"].includes(error.code)) throw error;
     const parent = path.dirname(absolute);
     if (parent === absolute) return absolute;
     return path.join(physicalPath(parent, links), path.basename(absolute));

@@ -198,17 +198,34 @@ def test_bad_manifest_fails_cleanly_through_the_cli(tmp_path, command, damage):
     assert json.loads(proc.stdout)['state'] == 'failed'
 
 
+def _listing(root: Path) -> list[str]:
+    """Every entry under ``root``, links listed but never entered (``rglob`` raises on a junction loop on Windows)."""
+    found = []
+    for folder, names, files in os.walk(root, followlinks=False):
+        for name in (*names, *files):
+            found.append((Path(folder) / name).relative_to(root).as_posix())
+        # os.walk lists a link to a folder under names; pruning it keeps the walk from entering it.
+        names[:] = [n for n in names if not _is_link(Path(folder) / n)]
+    return sorted(found)
+
+
+def _is_link(path: Path) -> bool:
+    """A symlink or, on Windows, a junction (``islink`` misses junctions before Python 3.12)."""
+    info = path.lstat()
+    return path.is_symlink() or bool(getattr(info, 'st_file_attributes', 0) & 0x400)
+
+
 @pytest.mark.parametrize('command', ['install', 'uninstall'])
 def test_target_that_is_a_symlink_loop_fails_cleanly_through_the_cli(tmp_path, command):
     repo = Path(__file__).resolve().parents[2]
     home = tmp_path / 'home'
     home.mkdir()
     _self_link(home / '.agents' / 'skills' / 'deeper-reading')
-    before = sorted(p.relative_to(home).as_posix() for p in home.rglob('*'))
+    before = _listing(home)
 
     proc = _cli(repo, home, command)
 
-    assert sorted(p.relative_to(home).as_posix() for p in home.rglob('*')) == before
+    assert _listing(home) == before
     assert proc.returncode == 2
     assert 'Traceback' not in proc.stderr
     assert json.loads(proc.stdout)['state'] == 'failed'
