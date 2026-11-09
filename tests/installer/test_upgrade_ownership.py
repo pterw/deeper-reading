@@ -43,7 +43,7 @@ def test_upgrade_refuses_modified_managed_file(tmp_path):
 def test_upgrade_removes_files_owned_by_old_manifest_but_not_new_manifest(tmp_path, name):
     package = tmp_path / 'package'
     shutil.copytree(ROOT, package, ignore=shutil.ignore_patterns('__pycache__', '.pytest_cache'))
-    (package / name).write_text('old managed payload', encoding='utf-8')
+    (package / 'skills' / 'deeper-reading' / name).write_text('old managed payload', encoding='utf-8')
     manifest_path = package / 'MANIFEST.json'
     new_manifest_bytes = manifest_path.read_bytes()
     data = json.loads(new_manifest_bytes)

@@ -24,7 +24,7 @@ import {
   uninstallSkill,
   verifyInstallation
 } from "../../installer/node/core.js";
-import { runNodeCli } from "./helpers.js";
+import { runNodeCli, SKILL_ROOT } from "./helpers.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const READY = { state: "ready", evidence: ["test-ready"], action: [] };
@@ -169,7 +169,7 @@ for (const name of ["legacy-managed.txt", "README.md"]) test(`upgrade removes ${
   const newManifestBytes = readFileSync(manifestPath);
   const oldManifest = loadManifest(manifestPath);
   oldManifest.payload.push(name);
-  writeFileSync(path.join(packageRoot, name), "legacy", "utf8");
+  writeFileSync(path.join(packageRoot, path.relative(ROOT, SKILL_ROOT), name), "legacy", "utf8");
   writeFileSync(manifestPath, `${JSON.stringify(oldManifest, null, 2)}\n`, "utf8");
   installSkill({ ...options, packageRoot, manifest: oldManifest });
   assert.equal(existsSync(path.join(targetRoot, name)), true);
@@ -196,7 +196,7 @@ test("failure after replacement restores the prior installation", (t) => {
     recursive: true,
     filter: (source) => ![".git", "node_modules", "__pycache__", ".pytest_cache"].includes(path.basename(source))
   });
-  writeFileSync(path.join(packageRoot, "references", "anti-patterns.md"), "replacement\n", "utf8");
+  writeFileSync(path.join(packageRoot, path.relative(ROOT, SKILL_ROOT), "references", "anti-patterns.md"), "replacement\n", "utf8");
   assert.throws(() => installSkill({
     ...options,
     packageRoot,

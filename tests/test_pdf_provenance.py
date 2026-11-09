@@ -5,8 +5,8 @@ import sys
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / 'scripts'))
+from layout import ROOT, SKILL_ROOT
+sys.path.insert(0, str(SKILL_ROOT / 'scripts'))
 import extract_pdf
 
 FIXTURE = ROOT / 'tests/fixtures/pdf-first-run'

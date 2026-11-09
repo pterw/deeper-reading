@@ -4,9 +4,11 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
+import { SKILL_ROOT } from "./helpers.js";
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const pkg = JSON.parse(readFileSync(path.join(ROOT, "package.json"), "utf8"));
-const version = readFileSync(path.join(ROOT, "VERSION"), "utf8").trim();
+const version = readFileSync(path.join(SKILL_ROOT, "VERSION"), "utf8").trim();
 
 test("npm metadata exposes the explicit CLI and matches VERSION", () => {
   assert.equal(pkg.name, "deeper-reading");

@@ -4,11 +4,11 @@ import re
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+from layout import ROOT, SKILL_ROOT
 
 
 def test_distribution_files_exist():
-    assert (ROOT / 'VERSION').is_file()
+    assert (SKILL_ROOT / 'VERSION').is_file()
     assert (ROOT / 'MANIFEST.json').is_file()
 
 
@@ -134,9 +134,9 @@ def test_npm_control_plane_is_not_installed_as_skill_payload():
 def _payload_files(manifest: dict) -> set[str]:
     files: set[str] = set()
     for entry in manifest['payload']:
-        path = ROOT / entry
+        path = SKILL_ROOT / entry
         found = [path] if path.is_file() else [p for p in path.rglob('*') if p.is_file()]
-        files.update(p.relative_to(ROOT).as_posix() for p in found)
+        files.update(p.relative_to(SKILL_ROOT).as_posix() for p in found)
     return files
 
 
@@ -148,7 +148,7 @@ def test_payload_markdown_links_resolve_inside_payload():
     files = _payload_files(manifest)
     broken = []
     for rel in sorted(f for f in files if f.endswith('.md')):
-        text = (ROOT / rel).read_text(encoding='utf-8')
+        text = (SKILL_ROOT / rel).read_text(encoding='utf-8')
         # Text inside a fenced code block is an example, not a navigable link.
         text = re.sub(r'^(```|~~~)[^\n]*\n.*?^\1', '', text, flags=re.M | re.S)
         # Likewise an inline code span: a backtick run to the next run of the

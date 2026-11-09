@@ -1,7 +1,6 @@
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SKILL = (ROOT / "SKILL.md").read_text(encoding="utf-8")
+from layout import SKILL_ROOT
+SKILL = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
 
 
 def test_skill_has_quick_path_to_done():

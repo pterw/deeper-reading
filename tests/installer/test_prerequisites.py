@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from installer.prerequisites import BUNDLED_EXTRACTORS, document_profile_status
+from layout import SKILL_ROOT
 
-ROOT = Path(__file__).resolve().parents[2]
+from installer.prerequisites import BUNDLED_EXTRACTORS, document_profile_status
 
 
 def _bundle(root: Path):
@@ -44,7 +44,7 @@ def test_unknown_profile_is_unsupported(tmp_path):
 
 
 def test_standalone_ready_for_the_real_package_root():
-    assert document_profile_status("standalone", skill_root=ROOT).state == "ready"
+    assert document_profile_status("standalone", skill_root=SKILL_ROOT).state == "ready"
 
 
 def test_oai_native_fails_closed_when_internal_root_missing(tmp_path):

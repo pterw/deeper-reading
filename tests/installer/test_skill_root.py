@@ -6,6 +6,7 @@ import subprocess
 import sys
 
 import pytest
+from layout import SKILL_ROOT
 
 from installer.core import install_skill, verify_installation
 from installer.manifest import load_manifest
@@ -111,10 +112,10 @@ def test_bad_manifest_fails_cleanly_through_the_cli(tmp_path, command, damage):
     repo = Path(__file__).resolve().parents[2]
     package = tmp_path / 'package'
     shutil.copytree(repo / 'installer', package / 'installer', ignore=shutil.ignore_patterns('node', '__pycache__'))
-    for name in ('MANIFEST.json', 'SKILL.md', 'VERSION', 'LICENSE'):
+    for name in ('MANIFEST.json', 'LICENSE'):
         shutil.copy2(repo / name, package / name)
-    for name in ('references', 'scripts', 'skills'):
-        shutil.copytree(repo / name, package / name, ignore=shutil.ignore_patterns('__pycache__'))
+    package_skill = package / 'skills' / 'deeper-reading'
+    shutil.copytree(SKILL_ROOT, package_skill, ignore=shutil.ignore_patterns('__pycache__'))
     home = tmp_path / 'home'
     home.mkdir()
     assert _cli(package, home, 'install').returncode == 0

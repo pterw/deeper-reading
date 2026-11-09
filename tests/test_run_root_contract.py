@@ -2,12 +2,10 @@ import json
 import shutil
 import subprocess
 import sys
-from pathlib import Path
-
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-SCRIPTS = ROOT / "scripts"
+from layout import SKILL_ROOT
+SCRIPTS = SKILL_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from verify_run import build_dod, validate_run
 from run_fixture import valid_run

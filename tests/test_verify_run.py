@@ -11,8 +11,8 @@ import pytest
 
 from tests.run_fixture import valid_run
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "verify_run.py"
+from layout import SKILL_ROOT
+MODULE_PATH = SKILL_ROOT / "scripts" / "verify_run.py"
 
 
 def load_module():
@@ -317,7 +317,7 @@ def test_dod_directory_fails_without_removing_it(tmp_path):
 
 
 def _upgrade_fixture_ledger_to_v2(run):
-    sys.path.insert(0, str(ROOT / "scripts"))
+    sys.path.insert(0, str(SKILL_ROOT / "scripts"))
     from evidence_atoms import atom_id
 
     ledger_path = Path(run["_ledger_path"]).parent / run["chunking"]["evidence_ledger"]

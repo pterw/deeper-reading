@@ -1,11 +1,9 @@
-from pathlib import Path
-
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT
 
 def read(rel):
-    return (ROOT / rel).read_text(encoding="utf-8")
+    return (SKILL_ROOT / rel).read_text(encoding="utf-8")
 
 def test_root_default_profile_is_standalone():
     text = read("SKILL.md")
@@ -26,7 +24,7 @@ def test_failure_recovery_owns_the_native_failure_and_recovery_states():
 
 @pytest.mark.parametrize("needle", ["systematic-debugging", "invoke systematic debugging", "brainstorm alternatives"])
 def test_no_prose_hands_a_failure_to_a_foreign_skill(needle):
-    files = [ROOT / "SKILL.md", *ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("references/*.md")]
+    files = [SKILL_ROOT / "SKILL.md", *SKILL_ROOT.glob("skills/*/SKILL.md"), *SKILL_ROOT.glob("references/*.md")]
     assert len(files) > 2
     assert [f.name for f in files if needle in f.read_text(encoding="utf-8")] == []
 

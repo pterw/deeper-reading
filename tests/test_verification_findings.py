@@ -1,5 +1,6 @@
 import pytest
 
+from layout import SKILL_ROOT
 from scripts.verification_findings import Finding, codes_of, group_by_predicate
 from tests.run_fixture import valid_run
 
@@ -87,10 +88,9 @@ def test_false_preflight_emits_the_key_code():
 def test_every_finding_literal_has_one_predicate_from_predicates():
     """Structural coverage from source, not proof that each branch executes."""
     import ast
-    from pathlib import Path
     from scripts.verification_findings import PREDICATES
     from scripts.verify_run import REQUIRED_EVIDENCE, REQUIRED_PREFLIGHT
-    tree = ast.parse((Path(__file__).parents[1] / 'scripts/verify_run.py').read_text(encoding="utf-8"))
+    tree = ast.parse((SKILL_ROOT / 'scripts/verify_run.py').read_text(encoding="utf-8"))
     owner = {}
     for node in ast.walk(tree):
         if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'Finding'):

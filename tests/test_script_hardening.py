@@ -1,14 +1,13 @@
 import json
-from pathlib import Path
 import subprocess
 import sys
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT
 
 def run_script(name, *args):
-    return subprocess.run([sys.executable, '-B', str(ROOT / 'scripts' / name), *map(str,args)],
+    return subprocess.run([sys.executable, '-B', str(SKILL_ROOT / 'scripts' / name), *map(str,args)],
                           capture_output=True, text=True, timeout=15)
 
 @pytest.mark.parametrize('value', [None, [], 'invalid', 5])
@@ -187,7 +186,7 @@ def test_extractor_fails_closed_when_no_text(tmp_path, script, name, content):
 
 
 def test_pdf_without_text_layer_points_at_ocr(tmp_path):
-    sys.path.insert(0, str(ROOT / 'scripts'))
+    sys.path.insert(0, str(SKILL_ROOT / 'scripts'))
     from chunk_common import build_manifest
     source = tmp_path / 'a.pdf'
     source.write_bytes(b'%PDF-1.4')

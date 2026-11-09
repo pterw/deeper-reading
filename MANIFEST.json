@@ -2,6 +2,7 @@
   "schema_version": 1,
   "skill": {
     "name": "deeper-reading",
+    "root": "skills/deeper-reading",
     "entrypoint": "SKILL.md"
   },
   "payload": [

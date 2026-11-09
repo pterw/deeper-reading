@@ -4,9 +4,9 @@ import sys
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-MODULE_PATH = ROOT / "scripts" / "verify_run.py"
-SCRIPTS = ROOT / "scripts"
+from layout import SKILL_ROOT
+MODULE_PATH = SKILL_ROOT / "scripts" / "verify_run.py"
+SCRIPTS = SKILL_ROOT / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 

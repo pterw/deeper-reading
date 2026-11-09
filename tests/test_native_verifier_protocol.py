@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import copy
-from pathlib import Path
 import sys
 
 import pytest
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "scripts"))
+from layout import SKILL_ROOT
+sys.path.insert(0, str(SKILL_ROOT / "scripts"))
 
 from verify_run import validate_run
 from run_fixture import valid_run

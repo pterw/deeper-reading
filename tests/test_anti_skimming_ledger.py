@@ -6,7 +6,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-ROOT = Path(__file__).resolve().parents[1]
+from layout import SKILL_ROOT as ROOT
 MODULE_PATH = ROOT / 'scripts' / 'verify_run.py'
 
 

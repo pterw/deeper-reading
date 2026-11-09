@@ -18,12 +18,8 @@
     "LICENSE",
     "MANIFEST.json",
     "README.md",
-    "SKILL.md",
-    "VERSION",
     "installer/node",
-    "references",
-    "scripts",
-    "skills",
+    "skills/deeper-reading",
     "!**/__pycache__",
     "!**/*.pyc"
   ],

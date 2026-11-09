@@ -3,6 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+export const SKILL_ROOT = path.join(ROOT, "skills", "deeper-reading");
 
 export function npmCommand() {
   return process.platform === "win32" ? "npm.cmd" : "npm";

@@ -45,7 +45,7 @@ jobs:
 
       # The same check the publish applies, against the tag this VERSION would get.
       - name: Check the release labels agree
-        run: python tools/release_check.py --tag "v$(cat VERSION)"
+        run: python tools/release_check.py --tag "v$(cat skills/deeper-reading/VERSION)"
 
       - name: Rehearse the npm publish
         run: npm publish --dry-run
@@ -112,7 +112,7 @@ jobs:
       # approved or rejected fails with a hint. Any other error fails.
       - name: Stage the npm publish
         run: |
-          VERSION="$(cat VERSION)"
+          VERSION="$(cat skills/deeper-reading/VERSION)"
           # The answer is read from stdout only: a notice npm prints on stderr
           # (an update hint, a config warning) must not turn a found version
           # into an error.
@@ -155,7 +155,7 @@ jobs:
       # keeps waiting, a match proceeds, any other error fails at once.
       - name: Wait for the version to be public on npm
         run: |
-          VERSION="$(cat VERSION)"
+          VERSION="$(cat skills/deeper-reading/VERSION)"
           deadline=$((SECONDS + 3600))
           while true; do
             if out="$(npm view "deeper-reading@$VERSION" version 2> npm-view.err)"; then

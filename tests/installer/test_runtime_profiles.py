@@ -1,12 +1,10 @@
-from pathlib import Path
-
 import pytest
 
-ROOT = Path(__file__).resolve().parents[2]
+from layout import SKILL_ROOT
 
 
 def read(name: str) -> str:
-    return (ROOT / name).read_text(encoding="utf-8")
+    return (SKILL_ROOT / name).read_text(encoding="utf-8")
 
 
 def test_runtime_profile_reference_exists_and_names_both_profiles():
@@ -24,13 +22,13 @@ def test_native_profile_is_optional_enhancement_only():
 
 
 def _skill_prose_files():
-    return [ROOT / "SKILL.md", *ROOT.glob("skills/*/SKILL.md"), *ROOT.glob("references/*.md")]
+    return [SKILL_ROOT / "SKILL.md", *SKILL_ROOT.glob("skills/*/SKILL.md"), *SKILL_ROOT.glob("references/*.md")]
 
 
-@pytest.mark.parametrize("path", _skill_prose_files(), ids=lambda p: p.relative_to(ROOT).as_posix())
+@pytest.mark.parametrize("path", _skill_prose_files(), ids=lambda p: p.relative_to(SKILL_ROOT).as_posix())
 def test_host_skill_path_appears_only_in_the_oai_native_reference(path):
-    assert list(ROOT.glob("skills/*/SKILL.md")), "skills glob matched nothing"
-    assert list(ROOT.glob("references/*.md")), "references glob matched nothing"
+    assert list(SKILL_ROOT.glob("skills/*/SKILL.md")), "skills glob matched nothing"
+    assert list(SKILL_ROOT.glob("references/*.md")), "references glob matched nothing"
     assert ("/home/oai/skills" in path.read_text(encoding="utf-8")) == (path.name == "oai-native.md")
 
 
